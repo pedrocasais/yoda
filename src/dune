@@ -1,2 +1,4 @@
-(library
- (name project))
+(executable
+ (public_name project)
+ (name main)
+ (libraries dream yojson lwt lwt.unix))
