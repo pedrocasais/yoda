@@ -1,0 +1,20 @@
+# Containerfile.compiler
+FROM ocaml/opam:debian-ocaml-5.2
+
+# Install wasm backend dependencies
+RUN sudo apt update && sudo apt install -y m4 make gcc git docker-cli ninja-build cmake binaryen
+
+# Enable OCaml wasm backend (experimental)
+RUN opam update && \
+    eval $(opam env) && \
+    opam install -y wasm_of_ocaml-compiler js_of_ocaml js_of_ocaml-ppx js_of_ocaml-lwt && \
+    opam install -y dune
+
+RUN echo "(executable (name input) (modes wasm) (preprocess (pps js_of_ocaml-ppx)) )" > /tmp/dune
+RUN echo "(lang dune 3.17)" > /tmp/dune-project
+COPY ./include/. /tmp/.
+
+RUN sudo apt install -y zip
+
+WORKDIR /tmp
+ENTRYPOINT ["bash", "-c"]
