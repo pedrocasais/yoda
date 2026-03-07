@@ -1,0 +1,25 @@
+services:
+  yoda:
+    build:
+      dockerfile: Containerfile
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  yodac:
+    build:
+      dockerfile: Containerfile.sandbox
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    restart: unless-stopped
+
+volumes:
+  valkey_data:
