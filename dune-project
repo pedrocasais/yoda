@@ -19,7 +19,7 @@
  (name project)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml)
+  (depends ocaml dream yojson lwt)
  (tags
   ("add topics" "to describe" your project)))
 
