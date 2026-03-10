@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "contest_id": {
+      "type": "integer"
+    },
+    "problem_id": {
+      "type": "integer"
+    },
+    "language": {
+      "type": "string"
+    },
+    "source_code": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "contest_id",
+    "problem_id",
+    "language",
+    "source_code"
+  ]
+}
