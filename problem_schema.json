@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "time_limit_ms": {
+      "type": "integer"
+    },
+    "memory_limit_mb": {
+      "type": "integer"
+    },
+    "description": {
+      "type": "string"
+    },
+    "input_spec": {
+      "type": "string"
+    },
+    "output_spec": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "code",
+    "title",
+    "time_limit_ms",
+    "memory_limit_mb",
+    "description",
+    "input_spec",
+    "output_spec"
+  ]
+}
