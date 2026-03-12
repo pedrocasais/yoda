@@ -1,8 +1,8 @@
 (executable
  (public_name project)
  (name main)
+ (modules main output index users)
  (libraries dream yojson lwt lwt.unix redis-lwt))
-
 
 (rule
  (targets index.ml)

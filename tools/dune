@@ -1,0 +1,4 @@
+(executable
+ (public_name tools)
+ (name parser)
+ (libraries str yojson yaml))

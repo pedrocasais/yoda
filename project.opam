@@ -16,6 +16,7 @@ depends: [
   "yojson"
   "lwt"
   "redis-lwt"
+  "yaml"
   "odoc" {with-doc}
 ]
 build: [
