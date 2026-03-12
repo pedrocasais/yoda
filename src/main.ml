@@ -83,7 +83,8 @@ let () =
       ; Dream.post "/auth/login" login_handler
       ; Dream.post "/auth/register" register_handler 
       ; Dream.get "/users" (fun request -> getUsers request)
-      ; Dream.post "/users" Output.postUsers
+      ; Dream.post "/users" (fun request ->
+            Dream.html (Index.html "ola" request) )
       ; Dream.get "/users/:id" getUserbyId
       ; Dream.put "/users/:id" (fun request ->
             Dream.html (Index.html "ola" request) )

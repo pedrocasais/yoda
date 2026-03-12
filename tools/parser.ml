@@ -78,7 +78,7 @@ let rec go acc lst = function
     | e -> failwith ("NotImplemented: " ^ e) )
 
 let () =
-  let acc, a = go "" [] readRoutes in
+  let _acc, a = go "" [] readRoutes in
   let acc' =
     List.fold_left
       (fun acc r ->
@@ -86,4 +86,4 @@ let () =
         ^ Printf.sprintf "let %s _request =  \n failwith NotImplemented \n" r )
       "" a
   in
-  output acc acc'
+  output "" acc'
