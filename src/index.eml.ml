@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+let html param request= 
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,12 @@
 </head>
 <body>
   boas
+  <h1>Hello, <%s param %>!</h1>
   <br>
-    <img src="./resources/ocaml-icon.ico" alt="image">
+  <form action="/auth/register" method="post">
+      <%s! Dream.csrf_tag request %> 
+  <input type="email" name="email" placeholder="Enter email" required>
+  <button type="submit">Login</button>
+</form>
 </body>
 </html>

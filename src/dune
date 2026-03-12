@@ -1,4 +1,17 @@
 (executable
  (public_name project)
  (name main)
- (libraries dream yojson lwt lwt.unix))
+ (libraries dream yojson lwt lwt.unix redis-lwt))
+
+
+(rule
+ (targets index.ml)
+ (deps index.eml.ml)
+ (action
+  (run dream_eml %{deps} --workspace %{workspace_root})))
+
+(rule
+ (targets users.ml)
+ (deps users.eml.ml)
+ (action
+  (run dream_eml %{deps} --workspace %{workspace_root})))
