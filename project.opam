@@ -15,6 +15,7 @@ depends: [
   "dream"
   "yojson"
   "lwt"
+  "redis-lwt"
   "odoc" {with-doc}
 ]
 build: [
