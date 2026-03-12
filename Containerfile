@@ -4,33 +4,37 @@ FROM ocaml/opam:debian-ocaml-5.2
 USER root
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
+        python3 python3-yaml \
         m4 make gcc pkg-config libev-dev libgmp-dev libssl-dev docker-cli && \
     rm -rf /var/lib/apt/lists/*
 
-# Add opam user to docker group (999) to allow socket access
+# Add opam user to docker group
 RUN groupadd -r -g 999 docker
 RUN usermod -a -G docker opam
 
-# Switch back to the opam user for package installation
+# Switch back to the opam user
 USER opam
 WORKDIR /home/opam/app
 
-# Copy only the project files needed for dependency resolution first
+# Copy project files for dependency resolution
 COPY --chown=opam:opam dune-project ./
 COPY --chown=opam:opam *.opam ./
 
-# Install OCaml dependencies (cached if no .opam files change)
+# Install OCaml dependencies
 RUN opam update && \
     opam install -y . --deps-only
 
-# Copy the rest of the source code
+# Copy source code
 COPY --chown=opam:opam . .
 
-# Build the project
+# Generate schemas
+RUN python3 tools/schemas.py
+
+# Build project
 RUN eval $(opam env) && dune build
 
-# Expose your app (if it listens on a port)
+# Expose port
 EXPOSE 8080
 
-# Run the application
+# Run application
 CMD ["dune", "exec", "./src/main.exe"]
