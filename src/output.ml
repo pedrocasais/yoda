@@ -53,29 +53,3 @@ let postUsers _request =
  failwith NotImplemented 
 let getUsers _request =  
  failwith NotImplemented 
-
-;Dream.get "/contests/:id/scoreboard" getContestsIdScoreboard
-;Dream.post "/judge/:submissionId/result" postJudgeSubmissionIdResult
-;Dream.post "/judge/next" postJudgeNext
-;Dream.get "/contests/:contestId/submissions" getContestsContestIdSubmissions
-;Dream.get "/submissions/:id" getSubmissionsId
-;Dream.post "/submissions" postSubmissions
-;Dream.post "/problems/:id/testcases" postProblemsIdTestcases
-;Dream.get "/problems/:id/testcases" getProblemsIdTestcases
-;Dream.delete "/problems/:id" deleteProblemsId
-;Dream.put "/problems/:id" putProblemsId
-;Dream.get "/problems/:id" getProblemsId
-;Dream.post "/contests/:contestsId/problems" postContestsContestsIdProblems
-;Dream.get "/contests/:contestsId/problems" getContestsContestsIdProblems
-;Dream.delete "/contests/:id" deleteContestsId
-;Dream.put "/contests/:id" putContestsId
-;Dream.get "/contests/:id" getContestsId
-;Dream.post "/contests" postContests
-;Dream.get "/contests" getContests
-;Dream.post "/auth/register" postAuthRegister
-;Dream.post "/auth/login" postAuthLogin
-;Dream.delete "/users/:id" deleteUsersId
-;Dream.put "/users/:id" putUsersId
-;Dream.get "/users/:id" getUsersId
-;Dream.post "/users" postUsers
-;Dream.get "/users" getUsers
