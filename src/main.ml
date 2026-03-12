@@ -83,8 +83,7 @@ let () =
       ; Dream.post "/auth/login" login_handler
       ; Dream.post "/auth/register" register_handler 
       ; Dream.get "/users" (fun request -> getUsers request)
-      ; Dream.post "/users" (fun request ->
-            Dream.html (Index.html "ola" request) )
+      ; Dream.post "/users" Output.postUsers
       ; Dream.get "/users/:id" getUserbyId
       ; Dream.put "/users/:id" (fun request ->
             Dream.html (Index.html "ola" request) )
@@ -93,4 +92,4 @@ let () =
     |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0)
     |> Dream.logger
   in
-  Dream.run ~interface:"0.0.0.0" ~port:8081 app
+  Dream.run ~interface:"0.0.0.0" ~port:8082 app
