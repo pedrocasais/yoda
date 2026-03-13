@@ -1,3 +1,3 @@
 start:
 	docker compose up -d --build
-	dune exec tools/parser.exe
+	dune exec tools/generator.exe
