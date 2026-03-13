@@ -1,6 +1,6 @@
 (lang dune 3.20)
 
-(name project)
+(name yoda)
 
 (generate_opam_files true)
 
@@ -16,7 +16,7 @@
 (documentation https://url/to/documentation)
 
 (package
- (name project)
+ (name yoda)
  (synopsis "A short synopsis")
  (description "A longer description")
  (depends ocaml dream yojson lwt redis-lwt)
