@@ -17,6 +17,7 @@ depends: [
   "lwt"
   "redis-lwt"
   "yaml"
+  "tyxml"
   "odoc" {with-doc}
 ]
 build: [
