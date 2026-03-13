@@ -1,6 +1,8 @@
 open Lwt.Infix
 open Redis_lwt
 
+let html_to_string html = Format.asprintf "%a" (Tyxml.Html.pp_elt ()) html
+
 let icon_handler _ =
   Lwt_io.(with_file ~mode:Input "./static/resources/ocaml-icon.ico" read)
   >>= fun data ->
@@ -19,34 +21,43 @@ let _sessions uid =
       Printf.ksprintf Dream.html "Welcome back, %s!"
         (Dream.html_escape username)
 
-let getUsers request =
-  Client.connect {host= "127.0.0.1"; port= 6379}
+let getUsers _request =
+  Client.connect {host= "valkey"; port= 6379}
   >>= fun conn ->
   Client.scan conn 0
   >>= fun result ->
-  match result with
-  | _,v ->
-      Dream.html (Users.html "ola" request v)
+  match result with _, v -> Dream.html (html_to_string (Users.users ~users:v) )
 
-let getUserbyId request = 
+let getUserbyId request =
   let id = Dream.param request "id" in
-  Client.connect {host= "127.0.0.1"; port= 6379}
+  Client.connect {host= "valkey"; port= 6379}
   >>= fun conn ->
   Client.hgetall conn ("user:" ^ id)
   >>= fun result ->
-  match result with
-  | _x ->
-    Dream.html (Index.html "ola" request)
-      (* Dream.html (Users.html2 "ola" request x) *)
-   
- 
+  match result with x -> Dream.html (html_to_string (Users.usersbyID ~users2:x ) )
+(* Dream.html (Users.html2 "ola" request x) *)
+
+let connection = Client.connect {host= "valkey"; port= 6379}
+
 let login_handler request =
+  let c = Dream.csrf_tag request in
+  print_endline c ;
   Dream.form ~csrf:true request
   >>= fun form ->
   match form with
-  | `Ok [("email", email)] ->
-      if email = "a@gmail.com" then _sessions email request
-      else Dream.html (Index.html "UPS" request)
+  | `Ok [("email", email)] -> (
+      connection
+      >>= fun conn ->
+      Client.get conn ("user:username:" ^ email)
+      >>= fun data ->
+      match data with
+      | Some x ->
+          print_endline "here" ;
+          Client.hgetall conn ("user:" ^ x)
+          >>= fun _data' ->
+          let page = File.detailUserPage () _data' in
+          Dream.html (html_to_string page)
+      | None -> Dream.html (html_to_string (Index.index ~param:"UPS" ~request) ) )
   | _ -> Dream.empty `Bad_Request
 
 let date =
@@ -58,39 +69,38 @@ let date =
   in
   Format.asprintf "%a" pp_tm today
 
-let register_handler  =
+let register_handler =
+  
  fun request ->
-  (* match Dream.session_field request "admin" with
-  | Some _ -> *)
-      Client.connect {host= "127.0.0.1"; port= 6379}
-      >>= fun conn ->
-      Client.incr conn "user:id"
-      >>= fun id ->
-      let key = "user:" ^ string_of_int id in
-      Client.hset conn key "username" "username2"
-      >>= fun _ ->
-      Client.hset conn key "role" "user"
-      >>= fun _ ->
-      Client.hset conn key "created_at" date
-      >>= fun _ -> Dream.redirect request "/"
-  (* | None -> Dream.html (Index.html "UPS" request) *)
+  (* match Dream.session_field request "admin" with | Some _ -> *)
+  Client.connect {host= "valkey"; port= 6379}
+  >>= fun conn ->
+  Client.incr conn "user:id"
+  >>= fun id ->
+  let key = "user:" ^ string_of_int id in
+  Client.hset conn key "username" "username2"
+  >>= fun _ ->
+  Client.hset conn key "role" "user"
+  >>= fun _ ->
+  Client.hset conn key "created_at" date
+  >>= fun _ -> Dream.redirect request "/"
+(* | None -> Dream.html (html_to_string (Index.index "UPS" request) ) *)
 
 let () =
   let app =
     Dream.router
       [ Dream.get "/resources/ocaml-icon.ico" icon_handler
-      ; Dream.get "/" (fun request -> Dream.html (Index.html "ola" request))
+      ; Dream.get "/" (fun request -> Dream.html (html_to_string (Index.index ~param:"ola" ~request) ))
       ; Dream.post "/auth/login" login_handler
-      ; Dream.post "/auth/register" register_handler 
-      ; Dream.get "/users" (fun request -> getUsers request)
-      ; Dream.post "/users" (fun request ->
-            Dream.html (Index.html "ola" request) )
+      ; Dream.post "/auth/register" register_handler
+      ; Dream.get "/users" getUsers
+      ; Dream.post "/users" getUsers
       ; Dream.get "/users/:id" getUserbyId
       ; Dream.put "/users/:id" (fun request ->
-            Dream.html (Index.html "ola" request) )
+            Dream.html (html_to_string (Index.index ~param:"ola" ~request) ) )
       ; Dream.delete "/users/:id" (fun request ->
-            Dream.html (Index.html "ola" request) ) ]
+            Dream.html (html_to_string (Index.index ~param:"ola" ~request) ) ) ]
     |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0)
     |> Dream.logger
   in
-  Dream.run ~interface:"0.0.0.0" ~port:8082 app
+  Dream.run ~interface:"0.0.0.0"  app
