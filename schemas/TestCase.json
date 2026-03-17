@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "string"
+    },
+    "output": {
+      "type": "string"
+    },
+    "is_sample": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "input",
+    "output",
+    "is_sample"
+  ]
+}

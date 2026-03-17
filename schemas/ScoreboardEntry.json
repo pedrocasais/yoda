@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "properties": {
+    "team": {
+      "type": "string"
+    },
+    "solved": {
+      "type": "integer"
+    },
+    "penalty": {
+      "type": "integer"
+    },
+    "problems": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "solved": {
+            "type": "boolean"
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "time": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "solved",
+          "attempts"
+        ]
+      }
+    }
+  },
+  "required": [
+    "team",
+    "solved",
+    "penalty",
+    "problems"
+  ]
+}
