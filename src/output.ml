@@ -6,92 +6,91 @@ open Redis_lwt
 let icon_handler _ =
   Lwt_io.(with_file ~mode:Input "./static/resources/ocaml-icon.ico" read)
   >>= fun data ->
-  Dream.respond ~headers:[("Content-Type", "image/x-icon")] data
+  Dream.respond ~headers:[("Content-Type", "image/x-icon")] data 
+let getContestsIdScoreboard _request =  
+ failwith "Not Implemented" 
+let postJudgeSubmissionIdResult _request =  
+ failwith "Not Implemented" 
+let postJudgeNext _request =  
+ failwith "Not Implemented" 
+let getContestsContestIdSubmissions _request =  
+ failwith "Not Implemented" 
+let getSubmissionsId _request =  
+ failwith "Not Implemented" 
+let postSubmissions _request =  
+ failwith "Not Implemented" 
+let postProblemsIdTestcases _request =  
+ failwith "Not Implemented" 
+let getProblemsIdTestcases _request =  
+ failwith "Not Implemented" 
+let deleteProblemsId _request =  
+ failwith "Not Implemented" 
+let putProblemsId _request =  
+ failwith "Not Implemented" 
+let getProblemsId _request =  
+ failwith "Not Implemented" 
+let postContestsContestsIdProblems _request =  
+ failwith "Not Implemented" 
+let getContestsContestsIdProblems _request =  
+ failwith "Not Implemented" 
+let deleteContestsId _request =  
+ failwith "Not Implemented" 
+let putContestsId _request =  
+ failwith "Not Implemented" 
+let getContestsId _request =  
+ failwith "Not Implemented" 
+let postContests _request =  
+ failwith "Not Implemented" 
+let getContests _request =  
+ failwith "Not Implemented" 
+let postAuthRegister _request =  
+ failwith "Not Implemented" 
+let postAuthLogin _request =  
+ failwith "Not Implemented" 
+let deleteUsersId _request =  
+ failwith "Not Implemented" 
+let putUsersId _request =  
+ failwith "Not Implemented" 
+let getUsersId _request =  
+ failwith "Not Implemented" 
+let postUsers _request =  
+ failwith "Not Implemented" 
+let getUsers _request =  
+ failwith "Not Implemented" 
 
-let getContestsIdScoreboard _request = failwith "Not Implemented"
 
-let postJudgeSubmissionIdResult _request = failwith "Not Implemented"
-
-let postJudgeNext _request = failwith "Not Implemented"
-
-let getContestsContestIdSubmissions _request = failwith "Not Implemented"
-
-let getSubmissionsId _request = failwith "Not Implemented"
-
-let postSubmissions _request = failwith "Not Implemented"
-
-let postProblemsIdTestcases _request = failwith "Not Implemented"
-
-let getProblemsIdTestcases _request = failwith "Not Implemented"
-
-let deleteProblemsId _request = failwith "Not Implemented"
-
-let putProblemsId _request = failwith "Not Implemented"
-
-let getProblemsId _request = failwith "Not Implemented"
-
-let postContestsContestsIdProblems _request = failwith "Not Implemented"
-
-let getContestsContestsIdProblems _request = failwith "Not Implemented"
-
-let deleteContestsId _request = failwith "Not Implemented"
-
-let putContestsId _request = failwith "Not Implemented"
-
-let getContestsId _request = failwith "Not Implemented"
-
-let postContests _request = failwith "Not Implemented"
-
-let getContests _request = failwith "Not Implemented"
-
-let postAuthRegister _request = failwith "Not Implemented"
-
-let postAuthLogin _request = failwith "Not Implemented"
-
-let deleteUsersId _request = failwith "Not Implemented"
-
-let putUsersId _request = failwith "Not Implemented"
-
-let getUsersId _request = failwith "Not Implemented"
-
-let postUsers _request = failwith "Not Implemented"
-
-let getUsers _request = failwith "Not Implemented"
-
-let () =
-  let app =
-    Dream.router
-      [ Dream.get "/resources/ocaml-icon.ico" icon_handler
-      ; Dream.get "/" (fun request -> Dream.html (Index.html "ola" request))
-      ; Dream.get "/contests/:id/scoreboard" getContestsIdScoreboard
-      ; Dream.post "/judge/:submissionId/result" postJudgeSubmissionIdResult
-      ; Dream.post "/judge/next" postJudgeNext
-      ; Dream.get "/contests/:contestId/submissions"
-          getContestsContestIdSubmissions
-      ; Dream.get "/submissions/:id" getSubmissionsId
-      ; Dream.post "/submissions" postSubmissions
-      ; Dream.post "/problems/:id/testcases" postProblemsIdTestcases
-      ; Dream.get "/problems/:id/testcases" getProblemsIdTestcases
-      ; Dream.delete "/problems/:id" deleteProblemsId
-      ; Dream.put "/problems/:id" putProblemsId
-      ; Dream.get "/problems/:id" getProblemsId
-      ; Dream.post "/contests/:contestsId/problems"
-          postContestsContestsIdProblems
-      ; Dream.get "/contests/:contestsId/problems"
-          getContestsContestsIdProblems
-      ; Dream.delete "/contests/:id" deleteContestsId
-      ; Dream.put "/contests/:id" putContestsId
-      ; Dream.get "/contests/:id" getContestsId
-      ; Dream.post "/contests" postContests
-      ; Dream.get "/contests" getContests
-      ; Dream.post "/auth/register" postAuthRegister
-      ; Dream.post "/auth/login" postAuthLogin
-      ; Dream.delete "/users/:id" deleteUsersId
-      ; Dream.put "/users/:id" putUsersId
-      ; Dream.get "/users/:id" getUsersId
-      ; Dream.post "/users" postUsers
-      ; Dream.get "/users" getUsers ]
-    |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0)
-    |> Dream.logger
-  in
-  Dream.run ~interface:"0.0.0.0" app
+ let () = 
+  let app = 
+  Dream.router [
+ 	Dream.get
+   "/resources/ocaml-icon.ico" icon_handler ;Dream.get "/" (fun request
+   -> Dream.html (Index.html "ola"  request))
+;Dream.get "/contests/:id/scoreboard" getContestsIdScoreboard
+;Dream.post "/judge/:submissionId/result" postJudgeSubmissionIdResult
+;Dream.post "/judge/next" postJudgeNext
+;Dream.get "/contests/:contestId/submissions" getContestsContestIdSubmissions
+;Dream.get "/submissions/:id" getSubmissionsId
+;Dream.post "/submissions" postSubmissions
+;Dream.post "/problems/:id/testcases" postProblemsIdTestcases
+;Dream.get "/problems/:id/testcases" getProblemsIdTestcases
+;Dream.delete "/problems/:id" deleteProblemsId
+;Dream.put "/problems/:id" putProblemsId
+;Dream.get "/problems/:id" getProblemsId
+;Dream.post "/contests/:contestsId/problems" postContestsContestsIdProblems
+;Dream.get "/contests/:contestsId/problems" getContestsContestsIdProblems
+;Dream.delete "/contests/:id" deleteContestsId
+;Dream.put "/contests/:id" putContestsId
+;Dream.get "/contests/:id" getContestsId
+;Dream.post "/contests" postContests
+;Dream.get "/contests" getContests
+;Dream.post "/auth/register" postAuthRegister
+;Dream.post "/auth/login" postAuthLogin
+;Dream.delete "/users/:id" deleteUsersId
+;Dream.put "/users/:id" putUsersId
+;Dream.get "/users/:id" getUsersId
+;Dream.post "/users" postUsers
+;Dream.get "/users" getUsers]
+ |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0) 
+ |> Dream.logger 
+   in 
+ Dream.run ~interface:"0.0.0.0" app

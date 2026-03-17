@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "string"
+    },
+    "score": {
+      "type": "integer"
+    },
+    "time_ms": {
+      "type": "integer"
+    },
+    "memory_kb": {
+      "type": "integer"
+    },
+    "details": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "testcase_id": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "time_ms": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "testcase_id",
+          "status",
+          "time_ms"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "status",
+    "score",
+    "time_ms",
+    "memory_kb",
+    "details"
+  ]
+}
