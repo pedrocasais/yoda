@@ -65,7 +65,7 @@ let subs2 s =
 
   
 let output str acc =
-  Out_channel.with_open_text "./src/output.ml" (fun oc ->
+  Out_channel.with_open_text "./src/router.ml" (fun oc ->
       Out_channel.output_string oc (initial acc ^ str ^ final) )
 
 
@@ -89,7 +89,7 @@ let () =
     List.fold_left
       (fun acc r ->
         acc
-        ^ Printf.sprintf "let %s _request =  \n failwith \"Not Implemented\" \n" r )
+        ^ Printf.sprintf "let %s _request =  \n failwith  \"%s\" \n" r r )
       "" a
   in
   output acc acc'

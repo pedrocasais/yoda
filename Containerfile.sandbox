@@ -17,4 +17,4 @@ COPY ./include/. /tmp/.
 RUN sudo apt install -y zip
 
 WORKDIR /tmp
-ENTRYPOINT ["bash", "-c"]
+ENTRYPOINT ["bash", "-c", "sleep infinity"]
