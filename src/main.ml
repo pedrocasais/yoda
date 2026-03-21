@@ -26,7 +26,7 @@ let getUsers _request =
   >>= fun conn ->
   Client.scan conn 0
   >>= fun result ->
-  match result with _, v -> Dream.html (html_to_string (Users.users ~users:v) )
+  match result with _, v -> Dream.html (html_to_string (User.users ~users:v) )
 
 let getUserbyId request =
   let id = Dream.param request "id" in
@@ -34,7 +34,7 @@ let getUserbyId request =
   >>= fun conn ->
   Client.hgetall conn ("user:" ^ id)
   >>= fun result ->
-  match result with x -> Dream.html (html_to_string (Users.usersbyID ~users2:x ) )
+  match result with x -> Dream.html (html_to_string (User.usersbyID ~users2:x ) )
 (* Dream.html (Users.html2 "ola" request x) *)
 
 let connection = Client.connect {host= "valkey"; port= 6379}
@@ -55,7 +55,7 @@ let login_handler request =
           print_endline "here" ;
           Client.hgetall conn ("user:" ^ x)
           >>= fun _data' ->
-          let page = File.detailUserPage () _data' in
+          let page = User.usersbyID ~users2:_data' in
           Dream.html (html_to_string page)
       | None -> Dream.html (html_to_string (Index.index ~param:"UPS" ~request) ) )
   | _ -> Dream.empty `Bad_Request
@@ -69,21 +69,22 @@ let date =
   in
   Format.asprintf "%a" pp_tm today
 
-let register_handler =
-  
- fun request ->
+let register_handler request =
+  Dream.form ~csrf:true request >>= fun form -> match form with
+  | `Ok [("email",email)] -> (
   (* match Dream.session_field request "admin" with | Some _ -> *)
-  Client.connect {host= "valkey"; port= 6379}
+  connection
   >>= fun conn ->
   Client.incr conn "user:id"
   >>= fun id ->
   let key = "user:" ^ string_of_int id in
-  Client.hset conn key "username" "username2"
+  Client.hset conn key "username" email
   >>= fun _ ->
   Client.hset conn key "role" "user"
   >>= fun _ ->
-  Client.hset conn key "created_at" date
+  Client.hset conn key "created_at" date )
   >>= fun _ -> Dream.redirect request "/"
+  | _ -> Dream.empty `Bad_Request
 (* | None -> Dream.html (html_to_string (Index.index "UPS" request) ) *)
 
 let () =
@@ -103,4 +104,4 @@ let () =
     |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0)
     |> Dream.logger
   in
-  Dream.run ~interface:"0.0.0.0"  app
+  Dream.run ~interface:"0.0.0.0" app
