@@ -1,6 +1,6 @@
 (executable
  (public_name project)
  (name main)
- (modules main output index users file)
+ (modules main router index users file)
  (libraries dream yojson lwt lwt.unix redis-lwt tyxml)
  (preprocess (pps lwt_ppx)))

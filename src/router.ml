@@ -8,55 +8,55 @@ let icon_handler _ =
   >>= fun data ->
   Dream.respond ~headers:[("Content-Type", "image/x-icon")] data 
 let getContestsIdScoreboard _request =  
- failwith "Not Implemented" 
+ failwith  "getContestsIdScoreboard" 
 let postJudgeSubmissionIdResult _request =  
- failwith "Not Implemented" 
+ failwith  "postJudgeSubmissionIdResult" 
 let postJudgeNext _request =  
- failwith "Not Implemented" 
+ failwith  "postJudgeNext" 
 let getContestsContestIdSubmissions _request =  
- failwith "Not Implemented" 
+ failwith  "getContestsContestIdSubmissions" 
 let getSubmissionsId _request =  
- failwith "Not Implemented" 
+ failwith  "getSubmissionsId" 
 let postSubmissions _request =  
- failwith "Not Implemented" 
+ failwith  "postSubmissions" 
 let postProblemsIdTestcases _request =  
- failwith "Not Implemented" 
+ failwith  "postProblemsIdTestcases" 
 let getProblemsIdTestcases _request =  
- failwith "Not Implemented" 
+ failwith  "getProblemsIdTestcases" 
 let deleteProblemsId _request =  
- failwith "Not Implemented" 
+ failwith  "deleteProblemsId" 
 let putProblemsId _request =  
- failwith "Not Implemented" 
+ failwith  "putProblemsId" 
 let getProblemsId _request =  
- failwith "Not Implemented" 
+ failwith  "getProblemsId" 
 let postContestsContestsIdProblems _request =  
- failwith "Not Implemented" 
+ failwith  "postContestsContestsIdProblems" 
 let getContestsContestsIdProblems _request =  
- failwith "Not Implemented" 
+ failwith  "getContestsContestsIdProblems" 
 let deleteContestsId _request =  
- failwith "Not Implemented" 
+ failwith  "deleteContestsId" 
 let putContestsId _request =  
- failwith "Not Implemented" 
+ failwith  "putContestsId" 
 let getContestsId _request =  
- failwith "Not Implemented" 
+ failwith  "getContestsId" 
 let postContests _request =  
- failwith "Not Implemented" 
+ failwith  "postContests" 
 let getContests _request =  
- failwith "Not Implemented" 
+ failwith  "getContests" 
 let postAuthRegister _request =  
- failwith "Not Implemented" 
+ failwith  "postAuthRegister" 
 let postAuthLogin _request =  
- failwith "Not Implemented" 
+ failwith  "postAuthLogin" 
 let deleteUsersId _request =  
- failwith "Not Implemented" 
+ failwith  "deleteUsersId" 
 let putUsersId _request =  
- failwith "Not Implemented" 
+ failwith  "putUsersId" 
 let getUsersId _request =  
- failwith "Not Implemented" 
+ failwith  "getUsersId" 
 let postUsers _request =  
- failwith "Not Implemented" 
+ failwith  "postUsers" 
 let getUsers _request =  
- failwith "Not Implemented" 
+ failwith  "getUsers" 
 
 
  let () = 
