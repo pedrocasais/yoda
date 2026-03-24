@@ -1,3 +1,5 @@
+.PHONY: start tools
+
 start:
 	docker compose up -d --build
 	$(MAKE) tools
