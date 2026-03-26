@@ -18,6 +18,8 @@ depends: [
   "redis-lwt"
   "yaml"
   "tyxml"
+  "atd"
+  "atdml"
   "odoc" {with-doc}
 ]
 build: [
@@ -36,3 +38,7 @@ build: [
 ]
 dev-repo: "git+https://github.com/username/reponame.git"
 x-maintenance-intent: ["(latest)"]
+pin-depends: [
+  ["atd.dev" "git+https://github.com/ahrefs/atd.git"]
+  ["atdml.dev" "git+https://github.com/ahrefs/atd.git"]
+]
