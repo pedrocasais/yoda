@@ -37,4 +37,4 @@ RUN eval $(opam env) && dune build
 EXPOSE 8080
 
 # Run application
-CMD ["dune", "exec", "./src/main.exe"]
+CMD ["dune", "exec", "./src/router.exe"]

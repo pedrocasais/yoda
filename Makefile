@@ -2,7 +2,7 @@
 
 start:
 	docker compose up -d --build
-	$(MAKE) tools
+	
 
 tools:
 	dune exec tools/generator.exe
