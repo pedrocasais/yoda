@@ -3,6 +3,12 @@ open Redis_lwt
 
 let html_to_string html = Format.asprintf "%a" (Tyxml.Html.pp_elt ()) html
 
+let rec aux cursor acc conn pattern =
+  if cursor = 0 then Lwt.return acc
+  else
+    Client.scan conn cursor ~pattern
+    >>= fun (next, lst) -> aux next (acc @ lst) conn pattern
+
 let rec userExist conn target = function
   | [] -> Lwt.return false
   | h :: t ->
@@ -11,13 +17,16 @@ let rec userExist conn target = function
       if data = Some target then Lwt.return true else userExist conn target t
 
 let postAuthRegister request =
+  let pattern = "user:*" in
   Dream.body request
   >>= fun data ->
   let user = Types.user_of_json data in
   Lwt_pool.use Db.pool (fun conn ->
-      Client.scan conn 0 ~pattern:"user:*"
-      >>= fun (_, users) ->
-      userExist conn user.username users
+      Client.scan conn 0 ~pattern
+      >>= fun (next_cursor, users) ->
+      aux next_cursor users conn pattern
+      >>= fun allusers ->
+      userExist conn user.username allusers
       >>= fun res ->
       if res then
         Dream.html (html_to_string (Index.index ~param:"ja exites" ~request))
@@ -32,12 +41,15 @@ let postAuthRegister request =
         >>= fun _ -> Dream.redirect request "/" )
 
 let postAuthLogin request =
+  let pattern = "user:*" in
   Dream.body request
   >>= fun data ->
   let user = Types.user_of_json data in
   Lwt_pool.use Db.pool (fun conn ->
-      Client.scan conn 0 ~pattern:"user:*"
-      >>= fun (_, users) -> userExist conn user.username users )
+      Client.scan conn 0 ~pattern
+      >>= fun (next_cursor, users) ->
+      aux next_cursor users conn pattern
+      >>= fun allusers -> userExist conn user.username allusers )
   >>= fun res ->
   if res then
     (*existe entra*)
