@@ -1,16 +1,16 @@
 # Yoda
-## Compile and evaluate programs in OCaml
 
+## Compile and evaluate programs in OCaml
 
 ![OCaml](https://img.shields.io/badge/OCaml-3C873A?logo=ocaml\&logoColor=white)
 ![WebAssembly](https://img.shields.io/badge/WebAssembly-654FF0?logo=webassembly\&logoColor=white)
+
 [![Build and Push Container](https://github.com/pedrocasais/yoda/actions/workflows/build.yml/badge.svg)](https://github.com/pedrocasais/yoda/actions/workflows/build.yml)
 [![Build and Push Sandbox Container](https://github.com/pedrocasais/yoda/actions/workflows/build-sandbox.yml/badge.svg)](https://github.com/pedrocasais/yoda/actions/workflows/build-sandbox.yml)
 
 
-
 ## 📝 Description
-This project is composed of YodaB and YodaC.
+This repository is composed of YodaB and YodaC.
 
 ### YodaB
 Module responsible for the API. It aims to reduce feedback time, improve consistency in grading, provide analytical data on students' individual and collective performance, and create a secure and scalable foundation for future integrations with academic systems or online learning platforms.
