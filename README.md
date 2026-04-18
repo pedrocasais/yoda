@@ -10,15 +10,20 @@
 
 
 ## 📝 Description
-This project is composed of YodaB and YodaC
+This project is composed of YodaB and YodaC.
 
-### YodaB 
-Module responsible of api and aims to reduce feedback time, improve consistency in grading, provide analytical data on students’ individual and collective performance, and create a secure and scalable foundation for future integrations with academic systems or online learning platforms.
+### YodaB
+Module responsible for the API. It aims to reduce feedback time, improve consistency in grading, provide analytical data on students' individual and collective performance, and create a secure and scalable foundation for future integrations with academic systems or online learning platforms.
 
-### YodaC 
-Module responsible for compiling and executing program code in a controlled manner, ensuring security and resource limitations. The system will integrate compilers and interpreters for different programming languages and execute the code in an isolated environment (sandbox), preventing unauthorized access to the host system.
+### YodaC
+Module responsible for compiling and executing program code in a controlled manner, ensuring security and resource limitations. The system integrates compilers and interpreters for different programming languages and executes code in an isolated environment (sandbox), preventing unauthorized access to the host system.
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
+
+The platform is split into three main components:
+- Client-facing API service (YodaB)
+- Judge/sandbox execution service (YodaC)
+- Persistent state storage (Valkey)
 
 ```mermaid
 graph TB
@@ -53,9 +58,12 @@ graph TB
   EXEC -- "POST /judge/:id/result" --> JDG
 ```
 
-## 🔧 How It Works
+## 🔧 Workflow
 
-**Workflow Overview:**
+Submission lifecycle overview:
+- The client sends requests to YodaB.
+- YodaB stores and manages data in Valkey.
+- YodaC fetches pending submissions, executes them in isolation, and reports results back.
 
 ```mermaid
 flowchart TD
