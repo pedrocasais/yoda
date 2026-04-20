@@ -28,13 +28,13 @@ RUN opam update && \
 COPY --chown=opam:opam . .
 
 # Generate schemas
-RUN python3 tools/schemas.py
+RUN make openapi-yaml-to-json
 
 # Build project
-RUN eval $(opam env) && dune build
+RUN eval $(opam env) && dune build --profile=release
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8001
 
 # Run application
-CMD ["dune", "exec", "./src/router.exe"]
+CMD ["dune", "exec", "./src/yodab.exe"]
