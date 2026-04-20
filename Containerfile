@@ -4,7 +4,7 @@ FROM ocaml/opam:debian-ocaml-5.2
 USER root
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
-        python3 python3-yaml \
+        python3 python3-venv python3-yaml \
         m4 make gcc pkg-config libev-dev libgmp-dev libssl-dev docker-cli && \
     rm -rf /var/lib/apt/lists/*
 
