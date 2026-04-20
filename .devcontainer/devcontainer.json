@@ -1,0 +1,19 @@
+{
+  "name": "yoda",
+  "build": {
+    "dockerfile": "Containerfile",
+    "context": ".."
+  },
+  "remoteUser": "opam",
+  "workspaceFolder": "/workspaces/yoda",
+  "forwardPorts": [8001, 8080, 8081],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ocamllabs.ocaml-platform",
+        "ms-python.python"
+      ]
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}
