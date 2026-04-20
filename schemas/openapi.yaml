@@ -1,14 +1,14 @@
 openapi: 3.0.4
 info:
   title: Backend API OCaml Dream
-  description: 
-  version: 1.0
+  description: "API specification for Yoda."
+  version: "1.0"
 
 paths:
   /users:
     get:
       summary: Returns a list of users.
-      description: 
+      description: Returns a list of users.
       responses:
         "200":
           description: A JSON array of user objects
@@ -33,7 +33,7 @@ paths:
           description: Server error
     post:
       summary: Creates a user.
-      description: 
+      description: Creates a new user.
       requestBody:
         required: true
         content:
@@ -72,7 +72,7 @@ paths:
           type: integer
     get:
       summary: Returns a user.
-      description: 
+      description: Returns a user.
       responses:
         "200":
           description: A user object
@@ -88,7 +88,7 @@ paths:
           description: Server error
     put:
       summary: Update a user.
-      description: 
+      description: Updates an existing user.
       requestBody:
         required: true
         content:
@@ -118,7 +118,7 @@ paths:
           description: Server error
     delete:
       summary: Deletes a user.
-      description: 
+      description: Deletes an existing user.
       responses:
         "204":
           description: User deleted successfully
@@ -132,7 +132,7 @@ paths:
   /auth/login:
     post:
       summary: Authenticate a user.
-      description: 
+      description: Authenticates a user and returns an authentication token.
       requestBody:
         required: true
         content:
@@ -154,8 +154,28 @@ paths:
                 $ref: '#/components/schemas/AuthToken'
         "401":
           description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required: ["error"]
+              example:
+                error: "Invalid username or password"
         "500":
           description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required: ["error"]
+              example:
+                error: "An unexpected error occurred. Please try again later."
 
   /auth/register:
     post:
@@ -195,7 +215,7 @@ paths:
   /contests:
     get:
       summary: Returns a list of contests.
-      description: 
+      description: Returns a list of contests.
       responses:
         "200":
           description: A JSON array of contest objects
@@ -255,7 +275,7 @@ paths:
           type: integer
     get:
       summary: Returns a contest detail.
-      description: 
+      description: Returns a contest detail.
       responses:
         "200":
           description: A contest object
@@ -333,7 +353,7 @@ paths:
           type: integer
     get:
       summary: List contest problems.
-      description: 
+      description: Returns a list of problems for a given contest.
       responses:
         "200":
           description: A JSON array of problem objects
@@ -351,7 +371,7 @@ paths:
           description: Server error
     post:
       summary: Create problem.
-      description: 
+      description: Creates a new problem.
       requestBody:
         required: true
         content:
@@ -383,7 +403,7 @@ paths:
           type: integer
     get:
       summary: Get problem details.
-      description: 
+      description: Returns details for a specific problem.
       responses:
         "200":
           description: A problem object
@@ -399,7 +419,7 @@ paths:
           description: Server error
     put:
       summary: Update problem.
-      description: 
+      description: Updates an existing problem.
       requestBody:
         required: true
         content:
@@ -423,7 +443,7 @@ paths:
           description: Server error
     delete:
       summary: Delete problem.
-      description: 
+      description: Deletes an existing problem.
       responses:
         "204":
           description: Problem deleted successfully
@@ -443,7 +463,7 @@ paths:
           type: integer
     get:
       summary: List test cases (admin/judge)
-      description: 
+      description: Returns a list of test cases for a specific problem.
       responses:
         "200":
           description: A JSON array of test case objects
@@ -461,7 +481,7 @@ paths:
           description: Server error
     post:
       summary: Upload test case.
-      description: 
+      description: Uploads a new test case for a specific problem.
       requestBody:
         required: true
         content:
@@ -487,7 +507,7 @@ paths:
   /submissions:
     post:
       summary: Submit solution
-      description: 
+      description: Submits a new solution for evaluation.
       requestBody:
         required: true
         content:
@@ -517,7 +537,7 @@ paths:
           type: integer
     get:
       summary: Get submission result
-      description: 
+      description: Returns the result of a specific submission.
       responses:
         "200":
           description: A submission result object
@@ -541,7 +561,7 @@ paths:
           type: integer
     get:
       summary: List contest submissions (filtered by user/problem/status)
-      description: 
+      description: Returns a list of submissions for a specific contest, filtered by user, problem, or status.
       responses:
         "200":
           description: A JSON array of submission objects
@@ -561,7 +581,7 @@ paths:
   /judge/next:
     post:
       summary: Judge worker fetches next submission
-      description: 
+      description: Fetches the next pending submission for evaluation.
       responses:
         "200":
           description: Next pending submission to judge
@@ -585,7 +605,7 @@ paths:
           type: integer
     post:
       summary: Judge posts result
-      description: 
+      description: Posts the result of a judged submission.
       requestBody:
         required: true
         content:
@@ -617,7 +637,7 @@ paths:
           type: integer
     get:
       summary: Get contest scoreboard
-      description: 
+      description: Returns the scoreboard for a specific contest.
       responses:
         "200":
           description: Contest scoreboard

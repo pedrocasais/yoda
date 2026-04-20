@@ -20,7 +20,7 @@ let postAuthRegister request =
   let pattern = "user:*" in
   Dream.body request
   >>= fun data ->
-  let user = Types.user_of_json data in
+  let user = Openapi.user_of_json data in
   Lwt_pool.use Db.pool (fun conn ->
       Client.scan conn 0 ~pattern
       >>= fun (next_cursor, users) ->
@@ -36,7 +36,7 @@ let postAuthRegister request =
         let key = "user:" ^ string_of_int id in
         Client.hset conn key "username" user.username
         >>= fun _ ->
-        Client.hset conn key "role" (Types.UserRole.to_json user.role)
+        Client.hset conn key "role" (Openapi.UserRole.to_json user.role)
         >>= fun _ -> Client.hset conn key "created_at" user.created_at )
         >>= fun _ -> Dream.redirect request "/" )
 
@@ -44,7 +44,7 @@ let postAuthLogin request =
   let pattern = "user:*" in
   Dream.body request
   >>= fun data ->
-  let user = Types.user_of_json data in
+  let user = Openapi.user_of_json data in
   Lwt_pool.use Db.pool (fun conn ->
       Client.scan conn 0 ~pattern
       >>= fun (next_cursor, users) ->

@@ -2,49 +2,49 @@
 
 open Lwt.Infix
 
+  
 let html_to_string html = Format.asprintf "%a" (Tyxml.Html.pp_elt ()) html
+  
+  
 
 let icon_handler _ =
   Lwt_io.(with_file ~mode:Input "./static/resources/ocaml-icon.ico" read)
   >>= fun data ->
-  Dream.respond ~headers:[("Content-Type", "image/x-icon")] data
+  Dream.respond ~headers:[("Content-Type", "image/x-icon")] data 
 
-let () =
-  let app =
-    Dream.router
-      [ Dream.get "/resources/ocaml-icon.ico" icon_handler
-      ; Dream.get "/" (fun request ->
-            Dream.html (html_to_string (Index.index ~param:"ola" ~request)) )
-      ; Dream.get "/contests/:id/scoreboard" Contests.getContestsIdScoreboard
-      ; Dream.post "/judge/:submissionId/result"
-          Judge.postJudgeSubmissionIdResult
-      ; Dream.post "/judge/next" Judge.postJudgeNext
-      ; Dream.get "/contests/:contestId/submissions"
-          Contests.getContestsContestIdSubmissions
-      ; Dream.get "/submissions/:id" Submissions.getSubmissionsId
-      ; Dream.post "/submissions" Submissions.postSubmissions
-      ; Dream.post "/problems/:id/testcases" Problems.postProblemsIdTestcases
-      ; Dream.get "/problems/:id/testcases" Problems.getProblemsIdTestcases
-      ; Dream.delete "/problems/:id" Problems.deleteProblemsId
-      ; Dream.put "/problems/:id" Problems.putProblemsId
-      ; Dream.get "/problems/:id" Problems.getProblemsId
-      ; Dream.post "/contests/:contestsId/problems"
-          Contests.postContestsContestsIdProblems
-      ; Dream.get "/contests/:contestsId/problems"
-          Contests.getContestsContestsIdProblems
-      ; Dream.delete "/contests/:id" Contests.deleteContestsId
-      ; Dream.put "/contests/:id" Contests.putContestsId
-      ; Dream.get "/contests/:id" Contests.getContestsId
-      ; Dream.post "/contests" Contests.postContests
-      ; Dream.get "/contests" Contests.getContests
-      ; Dream.post "/auth/register" Auth.postAuthRegister
-      ; Dream.post "/auth/login" Auth.postAuthLogin
-      ; Dream.delete "/users/:id" Users.deleteUsersId
-      ; Dream.put "/users/:id" Users.putUsersId
-      ; Dream.get "/users/:id" Users.getUsersId
-      ; Dream.post "/users" Users.postUsers
-      ; Dream.get "/users" Users.getUsers ]
-    |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0)
-    |> Dream.logger
-  in
-  Dream.run ~interface:"0.0.0.0" ~port:8001 app
+
+ let () = 
+  let app = 
+  Dream.router [
+ 	Dream.get
+   "/resources/ocaml-icon.ico" icon_handler ;Dream.get "/" (fun request
+   -> Dream.html (html_to_string (Index.index ~param:"ola"  ~request)))
+;Dream.get "/contests/:id/scoreboard" Contests.getContestsIdScoreboard
+;Dream.post "/judge/:submissionId/result" Judge.postJudgeSubmissionIdResult
+;Dream.post "/judge/next" Judge.postJudgeNext
+;Dream.get "/contests/:contestId/submissions" Contests.getContestsContestIdSubmissions
+;Dream.get "/submissions/:id" Submissions.getSubmissionsId
+;Dream.post "/submissions" Submissions.postSubmissions
+;Dream.post "/problems/:id/testcases" Problems.postProblemsIdTestcases
+;Dream.get "/problems/:id/testcases" Problems.getProblemsIdTestcases
+;Dream.delete "/problems/:id" Problems.deleteProblemsId
+;Dream.put "/problems/:id" Problems.putProblemsId
+;Dream.get "/problems/:id" Problems.getProblemsId
+;Dream.post "/contests/:contestsId/problems" Contests.postContestsContestsIdProblems
+;Dream.get "/contests/:contestsId/problems" Contests.getContestsContestsIdProblems
+;Dream.delete "/contests/:id" Contests.deleteContestsId
+;Dream.put "/contests/:id" Contests.putContestsId
+;Dream.get "/contests/:id" Contests.getContestsId
+;Dream.post "/contests" Contests.postContests
+;Dream.get "/contests" Contests.getContests
+;Dream.post "/auth/register" Auth.postAuthRegister
+;Dream.post "/auth/login" Auth.postAuthLogin
+;Dream.delete "/users/:id" Users.deleteUsersId
+;Dream.put "/users/:id" Users.putUsersId
+;Dream.get "/users/:id" Users.getUsersId
+;Dream.post "/users" Users.postUsers
+;Dream.get "/users" Users.getUsers]
+ |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0) 
+ |> Dream.logger 
+   in 
+ Dream.run ~interface:"0.0.0.0" app

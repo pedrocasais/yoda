@@ -2,24 +2,21 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Backend API OCaml Dream",
-    "description": null,
-    "version": 1
+    "description": "API specification for Yoda.",
+    "version": "1.0"
   },
   "paths": {
     "/users": {
       "get": {
         "summary": "Returns a list of users.",
-        "description": null,
+        "description": "Returns a list of users.",
         "responses": {
           "200": {
             "description": "A JSON array of user objects",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/User"
-                  }
+                  "$ref": "#/components/schemas/UsersGetResponse200"
                 },
                 "example": [
                   {
@@ -48,34 +45,13 @@
       },
       "post": {
         "summary": "Creates a user.",
-        "description": null,
+        "description": "Creates a new user.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": [
-                      "user",
-                      "judge",
-                      "admin"
-                    ]
-                  }
-                },
-                "required": [
-                  "username",
-                  "password",
-                  "role"
-                ]
+                "$ref": "#/components/schemas/UsersPostRequest"
               }
             }
           }
@@ -116,7 +92,7 @@
       ],
       "get": {
         "summary": "Returns a user.",
-        "description": null,
+        "description": "Returns a user.",
         "responses": {
           "200": {
             "description": "A user object",
@@ -141,26 +117,13 @@
       },
       "put": {
         "summary": "Update a user.",
-        "description": null,
+        "description": "Updates an existing user.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": [
-                      "user",
-                      "judge",
-                      "admin"
-                    ]
-                  }
-                }
+                "$ref": "#/components/schemas/UsersIdPutRequest"
               }
             }
           }
@@ -192,7 +155,7 @@
       },
       "delete": {
         "summary": "Deletes a user.",
-        "description": null,
+        "description": "Deletes an existing user.",
         "responses": {
           "204": {
             "description": "User deleted successfully"
@@ -212,25 +175,13 @@
     "/auth/login": {
       "post": {
         "summary": "Authenticate a user.",
-        "description": null,
+        "description": "Authenticates a user and returns an authentication token.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "username",
-                  "password"
-                ]
+                "$ref": "#/components/schemas/AuthLoginPostRequest"
               }
             }
           }
@@ -247,10 +198,30 @@
             }
           },
           "401": {
-            "description": "Invalid credentials"
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthLoginPostResponse401"
+                },
+                "example": {
+                  "error": "Invalid username or password"
+                }
+              }
+            }
           },
           "500": {
-            "description": "Server error"
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthLoginPostResponse401"
+                },
+                "example": {
+                  "error": "An unexpected error occurred. Please try again later."
+                }
+              }
+            }
           }
         }
       }
@@ -264,28 +235,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": [
-                      "user",
-                      "judge",
-                      "admin"
-                    ]
-                  }
-                },
-                "required": [
-                  "username",
-                  "password",
-                  "role"
-                ]
+                "$ref": "#/components/schemas/UsersPostRequest"
               }
             }
           }
@@ -319,17 +269,14 @@
     "/contests": {
       "get": {
         "summary": "Returns a list of contests.",
-        "description": null,
+        "description": "Returns a list of contests.",
         "responses": {
           "200": {
             "description": "A JSON array of contest objects",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Contest"
-                  }
+                  "$ref": "#/components/schemas/ContestsGetResponse200"
                 }
               }
             }
@@ -350,28 +297,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "start_time": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "end_time": {
-                    "type": "string",
-                    "format": "date-time"
-                  }
-                },
-                "required": [
-                  "title",
-                  "start_time",
-                  "end_time"
-                ]
+                "$ref": "#/components/schemas/ContestsPostRequest"
               }
             }
           }
@@ -415,7 +341,7 @@
       ],
       "get": {
         "summary": "Returns a contest detail.",
-        "description": null,
+        "description": "Returns a contest detail.",
         "responses": {
           "200": {
             "description": "A contest object",
@@ -446,31 +372,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "start_time": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "end_time": {
-                    "type": "string",
-                    "format": "date-time"
-                  },
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "upcoming",
-                      "running",
-                      "finished"
-                    ]
-                  }
-                }
+                "$ref": "#/components/schemas/ContestsIdPutRequest"
               }
             }
           }
@@ -538,17 +440,14 @@
       ],
       "get": {
         "summary": "List contest problems.",
-        "description": null,
+        "description": "Returns a list of problems for a given contest.",
         "responses": {
           "200": {
             "description": "A JSON array of problem objects",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Problem"
-                  }
+                  "$ref": "#/components/schemas/ContestsContestsidProblemsGetResponse200"
                 }
               }
             }
@@ -566,7 +465,7 @@
       },
       "post": {
         "summary": "Create problem.",
-        "description": null,
+        "description": "Creates a new problem.",
         "requestBody": {
           "required": true,
           "content": {
@@ -616,7 +515,7 @@
       ],
       "get": {
         "summary": "Get problem details.",
-        "description": null,
+        "description": "Returns details for a specific problem.",
         "responses": {
           "200": {
             "description": "A problem object",
@@ -641,7 +540,7 @@
       },
       "put": {
         "summary": "Update problem.",
-        "description": null,
+        "description": "Updates an existing problem.",
         "requestBody": {
           "required": true,
           "content": {
@@ -679,7 +578,7 @@
       },
       "delete": {
         "summary": "Delete problem.",
-        "description": null,
+        "description": "Deletes an existing problem.",
         "responses": {
           "204": {
             "description": "Problem deleted successfully"
@@ -709,17 +608,14 @@
       ],
       "get": {
         "summary": "List test cases (admin/judge)",
-        "description": null,
+        "description": "Returns a list of test cases for a specific problem.",
         "responses": {
           "200": {
             "description": "A JSON array of test case objects",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TestCase"
-                  }
+                  "$ref": "#/components/schemas/ProblemsIdTestcasesGetResponse200"
                 }
               }
             }
@@ -737,7 +633,7 @@
       },
       "post": {
         "summary": "Upload test case.",
-        "description": null,
+        "description": "Uploads a new test case for a specific problem.",
         "requestBody": {
           "required": true,
           "content": {
@@ -777,7 +673,7 @@
     "/submissions": {
       "post": {
         "summary": "Submit solution",
-        "description": null,
+        "description": "Submits a new solution for evaluation.",
         "requestBody": {
           "required": true,
           "content": {
@@ -824,7 +720,7 @@
       ],
       "get": {
         "summary": "Get submission result",
-        "description": null,
+        "description": "Returns the result of a specific submission.",
         "responses": {
           "200": {
             "description": "A submission result object",
@@ -861,17 +757,14 @@
       ],
       "get": {
         "summary": "List contest submissions (filtered by user/problem/status)",
-        "description": null,
+        "description": "Returns a list of submissions for a specific contest, filtered by user, problem, or status.",
         "responses": {
           "200": {
             "description": "A JSON array of submission objects",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Submission"
-                  }
+                  "$ref": "#/components/schemas/ContestsContestidSubmissionsGetResponse200"
                 }
               }
             }
@@ -891,7 +784,7 @@
     "/judge/next": {
       "post": {
         "summary": "Judge worker fetches next submission",
-        "description": null,
+        "description": "Fetches the next pending submission for evaluation.",
         "responses": {
           "200": {
             "description": "Next pending submission to judge",
@@ -928,7 +821,7 @@
       ],
       "post": {
         "summary": "Judge posts result",
-        "description": null,
+        "description": "Posts the result of a judged submission.",
         "requestBody": {
           "required": true,
           "content": {
@@ -978,17 +871,14 @@
       ],
       "get": {
         "summary": "Get contest scoreboard",
-        "description": null,
+        "description": "Returns the scoreboard for a specific contest.",
         "responses": {
           "200": {
             "description": "Contest scoreboard",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ScoreboardEntry"
-                  }
+                  "$ref": "#/components/schemas/ContestsIdScoreboardGetResponse200"
                 }
               }
             }
@@ -1255,6 +1145,159 @@
           "token",
           "user"
         ]
+      },
+      "UsersGetResponse200": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/User"
+        }
+      },
+      "UsersPostRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "judge",
+              "admin"
+            ]
+          }
+        },
+        "required": [
+          "username",
+          "password",
+          "role"
+        ]
+      },
+      "UsersIdPutRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "judge",
+              "admin"
+            ]
+          }
+        }
+      },
+      "AuthLoginPostRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      },
+      "AuthLoginPostResponse401": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "ContestsGetResponse200": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Contest"
+        }
+      },
+      "ContestsPostRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "title",
+          "start_time",
+          "end_time"
+        ]
+      },
+      "ContestsIdPutRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "start_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "running",
+              "finished"
+            ]
+          }
+        }
+      },
+      "ContestsContestsidProblemsGetResponse200": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Problem"
+        }
+      },
+      "ProblemsIdTestcasesGetResponse200": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TestCase"
+        }
+      },
+      "ContestsContestidSubmissionsGetResponse200": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Submission"
+        }
+      },
+      "ContestsIdScoreboardGetResponse200": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ScoreboardEntry"
+        }
       }
     }
   }

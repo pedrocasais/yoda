@@ -3,8 +3,8 @@ import json
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INPUT_FILE = os.path.join(BASE_DIR, "..", "schemas", "api.yaml")
-OUTPUT_DIR = os.path.join(BASE_DIR, "..", "schemas")
+INPUT_FILE = os.path.join(BASE_DIR, "..", "..", "schemas", "openapi.yaml")
+OUTPUT_DIR = os.path.join(BASE_DIR, "..", "..", "schemas", "json")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
