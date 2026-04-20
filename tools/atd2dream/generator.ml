@@ -30,7 +30,8 @@ let initial acc =
     \  let app = \n\
     \  Dream.router [\n\
     \ \tDream.get\n\
-    \   \"/resources/ocaml-icon.ico\" icon_handler ;Dream.get \"/\" (fun \
+    \   \"/resources/ocaml-icon.ico\" icon_handler ;\n\
+    \ \tDream.get \"/\" (fun \
      request\n\
     \   -> Dream.html (html_to_string (Index.index ~param:\"ola\"  ~request)))"
 
@@ -39,7 +40,7 @@ let final =
   \ |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0) \n\
   \ |> Dream.logger \n\
   \   in \n\
-  \ Dream.run ~interface:\"0.0.0.0\" app"
+  \ Dream.run ~interface:\"0.0.0.0\" ~port:8001 app"
 
 let readRoutes =
   match Yaml.of_string file with

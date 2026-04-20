@@ -11,3 +11,5 @@ opam install -y . --deps-only
 opam pin add atdgen-runtime.dev https://github.com/ahrefs/atd.git
 opam pin add atdgen.dev https://github.com/ahrefs/atd.git
 opam install jsonschema2atd
+
+opam install ocamlformat ocaml-lsp-server

@@ -17,7 +17,8 @@ let icon_handler _ =
   let app = 
   Dream.router [
  	Dream.get
-   "/resources/ocaml-icon.ico" icon_handler ;Dream.get "/" (fun request
+   "/resources/ocaml-icon.ico" icon_handler ;
+ 	Dream.get "/" (fun request
    -> Dream.html (html_to_string (Index.index ~param:"ola"  ~request)))
 ;Dream.get "/contests/:id/scoreboard" Contests.getContestsIdScoreboard
 ;Dream.post "/judge/:submissionId/result" Judge.postJudgeSubmissionIdResult
@@ -47,4 +48,4 @@ let icon_handler _ =
  |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0) 
  |> Dream.logger 
    in 
- Dream.run ~interface:"0.0.0.0" app
+ Dream.run ~interface:"0.0.0.0" ~port:8001 app
