@@ -37,4 +37,4 @@ RUN eval $(opam env) && dune build --profile=release
 EXPOSE 8001
 
 # Run application
-CMD ["dune", "exec", "./src/yodab.exe"]
+CMD ["dune", "exec", "./src/router.exe"]
