@@ -2,6 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "id": {
+      "type": "integer"
+    },
     "input": {
       "type": "string"
     },
@@ -13,6 +16,7 @@
     }
   },
   "required": [
+    "id",
     "input",
     "output",
     "is_sample"

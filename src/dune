@@ -1,6 +1,21 @@
+(library
+ (name api_types)
+ (wrapped false)
+ (modules openapi)
+ (libraries yojson))
+
 (executable
  (public_name yoda)
  (name router)
- (modules yodab router openapi index user contests auth judge problems submissions users db)
- (libraries dream yojson lwt lwt.unix redis-lwt tyxml)
- (preprocess (pps lwt_ppx)))
+ (modules yodab router index user contests auth judge problems submissions users db)
+ (libraries dream yojson lwt lwt.unix redis-lwt tyxml api_types)
+ (preprocess
+  (pps lwt_ppx)))
+
+(executable
+ (public_name yodac)
+ (name yodac)
+ (modules yodac compiler docker_runner job worker)
+ (libraries unix lwt lwt.unix redis-lwt yojson api_types)
+ (preprocess
+  (pps lwt_ppx)))

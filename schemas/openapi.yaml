@@ -17,7 +17,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: "#/components/schemas/User"
               example:
                 - id: 1
                   username: "alice"
@@ -55,7 +55,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: "#/components/schemas/User"
         "400":
           description: Bad request
         "401":
@@ -79,7 +79,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: "#/components/schemas/User"
         "401":
           description: Unauthorized access
         "404":
@@ -107,7 +107,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: "#/components/schemas/User"
         "400":
           description: Bad request
         "401":
@@ -151,7 +151,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthToken'
+                $ref: "#/components/schemas/AuthToken"
         "401":
           description: Invalid credentials
           content:
@@ -202,7 +202,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: "#/components/schemas/User"
         "400":
           description: Bad request
         "401":
@@ -224,7 +224,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Contest'
+                  $ref: "#/components/schemas/Contest"
         "401":
           description: Unauthorized access
         "500":
@@ -256,7 +256,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Contest'
+                $ref: "#/components/schemas/Contest"
         "400":
           description: Bad request
         "401":
@@ -282,7 +282,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Contest'
+                $ref: "#/components/schemas/Contest"
         "401":
           description: Unauthorized access
         "404":
@@ -318,7 +318,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Contest'
+                $ref: "#/components/schemas/Contest"
         "400":
           description: Bad request
         "401":
@@ -362,7 +362,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Problem'
+                  $ref: "#/components/schemas/Problem"
         "401":
           description: Unauthorized access
         "404":
@@ -377,14 +377,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Problem'
+              $ref: "#/components/schemas/Problem"
       responses:
         "201":
           description: Problem created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
         "401":
@@ -410,7 +410,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
         "401":
           description: Unauthorized access
         "404":
@@ -425,14 +425,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Problem'
+              $ref: "#/components/schemas/Problem"
       responses:
         "200":
           description: Updated problem object
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                $ref: "#/components/schemas/Problem"
         "400":
           description: Bad request
         "401":
@@ -472,7 +472,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TestCase'
+                  $ref: "#/components/schemas/TestCase"
         "401":
           description: Unauthorized access
         "404":
@@ -487,14 +487,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TestCase'
+              $ref: "#/components/schemas/TestCase"
       responses:
         "201":
           description: Test case created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TestCase'
+                $ref: "#/components/schemas/TestCase"
         "400":
           description: Bad request
         "401":
@@ -513,14 +513,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Solution'
+              $ref: "#/components/schemas/Solution"
       responses:
         "201":
           description: Submission created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                $ref: "#/components/schemas/Submission"
         "400":
           description: Bad request
         "401":
@@ -544,7 +544,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                $ref: "#/components/schemas/Submission"
         "401":
           description: Unauthorized access
         "404":
@@ -570,7 +570,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Submission'
+                  $ref: "#/components/schemas/Submission"
         "401":
           description: Unauthorized access
         "404":
@@ -588,7 +588,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                $ref: "#/components/schemas/Submission"
         "204":
           description: No pending submissions
         "401":
@@ -611,14 +611,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Submission'
+              $ref: "#/components/schemas/Submission"
       responses:
         "200":
           description: Submission result updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Submission'
+                $ref: "#/components/schemas/Submission"
         "400":
           description: Bad request
         "401":
@@ -646,14 +646,14 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ScoreboardEntry'
+                  $ref: "#/components/schemas/ScoreboardEntry"
         "401":
           description: Unauthorized access
         "404":
           description: Contest not found
         "500":
           description: Server error
-          
+
 components:
   schemas:
     User:
@@ -687,18 +687,29 @@ components:
           type: string
         output_spec:
           type: string
-      required: ["code", "title", "time_limit_ms", "memory_limit_mb", "description", "input_spec", "output_spec"]
+      required:
+        [
+          "code",
+          "title",
+          "time_limit_ms",
+          "memory_limit_mb",
+          "description",
+          "input_spec",
+          "output_spec",
+        ]
 
     TestCase:
       type: object
       properties:
+        id:
+          type: integer
         input:
           type: string
         output:
           type: string
         is_sample:
           type: boolean
-      required: ["input", "output", "is_sample"]
+      required: ["id", "input", "output", "is_sample"]
 
     Submission:
       type: object
@@ -789,5 +800,5 @@ components:
         token:
           type: string
         user:
-          $ref: '#/components/schemas/User'
+          $ref: "#/components/schemas/User"
       required: ["token", "user"]

@@ -133,12 +133,13 @@ module UsersGetResponse2 : sig
 end
 
 type testCase = {
+  id: int;
   input: string;
   output: string;
   is_sample: bool;
 }
 
-val create_testCase : input:string -> output:string -> is_sample:bool -> unit -> testCase
+val create_testCase : id:int -> input:string -> output:string -> is_sample:bool -> unit -> testCase
 val testCase_of_yojson : Yojson.Safe.t -> testCase
 val yojson_of_testCase : testCase -> Yojson.Safe.t
 val testCase_of_json : string -> testCase
@@ -146,7 +147,7 @@ val json_of_testCase : testCase -> string
 
 module TestCase : sig
   type nonrec t = testCase
-  val create : input:string -> output:string -> is_sample:bool -> unit -> t
+  val create : id:int -> input:string -> output:string -> is_sample:bool -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
