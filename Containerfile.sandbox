@@ -1,20 +1,24 @@
-# Containerfile.compiler
 FROM ocaml/opam:debian-ocaml-5.2
 
-# Install wasm backend dependencies
-RUN sudo apt update && sudo apt install -y m4 make gcc git docker-cli ninja-build cmake binaryen
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    m4 make gcc pkg-config libev-dev libgmp-dev libssl-dev python3-pip openjdk-21-jdk nodejs \
+    docker-cli \
+    && rm -rf /var/lib/apt/lists/*
 
-# Enable OCaml wasm backend (experimental)
-RUN opam update && \
-    eval $(opam env) && \
-    opam install -y wasm_of_ocaml-compiler js_of_ocaml js_of_ocaml-ppx js_of_ocaml-lwt && \
-    opam install -y dune
+RUN groupadd -r docker 2>/dev/null || true && \
+    usermod -a -G docker opam 2>/dev/null || true
 
-RUN echo "(executable (name input) (modes wasm) (preprocess (pps js_of_ocaml-ppx)) )" > /tmp/dune
-RUN echo "(lang dune 3.17)" > /tmp/dune-project
-COPY ./include/. /tmp/.
+USER opam
+WORKDIR /home/opam/app
 
-RUN sudo apt install -y zip
+COPY --chown=opam:opam dune-project ./
+COPY --chown=opam:opam *.opam ./
 
-WORKDIR /tmp
-ENTRYPOINT ["bash", "-c", "sleep infinity"]
+RUN opam update && opam install -y . --deps-only
+
+COPY --chown=opam:opam . .
+
+RUN eval $(opam env) && dune build
+
+CMD ["bash", "-c", "eval $(opam env) && dune exec ./src/yodac.exe"]

@@ -964,6 +964,9 @@
       "TestCase": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer"
+          },
           "input": {
             "type": "string"
           },
@@ -975,6 +978,7 @@
           }
         },
         "required": [
+          "id",
           "input",
           "output",
           "is_sample"

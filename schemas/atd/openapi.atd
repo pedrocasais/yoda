@@ -123,6 +123,7 @@ type submission = {
 } 
 
 type testCase = {
+  id : int;
   input : string;
   output : string;
   is_sample : bool;
