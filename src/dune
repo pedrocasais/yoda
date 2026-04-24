@@ -7,7 +7,7 @@
 (executable
  (public_name yoda)
  (name router)
- (modules yodab router index user contests auth judge problems submissions users db)
+ (modules yodab router index user contests auth judge problems submissions users db helpers)
  (libraries dream yojson lwt lwt.unix redis-lwt tyxml api_types)
  (preprocess
   (pps lwt_ppx)))
