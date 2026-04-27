@@ -107,7 +107,7 @@ type scoreboardEntry = {
 } 
 
 type solution = {
-  contest_id : int;
+  user_id : int;
   problem_id : int;
   language : string;
   source_code : string;

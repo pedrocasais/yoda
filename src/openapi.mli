@@ -200,13 +200,13 @@ module Submission : sig
 end
 
 type solution = {
-  contest_id: int;
+  user_id: int;
   problem_id: int;
   language: string;
   source_code: string;
 }
 
-val create_solution : contest_id:int -> problem_id:int -> language:string -> source_code:string -> unit -> solution
+val create_solution : user_id:int -> problem_id:int -> language:string -> source_code:string -> unit -> solution
 val solution_of_yojson : Yojson.Safe.t -> solution
 val yojson_of_solution : solution -> Yojson.Safe.t
 val solution_of_json : string -> solution
@@ -214,7 +214,7 @@ val json_of_solution : solution -> string
 
 module Solution : sig
   type nonrec t = solution
-  val create : contest_id:int -> problem_id:int -> language:string -> source_code:string -> unit -> t
+  val create : user_id:int -> problem_id:int -> language:string -> source_code:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
