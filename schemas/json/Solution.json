@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "contest_id": {
+    "user_id": {
       "type": "integer"
     },
     "problem_id": {
@@ -16,7 +16,7 @@
     }
   },
   "required": [
-    "contest_id",
+    "user_id",
     "problem_id",
     "language",
     "source_code"

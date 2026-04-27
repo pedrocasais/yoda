@@ -3,84 +3,86 @@
 
 (* Inlined runtime — no external dependency needed. *)
 module Atdml_runtime = struct
-  let bad_type expected_type x =
-    Printf.ksprintf failwith "expected %s, got: %s"
-      expected_type (Yojson.Safe.to_string x)
-
-  let bad_sum type_name x =
-    Printf.ksprintf failwith "invalid variant for type '%s': %s"
-      type_name (Yojson.Safe.to_string x)
-
-  let missing_field type_name field_name =
-    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
-      field_name type_name
-
-  let bool_of_yojson = function
-    | `Bool b -> b
-    | x -> bad_type "bool" x
-
-  let yojson_of_bool b = `Bool b
-
-  let int_of_yojson = function
-    | `Int n -> n
-    | x -> bad_type "int" x
-
-  let yojson_of_int n = `Int n
-
-  let float_of_yojson = function
-    | `Float f -> f
-    | `Int n -> Float.of_int n
-    | x -> bad_type "float" x
-
-  let yojson_of_float f = `Float f
-
-  let string_of_yojson = function
-    | `String s -> s
-    | x -> bad_type "string" x
-
-  let yojson_of_string s = `String s
-
-  let unit_of_yojson = function
-    | `Null -> ()
-    | x -> bad_type "null" x
-
-  let yojson_of_unit () = `Null
-
-  let list_of_yojson f = function
-    | `List xs -> List.map f xs
-    | x -> bad_type "array" x
-
-  let yojson_of_list f xs = `List (List.map f xs)
-
-  let option_of_yojson f = function
-    | `String "None" -> None
-    | `List [`String "Some"; x] -> Some (f x)
-    | x -> bad_type "option" x
-
-  let yojson_of_option f = function
-    | None -> `String "None"
-    | Some x -> `List [`String "Some"; f x]
-
-  let nullable_of_yojson f = function
-    | `Null -> None
-    | x -> Some (f x)
-
-  let yojson_of_nullable f = function
-    | None -> `Null
-    | Some x -> f x
-
   (* Returns true iff the list has strictly more than [n] elements,
      without traversing past element n+1. *)
   let rec list_length_gt n = function
     | _ :: rest -> if n = 0 then true else list_length_gt (n - 1) rest
     | [] -> false
 
-  let assoc_of_yojson f = function
-    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
-    | x -> bad_type "object" x
+  module Yojson = struct
+    let bad_type expected_type x =
+      Printf.ksprintf failwith "expected %s, got: %s"
+        expected_type (Yojson.Safe.to_string x)
 
-  let yojson_of_assoc f xs =
-    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+    let bad_sum type_name x =
+      Printf.ksprintf failwith "invalid variant for type '%s': %s"
+        type_name (Yojson.Safe.to_string x)
+
+    let missing_field type_name field_name =
+      Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+        field_name type_name
+
+    let bool_of_yojson = function
+      | `Bool b -> b
+      | x -> bad_type "bool" x
+
+    let yojson_of_bool b = `Bool b
+
+    let int_of_yojson = function
+      | `Int n -> n
+      | x -> bad_type "int" x
+
+    let yojson_of_int n = `Int n
+
+    let float_of_yojson = function
+      | `Float f -> f
+      | `Int n -> Float.of_int n
+      | x -> bad_type "float" x
+
+    let yojson_of_float f = `Float f
+
+    let string_of_yojson = function
+      | `String s -> s
+      | x -> bad_type "string" x
+
+    let yojson_of_string s = `String s
+
+    let unit_of_yojson = function
+      | `Null -> ()
+      | x -> bad_type "null" x
+
+    let yojson_of_unit () = `Null
+
+    let list_of_yojson f = function
+      | `List xs -> List.map f xs
+      | x -> bad_type "array" x
+
+    let yojson_of_list f xs = `List (List.map f xs)
+
+    let option_of_yojson f = function
+      | `String "None" -> None
+      | `List [`String "Some"; x] -> Some (f x)
+      | x -> bad_type "option" x
+
+    let yojson_of_option f = function
+      | None -> `String "None"
+      | Some x -> `List [`String "Some"; f x]
+
+    let nullable_of_yojson f = function
+      | `Null -> None
+      | x -> Some (f x)
+
+    let yojson_of_nullable f = function
+      | None -> `Null
+      | Some x -> f x
+
+    let assoc_of_yojson f = function
+      | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+      | x -> bad_type "object" x
+
+    let yojson_of_assoc f xs =
+      `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+  end
 end
 
 type usersPostRequestRole =
@@ -93,7 +95,7 @@ let usersPostRequestRole_of_yojson (x : Yojson.Safe.t) : usersPostRequestRole =
   | `String "user" -> User
   | `String "judge" -> Judge
   | `String "admin" -> Admin
-  | _ -> Atdml_runtime.bad_sum "usersPostRequestRole" x
+  | _ -> Atdml_runtime.Yojson.bad_sum "usersPostRequestRole" x
 
 let yojson_of_usersPostRequestRole (x : usersPostRequestRole) : Yojson.Safe.t =
   match x with
@@ -139,26 +141,26 @@ let usersPostRequest_of_yojson (x : Yojson.Safe.t) : usersPostRequest =
     in
     let username =
       match assoc_ "username" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "usersPostRequest" "username"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "usersPostRequest" "username"
     in
     let password =
       match assoc_ "password" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "usersPostRequest" "password"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "usersPostRequest" "password"
     in
     let role =
       match assoc_ "role" with
       | Some v -> usersPostRequestRole_of_yojson v
-      | None -> Atdml_runtime.missing_field "usersPostRequest" "role"
+      | None -> Atdml_runtime.Yojson.missing_field "usersPostRequest" "role"
     in
     { username; password; role }
-  | _ -> Atdml_runtime.bad_type "usersPostRequest" x
+  | _ -> Atdml_runtime.Yojson.bad_type "usersPostRequest" x
 
 let yojson_of_usersPostRequest (x : usersPostRequest) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("username", Atdml_runtime.yojson_of_string x.username)];
-    [("password", Atdml_runtime.yojson_of_string x.password)];
+    [("username", Atdml_runtime.Yojson.yojson_of_string x.username)];
+    [("password", Atdml_runtime.Yojson.yojson_of_string x.password)];
     [("role", yojson_of_usersPostRequestRole x.role)];
   ])
 
@@ -187,7 +189,7 @@ let usersIdPutRequestRole_of_yojson (x : Yojson.Safe.t) : usersIdPutRequestRole 
   | `String "user" -> User
   | `String "judge" -> Judge
   | `String "admin" -> Admin
-  | _ -> Atdml_runtime.bad_sum "usersIdPutRequestRole" x
+  | _ -> Atdml_runtime.Yojson.bad_sum "usersIdPutRequestRole" x
 
 let yojson_of_usersIdPutRequestRole (x : usersIdPutRequestRole) : Yojson.Safe.t =
   match x with
@@ -233,7 +235,7 @@ let usersIdPutRequest_of_yojson (x : Yojson.Safe.t) : usersIdPutRequest =
     let username =
       match assoc_ "username" with
       | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.string_of_yojson v)
+      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let role =
       match assoc_ "role" with
@@ -241,11 +243,11 @@ let usersIdPutRequest_of_yojson (x : Yojson.Safe.t) : usersIdPutRequest =
       | Some v -> Some (usersIdPutRequestRole_of_yojson v)
     in
     { username; role }
-  | _ -> Atdml_runtime.bad_type "usersIdPutRequest" x
+  | _ -> Atdml_runtime.Yojson.bad_type "usersIdPutRequest" x
 
 let yojson_of_usersIdPutRequest (x : usersIdPutRequest) : Yojson.Safe.t =
   `Assoc (List.concat [
-    (match x.username with None -> [] | Some v -> [("username", Atdml_runtime.yojson_of_string v)]);
+    (match x.username with None -> [] | Some v -> [("username", Atdml_runtime.Yojson.yojson_of_string v)]);
     (match x.role with None -> [] | Some v -> [("role", yojson_of_usersIdPutRequestRole v)]);
   ])
 
@@ -274,7 +276,7 @@ let userRole_of_yojson (x : Yojson.Safe.t) : userRole =
   | `String "user" -> User
   | `String "judge" -> Judge
   | `String "admin" -> Admin
-  | _ -> Atdml_runtime.bad_sum "userRole" x
+  | _ -> Atdml_runtime.Yojson.bad_sum "userRole" x
 
 let yojson_of_userRole (x : userRole) : Yojson.Safe.t =
   match x with
@@ -321,33 +323,33 @@ let user_of_yojson (x : Yojson.Safe.t) : user =
     in
     let id =
       match assoc_ "id" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "user" "id"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "user" "id"
     in
     let username =
       match assoc_ "username" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "user" "username"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "user" "username"
     in
     let role =
       match assoc_ "role" with
       | Some v -> userRole_of_yojson v
-      | None -> Atdml_runtime.missing_field "user" "role"
+      | None -> Atdml_runtime.Yojson.missing_field "user" "role"
     in
     let created_at =
       match assoc_ "created_at" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "user" "created_at"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "user" "created_at"
     in
     { id; username; role; created_at }
-  | _ -> Atdml_runtime.bad_type "user" x
+  | _ -> Atdml_runtime.Yojson.bad_type "user" x
 
 let yojson_of_user (x : user) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("id", Atdml_runtime.yojson_of_int x.id)];
-    [("username", Atdml_runtime.yojson_of_string x.username)];
+    [("id", Atdml_runtime.Yojson.yojson_of_int x.id)];
+    [("username", Atdml_runtime.Yojson.yojson_of_string x.username)];
     [("role", yojson_of_userRole x.role)];
-    [("created_at", Atdml_runtime.yojson_of_string x.created_at)];
+    [("created_at", Atdml_runtime.Yojson.yojson_of_string x.created_at)];
   ])
 
 let user_of_json s =
@@ -368,10 +370,10 @@ end
 type usersGetResponse2 = user list
 
 let usersGetResponse2_of_yojson (x : Yojson.Safe.t) : usersGetResponse2 =
-  (Atdml_runtime.list_of_yojson user_of_yojson) x
+  (Atdml_runtime.Yojson.list_of_yojson user_of_yojson) x
 
 let yojson_of_usersGetResponse2 (x : usersGetResponse2) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list yojson_of_user) x
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_user) x
 
 let usersGetResponse2_of_json s =
   usersGetResponse2_of_yojson (Yojson.Safe.from_string s)
@@ -412,33 +414,33 @@ let testCase_of_yojson (x : Yojson.Safe.t) : testCase =
     in
     let id =
       match assoc_ "id" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "testCase" "id"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "testCase" "id"
     in
     let input =
       match assoc_ "input" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "testCase" "input"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "testCase" "input"
     in
     let output =
       match assoc_ "output" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "testCase" "output"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "testCase" "output"
     in
     let is_sample =
       match assoc_ "is_sample" with
-      | Some v -> Atdml_runtime.bool_of_yojson v
-      | None -> Atdml_runtime.missing_field "testCase" "is_sample"
+      | Some v -> Atdml_runtime.Yojson.bool_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "testCase" "is_sample"
     in
     { id; input; output; is_sample }
-  | _ -> Atdml_runtime.bad_type "testCase" x
+  | _ -> Atdml_runtime.Yojson.bad_type "testCase" x
 
 let yojson_of_testCase (x : testCase) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("id", Atdml_runtime.yojson_of_int x.id)];
-    [("input", Atdml_runtime.yojson_of_string x.input)];
-    [("output", Atdml_runtime.yojson_of_string x.output)];
-    [("is_sample", Atdml_runtime.yojson_of_bool x.is_sample)];
+    [("id", Atdml_runtime.Yojson.yojson_of_int x.id)];
+    [("input", Atdml_runtime.Yojson.yojson_of_string x.input)];
+    [("output", Atdml_runtime.Yojson.yojson_of_string x.output)];
+    [("is_sample", Atdml_runtime.Yojson.yojson_of_bool x.is_sample)];
   ])
 
 let testCase_of_json s =
@@ -480,27 +482,27 @@ let submissionDetails_of_yojson (x : Yojson.Safe.t) : submissionDetails =
     in
     let testcase_id =
       match assoc_ "testcase_id" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "submissionDetails" "testcase_id"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submissionDetails" "testcase_id"
     in
     let status =
       match assoc_ "status" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "submissionDetails" "status"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submissionDetails" "status"
     in
     let time_ms =
       match assoc_ "time_ms" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "submissionDetails" "time_ms"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submissionDetails" "time_ms"
     in
     { testcase_id; status; time_ms }
-  | _ -> Atdml_runtime.bad_type "submissionDetails" x
+  | _ -> Atdml_runtime.Yojson.bad_type "submissionDetails" x
 
 let yojson_of_submissionDetails (x : submissionDetails) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("testcase_id", Atdml_runtime.yojson_of_int x.testcase_id)];
-    [("status", Atdml_runtime.yojson_of_string x.status)];
-    [("time_ms", Atdml_runtime.yojson_of_int x.time_ms)];
+    [("testcase_id", Atdml_runtime.Yojson.yojson_of_int x.testcase_id)];
+    [("status", Atdml_runtime.Yojson.yojson_of_string x.status)];
+    [("time_ms", Atdml_runtime.Yojson.yojson_of_int x.time_ms)];
   ])
 
 let submissionDetails_of_json s =
@@ -545,45 +547,45 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
     in
     let id =
       match assoc_ "id" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "submission" "id"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submission" "id"
     in
     let status =
       match assoc_ "status" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "submission" "status"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submission" "status"
     in
     let score =
       match assoc_ "score" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "submission" "score"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submission" "score"
     in
     let time_ms =
       match assoc_ "time_ms" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "submission" "time_ms"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submission" "time_ms"
     in
     let memory_kb =
       match assoc_ "memory_kb" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "submission" "memory_kb"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submission" "memory_kb"
     in
     let details =
       match assoc_ "details" with
-      | Some v -> (Atdml_runtime.list_of_yojson submissionDetails_of_yojson) v
-      | None -> Atdml_runtime.missing_field "submission" "details"
+      | Some v -> (Atdml_runtime.Yojson.list_of_yojson submissionDetails_of_yojson) v
+      | None -> Atdml_runtime.Yojson.missing_field "submission" "details"
     in
     { id; status; score; time_ms; memory_kb; details }
-  | _ -> Atdml_runtime.bad_type "submission" x
+  | _ -> Atdml_runtime.Yojson.bad_type "submission" x
 
 let yojson_of_submission (x : submission) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("id", Atdml_runtime.yojson_of_int x.id)];
-    [("status", Atdml_runtime.yojson_of_string x.status)];
-    [("score", Atdml_runtime.yojson_of_int x.score)];
-    [("time_ms", Atdml_runtime.yojson_of_int x.time_ms)];
-    [("memory_kb", Atdml_runtime.yojson_of_int x.memory_kb)];
-    [("details", (Atdml_runtime.yojson_of_list yojson_of_submissionDetails) x.details)];
+    [("id", Atdml_runtime.Yojson.yojson_of_int x.id)];
+    [("status", Atdml_runtime.Yojson.yojson_of_string x.status)];
+    [("score", Atdml_runtime.Yojson.yojson_of_int x.score)];
+    [("time_ms", Atdml_runtime.Yojson.yojson_of_int x.time_ms)];
+    [("memory_kb", Atdml_runtime.Yojson.yojson_of_int x.memory_kb)];
+    [("details", (Atdml_runtime.Yojson.yojson_of_list yojson_of_submissionDetails) x.details)];
   ])
 
 let submission_of_json s =
@@ -602,14 +604,14 @@ module Submission = struct
 end
 
 type solution = {
-  contest_id: int;
+  user_id: int;
   problem_id: int;
   language: string;
   source_code: string;
 }
 
-let create_solution ~contest_id ~problem_id ~language ~source_code () : solution =
-  { contest_id; problem_id; language; source_code }
+let create_solution ~user_id ~problem_id ~language ~source_code () : solution =
+  { user_id; problem_id; language; source_code }
 
 let solution_of_yojson (x : Yojson.Safe.t) : solution =
   match x with
@@ -624,35 +626,35 @@ let solution_of_yojson (x : Yojson.Safe.t) : solution =
         (fun key -> Hashtbl.find_opt tbl key)
       else (fun key -> List.assoc_opt key fields)
     in
-    let contest_id =
-      match assoc_ "contest_id" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "solution" "contest_id"
+    let user_id =
+      match assoc_ "user_id" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "solution" "user_id"
     in
     let problem_id =
       match assoc_ "problem_id" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "solution" "problem_id"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "solution" "problem_id"
     in
     let language =
       match assoc_ "language" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "solution" "language"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "solution" "language"
     in
     let source_code =
       match assoc_ "source_code" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "solution" "source_code"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "solution" "source_code"
     in
-    { contest_id; problem_id; language; source_code }
-  | _ -> Atdml_runtime.bad_type "solution" x
+    { user_id; problem_id; language; source_code }
+  | _ -> Atdml_runtime.Yojson.bad_type "solution" x
 
 let yojson_of_solution (x : solution) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("contest_id", Atdml_runtime.yojson_of_int x.contest_id)];
-    [("problem_id", Atdml_runtime.yojson_of_int x.problem_id)];
-    [("language", Atdml_runtime.yojson_of_string x.language)];
-    [("source_code", Atdml_runtime.yojson_of_string x.source_code)];
+    [("user_id", Atdml_runtime.Yojson.yojson_of_int x.user_id)];
+    [("problem_id", Atdml_runtime.Yojson.yojson_of_int x.problem_id)];
+    [("language", Atdml_runtime.Yojson.yojson_of_string x.language)];
+    [("source_code", Atdml_runtime.Yojson.yojson_of_string x.source_code)];
   ])
 
 let solution_of_json s =
@@ -717,32 +719,32 @@ let scoreboardEntry_of_yojson (x : Yojson.Safe.t) : scoreboardEntry =
     in
     let team =
       match assoc_ "team" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "scoreboardEntry" "team"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "scoreboardEntry" "team"
     in
     let solved =
       match assoc_ "solved" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "scoreboardEntry" "solved"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "scoreboardEntry" "solved"
     in
     let penalty =
       match assoc_ "penalty" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "scoreboardEntry" "penalty"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "scoreboardEntry" "penalty"
     in
     let problems =
       match assoc_ "problems" with
       | Some v -> json__of_yojson v
-      | None -> Atdml_runtime.missing_field "scoreboardEntry" "problems"
+      | None -> Atdml_runtime.Yojson.missing_field "scoreboardEntry" "problems"
     in
     { team; solved; penalty; problems }
-  | _ -> Atdml_runtime.bad_type "scoreboardEntry" x
+  | _ -> Atdml_runtime.Yojson.bad_type "scoreboardEntry" x
 
 let yojson_of_scoreboardEntry (x : scoreboardEntry) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("team", Atdml_runtime.yojson_of_string x.team)];
-    [("solved", Atdml_runtime.yojson_of_int x.solved)];
-    [("penalty", Atdml_runtime.yojson_of_int x.penalty)];
+    [("team", Atdml_runtime.Yojson.yojson_of_string x.team)];
+    [("solved", Atdml_runtime.Yojson.yojson_of_int x.solved)];
+    [("penalty", Atdml_runtime.Yojson.yojson_of_int x.penalty)];
     [("problems", yojson_of_json_ x.problems)];
   ])
 
@@ -764,10 +766,10 @@ end
 type problemsIdTestcasesGetResponse2 = testCase list
 
 let problemsIdTestcasesGetResponse2_of_yojson (x : Yojson.Safe.t) : problemsIdTestcasesGetResponse2 =
-  (Atdml_runtime.list_of_yojson testCase_of_yojson) x
+  (Atdml_runtime.Yojson.list_of_yojson testCase_of_yojson) x
 
 let yojson_of_problemsIdTestcasesGetResponse2 (x : problemsIdTestcasesGetResponse2) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list yojson_of_testCase) x
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_testCase) x
 
 let problemsIdTestcasesGetResponse2_of_json s =
   problemsIdTestcasesGetResponse2_of_yojson (Yojson.Safe.from_string s)
@@ -811,51 +813,51 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
     in
     let code =
       match assoc_ "code" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "problem" "code"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problem" "code"
     in
     let title =
       match assoc_ "title" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "problem" "title"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problem" "title"
     in
     let time_limit_ms =
       match assoc_ "time_limit_ms" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "problem" "time_limit_ms"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problem" "time_limit_ms"
     in
     let memory_limit_mb =
       match assoc_ "memory_limit_mb" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "problem" "memory_limit_mb"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problem" "memory_limit_mb"
     in
     let description =
       match assoc_ "description" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "problem" "description"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problem" "description"
     in
     let input_spec =
       match assoc_ "input_spec" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "problem" "input_spec"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problem" "input_spec"
     in
     let output_spec =
       match assoc_ "output_spec" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "problem" "output_spec"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problem" "output_spec"
     in
     { code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
-  | _ -> Atdml_runtime.bad_type "problem" x
+  | _ -> Atdml_runtime.Yojson.bad_type "problem" x
 
 let yojson_of_problem (x : problem) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("code", Atdml_runtime.yojson_of_string x.code)];
-    [("title", Atdml_runtime.yojson_of_string x.title)];
-    [("time_limit_ms", Atdml_runtime.yojson_of_int x.time_limit_ms)];
-    [("memory_limit_mb", Atdml_runtime.yojson_of_int x.memory_limit_mb)];
-    [("description", Atdml_runtime.yojson_of_string x.description)];
-    [("input_spec", Atdml_runtime.yojson_of_string x.input_spec)];
-    [("output_spec", Atdml_runtime.yojson_of_string x.output_spec)];
+    [("code", Atdml_runtime.Yojson.yojson_of_string x.code)];
+    [("title", Atdml_runtime.Yojson.yojson_of_string x.title)];
+    [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int x.time_limit_ms)];
+    [("memory_limit_mb", Atdml_runtime.Yojson.yojson_of_int x.memory_limit_mb)];
+    [("description", Atdml_runtime.Yojson.yojson_of_string x.description)];
+    [("input_spec", Atdml_runtime.Yojson.yojson_of_string x.input_spec)];
+    [("output_spec", Atdml_runtime.Yojson.yojson_of_string x.output_spec)];
   ])
 
 let problem_of_json s =
@@ -879,10 +881,10 @@ let create_int64 (x : int) : int64 = x
 
 
 let int64_of_yojson (x : Yojson.Safe.t) : int64 =
-  Atdml_runtime.int_of_yojson x
+  Atdml_runtime.Yojson.int_of_yojson x
 
 let yojson_of_int64 (x : int64) : Yojson.Safe.t =
-  Atdml_runtime.yojson_of_int x
+  Atdml_runtime.Yojson.yojson_of_int x
 
 let int64_of_json s =
   int64_of_yojson (Yojson.Safe.from_string s)
@@ -924,33 +926,33 @@ let contestsPostRequest_of_yojson (x : Yojson.Safe.t) : contestsPostRequest =
     in
     let title =
       match assoc_ "title" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "contestsPostRequest" "title"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "contestsPostRequest" "title"
     in
     let description =
       match assoc_ "description" with
       | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.string_of_yojson v)
+      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let start_time =
       match assoc_ "start_time" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "contestsPostRequest" "start_time"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "contestsPostRequest" "start_time"
     in
     let end_time =
       match assoc_ "end_time" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "contestsPostRequest" "end_time"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "contestsPostRequest" "end_time"
     in
     { title; description; start_time; end_time }
-  | _ -> Atdml_runtime.bad_type "contestsPostRequest" x
+  | _ -> Atdml_runtime.Yojson.bad_type "contestsPostRequest" x
 
 let yojson_of_contestsPostRequest (x : contestsPostRequest) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("title", Atdml_runtime.yojson_of_string x.title)];
-    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.yojson_of_string v)]);
-    [("start_time", Atdml_runtime.yojson_of_string x.start_time)];
-    [("end_time", Atdml_runtime.yojson_of_string x.end_time)];
+    [("title", Atdml_runtime.Yojson.yojson_of_string x.title)];
+    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
+    [("start_time", Atdml_runtime.Yojson.yojson_of_string x.start_time)];
+    [("end_time", Atdml_runtime.Yojson.yojson_of_string x.end_time)];
   ])
 
 let contestsPostRequest_of_json s =
@@ -971,10 +973,10 @@ end
 type contestsIdScoreboardGetResponse2 = scoreboardEntry list
 
 let contestsIdScoreboardGetResponse2_of_yojson (x : Yojson.Safe.t) : contestsIdScoreboardGetResponse2 =
-  (Atdml_runtime.list_of_yojson scoreboardEntry_of_yojson) x
+  (Atdml_runtime.Yojson.list_of_yojson scoreboardEntry_of_yojson) x
 
 let yojson_of_contestsIdScoreboardGetResponse2 (x : contestsIdScoreboardGetResponse2) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list yojson_of_scoreboardEntry) x
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_scoreboardEntry) x
 
 let contestsIdScoreboardGetResponse2_of_json s =
   contestsIdScoreboardGetResponse2_of_yojson (Yojson.Safe.from_string s)
@@ -1000,7 +1002,7 @@ let contestsIdPutRequestStatus_of_yojson (x : Yojson.Safe.t) : contestsIdPutRequ
   | `String "upcoming" -> Upcoming
   | `String "running" -> Running
   | `String "finished" -> Finished
-  | _ -> Atdml_runtime.bad_sum "contestsIdPutRequestStatus" x
+  | _ -> Atdml_runtime.Yojson.bad_sum "contestsIdPutRequestStatus" x
 
 let yojson_of_contestsIdPutRequestStatus (x : contestsIdPutRequestStatus) : Yojson.Safe.t =
   match x with
@@ -1049,22 +1051,22 @@ let contestsIdPutRequest_of_yojson (x : Yojson.Safe.t) : contestsIdPutRequest =
     let title =
       match assoc_ "title" with
       | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.string_of_yojson v)
+      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let description =
       match assoc_ "description" with
       | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.string_of_yojson v)
+      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let start_time =
       match assoc_ "start_time" with
       | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.string_of_yojson v)
+      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let end_time =
       match assoc_ "end_time" with
       | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.string_of_yojson v)
+      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let status =
       match assoc_ "status" with
@@ -1072,14 +1074,14 @@ let contestsIdPutRequest_of_yojson (x : Yojson.Safe.t) : contestsIdPutRequest =
       | Some v -> Some (contestsIdPutRequestStatus_of_yojson v)
     in
     { title; description; start_time; end_time; status }
-  | _ -> Atdml_runtime.bad_type "contestsIdPutRequest" x
+  | _ -> Atdml_runtime.Yojson.bad_type "contestsIdPutRequest" x
 
 let yojson_of_contestsIdPutRequest (x : contestsIdPutRequest) : Yojson.Safe.t =
   `Assoc (List.concat [
-    (match x.title with None -> [] | Some v -> [("title", Atdml_runtime.yojson_of_string v)]);
-    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.yojson_of_string v)]);
-    (match x.start_time with None -> [] | Some v -> [("start_time", Atdml_runtime.yojson_of_string v)]);
-    (match x.end_time with None -> [] | Some v -> [("end_time", Atdml_runtime.yojson_of_string v)]);
+    (match x.title with None -> [] | Some v -> [("title", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.start_time with None -> [] | Some v -> [("start_time", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.end_time with None -> [] | Some v -> [("end_time", Atdml_runtime.Yojson.yojson_of_string v)]);
     (match x.status with None -> [] | Some v -> [("status", yojson_of_contestsIdPutRequestStatus v)]);
   ])
 
@@ -1108,7 +1110,7 @@ let contestStatus_of_yojson (x : Yojson.Safe.t) : contestStatus =
   | `String "upcoming" -> Upcoming
   | `String "running" -> Running
   | `String "finished" -> Finished
-  | _ -> Atdml_runtime.bad_sum "contestStatus" x
+  | _ -> Atdml_runtime.Yojson.bad_sum "contestStatus" x
 
 let yojson_of_contestStatus (x : contestStatus) : Yojson.Safe.t =
   match x with
@@ -1157,44 +1159,44 @@ let contest_of_yojson (x : Yojson.Safe.t) : contest =
     in
     let id =
       match assoc_ "id" with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "contest" "id"
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "contest" "id"
     in
     let title =
       match assoc_ "title" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "contest" "title"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "contest" "title"
     in
     let description =
       match assoc_ "description" with
       | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.string_of_yojson v)
+      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let start_time =
       match assoc_ "start_time" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "contest" "start_time"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "contest" "start_time"
     in
     let end_time =
       match assoc_ "end_time" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "contest" "end_time"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "contest" "end_time"
     in
     let status =
       match assoc_ "status" with
       | Some v -> contestStatus_of_yojson v
-      | None -> Atdml_runtime.missing_field "contest" "status"
+      | None -> Atdml_runtime.Yojson.missing_field "contest" "status"
     in
     { id; title; description; start_time; end_time; status }
-  | _ -> Atdml_runtime.bad_type "contest" x
+  | _ -> Atdml_runtime.Yojson.bad_type "contest" x
 
 let yojson_of_contest (x : contest) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("id", Atdml_runtime.yojson_of_int x.id)];
-    [("title", Atdml_runtime.yojson_of_string x.title)];
-    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.yojson_of_string v)]);
-    [("start_time", Atdml_runtime.yojson_of_string x.start_time)];
-    [("end_time", Atdml_runtime.yojson_of_string x.end_time)];
+    [("id", Atdml_runtime.Yojson.yojson_of_int x.id)];
+    [("title", Atdml_runtime.Yojson.yojson_of_string x.title)];
+    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
+    [("start_time", Atdml_runtime.Yojson.yojson_of_string x.start_time)];
+    [("end_time", Atdml_runtime.Yojson.yojson_of_string x.end_time)];
     [("status", yojson_of_contestStatus x.status)];
   ])
 
@@ -1216,10 +1218,10 @@ end
 type contestsGetResponse2 = contest list
 
 let contestsGetResponse2_of_yojson (x : Yojson.Safe.t) : contestsGetResponse2 =
-  (Atdml_runtime.list_of_yojson contest_of_yojson) x
+  (Atdml_runtime.Yojson.list_of_yojson contest_of_yojson) x
 
 let yojson_of_contestsGetResponse2 (x : contestsGetResponse2) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list yojson_of_contest) x
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_contest) x
 
 let contestsGetResponse2_of_json s =
   contestsGetResponse2_of_yojson (Yojson.Safe.from_string s)
@@ -1238,10 +1240,10 @@ end
 type contestsContestsidProblemsGetResponse2 = problem list
 
 let contestsContestsidProblemsGetResponse2_of_yojson (x : Yojson.Safe.t) : contestsContestsidProblemsGetResponse2 =
-  (Atdml_runtime.list_of_yojson problem_of_yojson) x
+  (Atdml_runtime.Yojson.list_of_yojson problem_of_yojson) x
 
 let yojson_of_contestsContestsidProblemsGetResponse2 (x : contestsContestsidProblemsGetResponse2) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list yojson_of_problem) x
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_problem) x
 
 let contestsContestsidProblemsGetResponse2_of_json s =
   contestsContestsidProblemsGetResponse2_of_yojson (Yojson.Safe.from_string s)
@@ -1260,10 +1262,10 @@ end
 type contestsContestidSubmissionsGetResponse2 = submission list
 
 let contestsContestidSubmissionsGetResponse2_of_yojson (x : Yojson.Safe.t) : contestsContestidSubmissionsGetResponse2 =
-  (Atdml_runtime.list_of_yojson submission_of_yojson) x
+  (Atdml_runtime.Yojson.list_of_yojson submission_of_yojson) x
 
 let yojson_of_contestsContestidSubmissionsGetResponse2 (x : contestsContestidSubmissionsGetResponse2) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list yojson_of_submission) x
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_submission) x
 
 let contestsContestidSubmissionsGetResponse2_of_json s =
   contestsContestidSubmissionsGetResponse2_of_yojson (Yojson.Safe.from_string s)
@@ -1302,20 +1304,20 @@ let authToken_of_yojson (x : Yojson.Safe.t) : authToken =
     in
     let token =
       match assoc_ "token" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "authToken" "token"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "authToken" "token"
     in
     let user =
       match assoc_ "user" with
       | Some v -> user_of_yojson v
-      | None -> Atdml_runtime.missing_field "authToken" "user"
+      | None -> Atdml_runtime.Yojson.missing_field "authToken" "user"
     in
     { token; user }
-  | _ -> Atdml_runtime.bad_type "authToken" x
+  | _ -> Atdml_runtime.Yojson.bad_type "authToken" x
 
 let yojson_of_authToken (x : authToken) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("token", Atdml_runtime.yojson_of_string x.token)];
+    [("token", Atdml_runtime.Yojson.yojson_of_string x.token)];
     [("user", yojson_of_user x.user)];
   ])
 
@@ -1356,15 +1358,15 @@ let authLoginPostResponse41_of_yojson (x : Yojson.Safe.t) : authLoginPostRespons
     in
     let error =
       match assoc_ "error" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "authLoginPostResponse41" "error"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "authLoginPostResponse41" "error"
     in
     { error }
-  | _ -> Atdml_runtime.bad_type "authLoginPostResponse41" x
+  | _ -> Atdml_runtime.Yojson.bad_type "authLoginPostResponse41" x
 
 let yojson_of_authLoginPostResponse41 (x : authLoginPostResponse41) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("error", Atdml_runtime.yojson_of_string x.error)];
+    [("error", Atdml_runtime.Yojson.yojson_of_string x.error)];
   ])
 
 let authLoginPostResponse41_of_json s =
@@ -1405,21 +1407,21 @@ let authLoginPostRequest_of_yojson (x : Yojson.Safe.t) : authLoginPostRequest =
     in
     let username =
       match assoc_ "username" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "authLoginPostRequest" "username"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "authLoginPostRequest" "username"
     in
     let password =
       match assoc_ "password" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "authLoginPostRequest" "password"
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "authLoginPostRequest" "password"
     in
     { username; password }
-  | _ -> Atdml_runtime.bad_type "authLoginPostRequest" x
+  | _ -> Atdml_runtime.Yojson.bad_type "authLoginPostRequest" x
 
 let yojson_of_authLoginPostRequest (x : authLoginPostRequest) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("username", Atdml_runtime.yojson_of_string x.username)];
-    [("password", Atdml_runtime.yojson_of_string x.password)];
+    [("username", Atdml_runtime.Yojson.yojson_of_string x.username)];
+    [("password", Atdml_runtime.Yojson.yojson_of_string x.password)];
   ])
 
 let authLoginPostRequest_of_json s =

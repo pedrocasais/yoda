@@ -741,7 +741,7 @@ components:
     Solution:
       type: object
       properties:
-        contest_id:
+        user_id:
           type: integer
         problem_id:
           type: integer
@@ -749,7 +749,7 @@ components:
           type: string
         source_code:
           type: string
-      required: ["contest_id", "problem_id", "language", "source_code"]
+      required: ["user_id", "problem_id", "language", "source_code"]
 
     ScoreboardEntry:
       type: object
