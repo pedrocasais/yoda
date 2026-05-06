@@ -18,6 +18,12 @@ let job =
         "input": "",
         "expected": "Hello World!",
         "is_sample": true
+        },
+        {
+        "testcase_id": 2,
+        "input": "",
+        "expected": "Hello!",
+        "is_sample": true
         }
     ]
   }|}
