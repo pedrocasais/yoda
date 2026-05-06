@@ -4,11 +4,30 @@
  (modules openapi)
  (libraries yojson))
 
+(library
+ (name valkey)
+ (wrapped false)
+ (modules db)
+ (libraries lwt lwt.unix redis-lwt)
+ (preprocess
+  (pps lwt_ppx)))
+
 (executable
  (public_name yoda)
  (name router)
- (modules yodab router index user contests auth judge problems submissions users db helpers)
- (libraries dream yojson lwt lwt.unix redis-lwt tyxml api_types)
+ (modules
+  yodab
+  router
+  index
+  user
+  contests
+  auth
+  judge
+  problems
+  submissions
+  users
+  helpers)
+ (libraries dream yojson lwt lwt.unix redis-lwt tyxml api_types valkey)
  (preprocess
   (pps lwt_ppx)))
 
@@ -16,6 +35,6 @@
  (public_name yodac)
  (name yodac)
  (modules yodac compiler docker_runner job worker)
- (libraries unix lwt lwt.unix redis-lwt yojson api_types)
+ (libraries unix lwt lwt.unix redis-lwt yojson api_types valkey)
  (preprocess
   (pps lwt_ppx)))

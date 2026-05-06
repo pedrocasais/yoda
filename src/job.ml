@@ -30,10 +30,10 @@ let lang_of_string = function
 let string_of_lang = function
   | C -> "c"
   | Cpp -> "cpp"
-  | OCaml -> "ml"
-  | Python -> "py"
+  | OCaml -> "ocaml"   
+  | Python -> "python"
   | Java -> "java"
-  | JavaScript -> "js"
+  | JavaScript -> "javascript"
 
 (* Parse JSON -> job *)
 let parse_testcase j =
