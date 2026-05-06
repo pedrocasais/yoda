@@ -96,3 +96,6 @@ docker pull ghcr.io/pedrocasais/yoda-sandbox:main
 docker pull ghcr.io/pedrocasais/yoda:1.0.0
 docker pull ghcr.io/pedrocasais/yoda-sandbox:1.0.0
 ```
+
+## ⚙️ Infrastructure Architecture
+![Image](diagrama.png)
