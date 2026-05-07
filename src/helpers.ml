@@ -54,3 +54,20 @@ let date =
       t.Unix.tm_hour t.Unix.tm_min t.Unix.tm_sec
   in
   Format.asprintf "%a" pp_tm today
+
+(* get all testcases from db *)
+let getAllTestCases conn lst =
+  let rec aux conn lst acc =
+    if lst = [] then Lwt.return acc
+    else
+      Client.hgetall conn ("testcase:" ^ List.hd lst)
+      >>= function
+      | [] ->
+          Lwt.fail_with
+            (Printf.sprintf
+               "Some testCases maybe be missing. Please check if \
+                testcase:%s is defined in a HASH"
+               (List.hd lst) )
+      | x -> aux conn (List.tl lst) (List.rev_append [x] acc)
+  in
+  aux conn lst []
