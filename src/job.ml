@@ -5,12 +5,10 @@ type testcase = Openapi.testCase
 
 type job =
   { submission_id: int
-  ; contest_id: int
+  ; user_id: int
   ; problem_id: int
   ; lang: lang
   ; source_code: string
-  ; time_limit_ms: int
-  ; memory_limit_mb: int
   ; testcases: testcase list }
 
 type detail = Openapi.submissionDetails
@@ -59,12 +57,10 @@ let parse_job json_str =
     let open Yojson.Basic.Util in
     Some
       { submission_id= j |> member "submission_id" |> to_int
-      ; contest_id= j |> member "contest_id" |> to_int
+      ; user_id= j |> member "user_id" |> to_int
       ; problem_id= j |> member "problem_id" |> to_int
       ; lang= j |> member "language" |> to_string |> lang_of_string
       ; source_code= j |> member "source_code" |> to_string
-      ; time_limit_ms= j |> member "time_limit_ms" |> to_int
-      ; memory_limit_mb= j |> member "memory_limit_mb" |> to_int
       ; testcases=
           j |> member "testcases" |> to_list |> List.map parse_testcase }
   with _ -> None
