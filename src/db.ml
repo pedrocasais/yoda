@@ -2,7 +2,7 @@ open Lwt.Infix
 open Redis_lwt
 
 let host =
-  let default = if Sys.file_exists "/.dockerenv" then "valkey" else "127.0.0.1" in
+  let default = "valkey" in
   Option.value (Sys.getenv_opt "VALKEY_HOST") ~default
 
 let port =

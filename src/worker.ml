@@ -1,36 +1,38 @@
 open Lwt.Infix
 open Redis_lwt
 
-let write_result (result : Job.result) =
+let hset_fields conn key fields =
+  Lwt_list.iter_s
+    (fun (field, value) -> Client.hset conn key field value >|= fun _ -> ())
+    fields
+
+let persist_submission conn (result : Job.result) =
   let key = Printf.sprintf "submission:%d" result.id in
-  Lwt_pool.use Db.pool (fun conn ->
-      Client.hset conn key "json" (Job.result_to_json result) )
+  let details =
+    `List (List.map Openapi.yojson_of_submissionDetails result.details)
+    |> Yojson.Safe.to_string
+  in
+  hset_fields conn key
+    [ ("id", string_of_int result.id)
+    ; ("status", result.status)
+    ; ("score", string_of_int result.score)
+    ; ("time_ms", string_of_int result.time_ms)
+    ; ("memory_kb", string_of_int result.memory_kb)
+    ; ("details", details) ]
+
+let write_result (result : Job.result) =
+  Lwt_pool.use Db.pool (fun conn -> persist_submission conn result)
   >>= fun _ ->
   Lwt_io.printf "Resultado: submission %d -> %s (%d%%)\n%!" result.id
     result.status result.score
 
-let persist_job conn (job : Job.job) job_str =
-  let key = Printf.sprintf "submission:%d" job.submission_id in
-  let testcases_json =
-    Yojson.Safe.to_string
-      (`List (List.map Openapi.yojson_of_testCase job.testcases))
-  in
-  Client.hset conn key "json" job_str
-  >>= fun _ ->
-  Client.hset conn key "submission_id" (string_of_int job.submission_id)
-  >>= fun _ ->
-  Client.hset conn key "contest_id" (string_of_int job.contest_id)
-  >>= fun _ ->
-  Client.hset conn key "problem_id" (string_of_int job.problem_id)
-  >>= fun _ ->
-  Client.hset conn key "language" (Job.string_of_lang job.lang)
-  >>= fun _ ->
-  Client.hset conn key "source_code" job.source_code
-  >>= fun _ ->
-  Client.hset conn key "time_limit_ms" (string_of_int job.time_limit_ms)
-  >>= fun _ ->
-  Client.hset conn key "memory_limit_mb" (string_of_int job.memory_limit_mb)
-  >>= fun _ -> Client.hset conn key "testcases" testcases_json
+let persist_solution conn (job : Job.job) =
+  let key = Printf.sprintf "submission:%d:solution" job.submission_id in
+  hset_fields conn key
+    [ ("user_id", string_of_int job.user_id)
+    ; ("problem_id", string_of_int job.problem_id)
+    ; ("language", Job.string_of_lang job.lang)
+    ; ("source_code", job.source_code) ]
 
 let process_job job_str =
   match Job.parse_job job_str with
@@ -40,7 +42,7 @@ let process_job job_str =
         job.submission_id
         (Job.string_of_lang job.lang)
       >>= fun () ->
-      Lwt_pool.use Db.pool (fun conn -> persist_job conn job job_str)
+      Lwt_pool.use Db.pool (fun conn -> persist_solution conn job)
       >>= fun _ ->
       let workdir, src = Compiler.prepare_workdir job in
       match Compiler.compile job workdir src with

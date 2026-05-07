@@ -5,8 +5,8 @@ let runner_image =
 
 let run_testcase (job : job) (workdir : string) (tc : testcase) =
   let run_cmd = Compiler.lang_run_cmd job.lang in
-  let memory = Printf.sprintf "%dm" job.memory_limit_mb in
-  let timeout = (job.time_limit_ms / 1000) + 1 in
+  let memory = Printf.sprintf "%dm" 256 in
+  let timeout = (50000 / 1000) + 1 in
 
   let input_file = Printf.sprintf "%s/input_%d.txt" workdir tc.id in
   let oc = open_out input_file in

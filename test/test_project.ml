@@ -3,7 +3,7 @@ open Redis_lwt
 (* open Yojson.Basic.Util *)
 
 
-let job =
+(* let job =
   {|{
     "submission_id": 1,
     "contest_id": 1,
@@ -12,6 +12,28 @@ let job =
     "source_code": "print_endline \"Hello World!\"",
     "time_limit_ms": 50000,
     "memory_limit_mb": 256,
+    "testcases": [
+        {
+        "testcase_id": 1,
+        "input": "",
+        "expected": "Hello World!",
+        "is_sample": true
+        },
+        {
+        "testcase_id": 2,
+        "input": "",
+        "expected": "Hello!",
+        "is_sample": true
+        }
+    ]
+  }|} *)
+let job =
+  {|{
+    "submission_id": 1,
+    "user_id": 1,
+    "problem_id": 1,
+    "language": "ocaml",
+    "source_code": "print_endline \"Hello World!\"",
     "testcases": [
         {
         "testcase_id": 1,
