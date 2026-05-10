@@ -35,6 +35,6 @@
  (public_name yodac)
  (name yodac)
  (modules yodac compiler docker_runner job worker)
- (libraries unix lwt lwt.unix redis-lwt yojson api_types valkey)
+ (libraries unix lwt lwt.unix redis-lwt yojson yaml api_types valkey)
  (preprocess
   (pps lwt_ppx)))
