@@ -1,31 +1,50 @@
 open Job
 
 let sandbox_image =
-  Option.value (Sys.getenv_opt "YODAC_SANDBOX_IMAGE") ~default:"yodac-sandbox"
+  Option.value
+    (Sys.getenv_opt "YODAC_SANDBOX_IMAGE")
+    ~default:"yodac-sandbox"
 
 let work_root =
   Option.value (Sys.getenv_opt "YODAC_WORK_ROOT") ~default:"/tmp/yodac"
 
 let lang_config_path =
-  Option.value (Sys.getenv_opt "YODAC_LANG_CONFIG") ~default:"languages.json"
+  Option.value (Sys.getenv_opt "YODAC_LANG_CONFIG") ~default:"languages.yaml"
 
 (* Cache da configuração para não ler o ficheiro a cada job *)
-let lang_config : (string * Yojson.Basic.t) list Lazy.t = lazy (
-  let j = Yojson.Basic.from_file lang_config_path in
-  match j with
-  | `Assoc l -> l
-  | _ -> failwith "languages.json: formato inválido"
-)
+let lang_config : (string * Yaml.value) list Lazy.t =
+  lazy
+    (let ic = open_in lang_config_path in
+     let content =
+       Fun.protect
+         ~finally:(fun () -> close_in_noerr ic)
+         (fun () -> really_input_string ic (in_channel_length ic))
+     in
+     match Yaml.of_string content with
+     | Ok (`O l) -> l
+     | Ok _ -> failwith "languages.yaml: formato inválido"
+     | Error (`Msg msg) -> failwith msg )
 
 let get_lang_field lang field =
-  let open Yojson.Basic.Util in
+  let open Yaml.Util in
   let key = Job.string_of_lang lang in
   match List.assoc_opt key (Lazy.force lang_config) with
-  | None -> failwith (Printf.sprintf "Linguagem '%s' não configurada em %s" key lang_config_path)
-  | Some cfg -> cfg |> member field
+  | None ->
+      failwith
+        (Printf.sprintf "Linguagem '%s' não configurada em %s" key
+           lang_config_path )
+  | Some cfg -> (
+    match find field cfg with
+    | Ok (Some value) -> value
+    | Ok None ->
+        failwith
+          (Printf.sprintf "Campo '%s' em '%s' não encontrado" field key)
+    | Error (`Msg msg) -> failwith msg )
 
 let lang_ext lang =
-  Yojson.Basic.Util.to_string (get_lang_field lang "ext")
+  match Yaml.Util.to_string (get_lang_field lang "ext") with
+  | Ok ext -> ext
+  | Error (`Msg msg) -> failwith msg
 
 let lang_compile_cmd lang =
   match get_lang_field lang "compile" with
@@ -34,7 +53,9 @@ let lang_compile_cmd lang =
   | _ -> failwith "campo 'compile' deve ser string ou null"
 
 let lang_run_cmd lang =
-  Yojson.Basic.Util.to_string (get_lang_field lang "run")
+  match Yaml.Util.to_string (get_lang_field lang "run") with
+  | Ok cmd -> cmd
+  | Error (`Msg msg) -> failwith msg
 
 let ensure_dir path =
   if not (Sys.file_exists path) then Unix.mkdir path 0o777 ;
@@ -60,13 +81,14 @@ let run_command cmd =
 let run_in_sandbox ~dir cmd =
   run_command
     (Printf.sprintf
-       "docker run --rm --network none --entrypoint /bin/sh -v %s:/work:rw -w /work %s -lc %S"
-       dir sandbox_image cmd)
+       "docker run --rm --network none --entrypoint /bin/sh -v %s:/work:rw \
+        -w /work %s -lc %S"
+       dir sandbox_image cmd )
 
 let compile job dir _src =
   match lang_compile_cmd job.lang with
-  | None -> Ok dir  (* interpretado, não precisa compilar *)
-  | Some cmd ->
+  | None -> Ok dir (* interpretado, não precisa compilar *)
+  | Some cmd -> (
     match run_in_sandbox ~dir cmd with
     | 0, _ -> Ok (dir ^ "/main")
-    | _, err -> Error err
+    | _, err -> Error err )
