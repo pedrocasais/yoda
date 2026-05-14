@@ -1,10 +1,5 @@
 open Job
 
-let sandbox_image =
-  Option.value
-    (Sys.getenv_opt "YODAC_SANDBOX_IMAGE")
-    ~default:"yodac-sandbox"
-
 let work_root =
   Option.value (Sys.getenv_opt "YODAC_WORK_ROOT") ~default:"/tmp/yodac"
 
@@ -27,23 +22,27 @@ let lang_config : (string * Yaml.value) list Lazy.t =
 
 let get_lang_field lang field =
   let open Yaml.Util in
-  let key = Job.string_of_lang lang in
-  match List.assoc_opt key (Lazy.force lang_config) with
+  match List.assoc_opt lang (Lazy.force lang_config) with 
   | None ->
       failwith
-        (Printf.sprintf "Linguagem '%s' não configurada em %s" key
+        (Printf.sprintf "Linguagem '%s' não configurada em %s" lang
            lang_config_path )
   | Some cfg -> (
     match find field cfg with
     | Ok (Some value) -> value
     | Ok None ->
         failwith
-          (Printf.sprintf "Campo '%s' em '%s' não encontrado" field key)
+          (Printf.sprintf "Campo '%s' em '%s' não encontrado" field lang)
     | Error (`Msg msg) -> failwith msg )
 
 let lang_ext lang =
   match Yaml.Util.to_string (get_lang_field lang "ext") with
   | Ok ext -> ext
+  | Error (`Msg msg) -> failwith msg
+
+let lang_image lang =
+  match Yaml.Util.to_string (get_lang_field lang "image") with
+  | Ok image -> image
   | Error (`Msg msg) -> failwith msg
 
 let lang_compile_cmd lang =
@@ -78,17 +77,16 @@ let run_command cmd =
   let status = Unix.close_process_in ic in
   match status with Unix.WEXITED code -> (code, output) | _ -> (1, output)
 
-let run_in_sandbox ~dir cmd =
+let run_in_sandbox ~dir ~lang cmd =
   run_command
     (Printf.sprintf
-       "docker run --rm --network none --entrypoint /bin/sh -v %s:/work:rw \
-        -w /work %s -lc %S"
-       dir sandbox_image cmd )
+       "docker run --rm --network none -v %s:/work:rw -w /work %s sh -c %S"
+       dir (lang_image lang) cmd )
 
 let compile job dir _src =
   match lang_compile_cmd job.lang with
-  | None -> Ok dir (* interpretado, não precisa compilar *)
+  | None -> Ok dir
   | Some cmd -> (
-    match run_in_sandbox ~dir cmd with
+    match run_in_sandbox ~dir ~lang:job.lang cmd with
     | 0, _ -> Ok (dir ^ "/main")
     | _, err -> Error err )

@@ -31,7 +31,7 @@ let persist_solution conn (job : Job.job) =
   hset_fields conn key
     [ ("user_id", string_of_int job.user_id)
     ; ("problem_id", string_of_int job.problem_id)
-    ; ("language", Job.string_of_lang job.lang)
+    ; ("language", job.lang)
     ; ("source_code", job.source_code) ]
 
 let process_job job_str =
@@ -40,7 +40,7 @@ let process_job job_str =
   | Some (job : Job.job) -> (
       Lwt_io.printf "Job recebido: submission %d lang %s\n%!"
         job.submission_id
-        (Job.string_of_lang job.lang)
+        (job.lang)
       >>= fun () ->
       Lwt_pool.use Db.pool (fun conn -> persist_solution conn job)
       >>= fun _ ->
