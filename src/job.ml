@@ -1,5 +1,5 @@
 (* Tipos *)
-type lang = C | Cpp | OCaml | Python | Java | JavaScript
+(* type lang = C | Cpp | OCaml | Python | Java | JavaScript *)
 
 type testcase = Openapi.testCase
 
@@ -7,7 +7,7 @@ type job =
   { submission_id: int
   ; user_id: int
   ; problem_id: int
-  ; lang: lang
+  ; lang : string
   ; source_code: string
   ; testcases: testcase list }
 
@@ -16,22 +16,22 @@ type detail = Openapi.submissionDetails
 type result = Openapi.submission
 
 (* Funções auxiliares *)
-let lang_of_string = function
+(* let lang_of_string = function
   | "c" -> C
   | "cpp" -> Cpp
   | "ocaml" -> OCaml
   | "python" -> Python
   | "java" -> Java
   | "javascript" -> JavaScript
-  | s -> failwith ("Linguagem desconhecida: " ^ s)
+  | s -> failwith ("Linguagem desconhecida: " ^ s) *)
 
-let string_of_lang = function
+(* let string_of_lang = function
   | C -> "c"
   | Cpp -> "cpp"
   | OCaml -> "ocaml"   
   | Python -> "python"
   | Java -> "java"
-  | JavaScript -> "javascript"
+  | JavaScript -> "javascript" *)
 
 (* Parse JSON -> job *)
 let parse_testcase j =
@@ -59,7 +59,7 @@ let parse_job json_str =
       { submission_id= j |> member "submission_id" |> to_int
       ; user_id= j |> member "user_id" |> to_int
       ; problem_id= j |> member "problem_id" |> to_int
-      ; lang= j |> member "language" |> to_string |> lang_of_string
+      ; lang= j |> member "language" |> to_string
       ; source_code= j |> member "source_code" |> to_string
       ; testcases=
           j |> member "testcases" |> to_list |> List.map parse_testcase }

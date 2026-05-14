@@ -1,8 +1,9 @@
 FROM ocaml/opam:debian-ocaml-5.2
 
+# Install system dependencies
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    m4 make gcc pkg-config libev-dev libgmp-dev libssl-dev python3-pip openjdk-21-jdk nodejs \
+    m4 make gcc pkg-config libev-dev libgmp-dev libssl-dev \
     docker-cli \
     && rm -rf /var/lib/apt/lists/*
 
@@ -12,13 +13,18 @@ RUN groupadd -r docker 2>/dev/null || true && \
 USER opam
 WORKDIR /home/opam/app
 
+# Copy project files for dependency resolution
 COPY --chown=opam:opam dune-project ./
 COPY --chown=opam:opam *.opam ./
 
+#Install OCaml dependencies
 RUN opam update && opam install -y . --deps-only
 
+#Copy source code
 COPY --chown=opam:opam . .
 
+# Build project
 RUN eval $(opam env) && dune build
 
+# Run application
 CMD ["bash", "-c", "eval $(opam env) && dune exec ./src/yodac.exe"]

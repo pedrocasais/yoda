@@ -1,12 +1,10 @@
 open Job
 
-let runner_image =
-  Option.value (Sys.getenv_opt "YODAC_RUNNER_IMAGE") ~default:"yodac-sandbox"
-
 let run_testcase (job : job) (workdir : string) (tc : testcase) =
   let run_cmd = Compiler.lang_run_cmd job.lang in
-  let memory = Printf.sprintf "%dm" 256 in
-  let timeout = (50000 / 1000) + 1 in
+  let image = Compiler.lang_image job.lang in
+  let memory = "256m" in
+  let timeout = 51 in
 
   let input_file = Printf.sprintf "%s/input_%d.txt" workdir tc.id in
   let oc = open_out input_file in
@@ -18,7 +16,7 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
       "timeout %d docker run --rm --network none --memory %s --cpus 0.5 \
        --read-only --tmpfs /tmp:size=16m --entrypoint /bin/sh \
        -v %s:/work:ro %s -c '%s < /work/input_%d.txt' 2>&1"
-      timeout memory workdir runner_image run_cmd tc.id
+      timeout memory workdir image run_cmd tc.id
   in
   let start = Unix.gettimeofday () in
   let ic = Unix.open_process_in cmd in
