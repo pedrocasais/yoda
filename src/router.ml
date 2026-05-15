@@ -2,8 +2,6 @@
 
 open Lwt.Infix
 
-let html_to_string html = Format.asprintf "%a" (Tyxml.Html.pp_elt ()) html
-
 let icon_handler _ =
   Lwt_io.(with_file ~mode:Input "./static/resources/ocaml-icon.ico" read)
   >>= fun data ->
@@ -21,8 +19,7 @@ let () =
   let app =
     Dream.router
       [ Dream.get "/resources/ocaml-icon.ico" icon_handler
-      ; Dream.get "/" (fun request ->
-            Dream.html (html_to_string (Index.index ~param:"ola" ~request)) )
+      ; Dream.get "/" (fun _request -> Dream.html "/")
       ; Dream.scope "/users" [login_handler]
           [ Dream.get "" Users.getUsers
           ; Dream.post "" Users.postUsers
