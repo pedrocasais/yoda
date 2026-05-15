@@ -1,8 +1,0 @@
-{
-  "c":          { "ext": "c",    "compile": "gcc -o /work/main /work/main.c -lm", "run": "/work/main" },
-  "cpp":        { "ext": "cpp",  "compile": "gcc -o /work/main /work/main.cpp",   "run": "/work/main" },
-  "ocaml":      { "ext": "ml",   "compile": "ocamlfind ocamlopt -package str -linkpkg -o /work/main /work/main.ml", "run": "/work/main" },
-  "java":       { "ext": "java", "compile": "javac -d /work /work/Main.java",     "run": "java -cp /work Main" },
-  "python":     { "ext": "py",   "compile": null,                                  "run": "python3 /work/main.py" },
-  "javascript": { "ext": "js",   "compile": null,                                  "run": "node /work/main.js" }
-}

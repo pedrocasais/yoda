@@ -16,7 +16,6 @@ depends: [
   "lwt"
   "redis-lwt"
   "yaml"
-  "tyxml"
   "atd"
   "atdml"
   "odoc" {with-doc}

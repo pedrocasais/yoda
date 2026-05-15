@@ -16,10 +16,7 @@
  (public_name yoda)
  (name router)
  (modules
-  yodab
   router
-  index
-  user
   contests
   auth
   judge
@@ -27,7 +24,7 @@
   submissions
   users
   helpers)
- (libraries dream yojson lwt lwt.unix redis-lwt tyxml api_types valkey)
+ (libraries dream yojson lwt lwt.unix redis-lwt api_types valkey)
  (preprocess
   (pps lwt_ppx)))
 
