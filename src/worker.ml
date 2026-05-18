@@ -34,16 +34,72 @@ let persist_solution conn (job : Job.job) =
     ; ("language", job.lang)
     ; ("source_code", job.source_code) ]
 
-let process_job job_str =
+let solution id =
+  let sub_id_sol = Printf.sprintf "submission:%s:solution" id in
+  Lwt_pool.use Db.pool (fun conn -> Client.hgetall conn sub_id_sol)
+  >>= fun fields ->
+  if fields = [] then Lwt.fail_with "submission not found"
+  else
+    let get f = List.assoc f fields in
+    let json =
+      `Assoc
+        [ ("user_id", `Int (int_of_string (get "user_id")))
+        ; ("problem_id", `Int (int_of_string (get "problem_id")))
+        ; ("language", `String (get "language"))
+        ; ("source_code", `String (get "source_code")) ]
+    in
+    Lwt.return (Yojson.Safe.to_string json)
+
+let testcases id =
+  let prob_id_tc = Printf.sprintf "problem:%i:testcases" id in
+  Lwt_pool.use Db.pool (fun conn -> Client.smembers conn prob_id_tc)
+  >>= fun tests ->
+  if tests = [] then Lwt.fail_with "testcases not found"
+  else
+    Lwt_list.map_s
+      (fun tc_id ->
+        let key = Printf.sprintf "testcase:%s" tc_id in
+        Lwt_pool.use Db.pool (fun conn -> Client.hgetall conn key)
+        >>= fun fields ->
+        if fields = [] then
+          Lwt.fail_with (Printf.sprintf "testcase %s not found" tc_id)
+        else
+          let get f = List.assoc f fields in
+          Lwt.return
+            (`Assoc
+               [ ("id", `Int (int_of_string tc_id))
+               ; ("input", `String (get "input"))
+               ; ("output", `String (get "output"))
+               ; ("is_sample", `Bool (bool_of_string (get "is_sample"))) ] ) )
+      tests
+
+let process_job submission_id =
+  solution submission_id
+  >>= fun sol_json ->
+  let json = Yojson.Safe.from_string sol_json in
+  let open Yojson.Safe.Util in
+  let problem_id = json |> member "problem_id" |> to_int in
+  let user_id = json |> member "user_id" |> to_int in
+  let language = json |> member "language" |> to_string in
+  let source_code = json |> member "source_code" |> to_string in
+  testcases  problem_id
+  >>= fun tests ->
+  let job_json =
+    `Assoc
+      [ ("submission_id", `Int (int_of_string submission_id))
+      ; ("user_id", `Int user_id)
+      ; ("problem_id", `Int  problem_id)
+      ; ("language", `String language)
+      ; ("source_code", `String source_code)
+      ; ("testcases", `List tests) ]
+  in
+  let job_str = Yojson.Safe.to_string job_json in
   match Job.parse_job job_str with
   | None -> Lwt_io.printf "Erro: JSON inválido\n%!"
   | Some (job : Job.job) -> (
       Lwt_io.printf "Job recebido: submission %d lang %s\n%!"
-        job.submission_id
-        (job.lang)
+        job.submission_id job.lang
       >>= fun () ->
-      Lwt_pool.use Db.pool (fun conn -> persist_solution conn job)
-      >>= fun _ ->
       let workdir, src = Compiler.prepare_workdir job in
       match Compiler.compile job workdir src with
       | Error err ->
@@ -61,7 +117,7 @@ let process_job job_str =
           write_result result )
 
 let rec worker () =
-  Lwt_pool.use Db.pool (fun conn -> Client.brpop conn ["jobs"] 0)
+  Lwt_pool.use Db.pool (fun conn -> Client.brpop conn ["submission:job"] 0)
   >>= function
   | None -> worker ()
   | Some (_, job_str) -> process_job job_str >>= fun () -> worker ()
