@@ -119,7 +119,7 @@ let postSubmissions request =
           ; string_of_int next_id ]
         >>= fun _ ->
         Client.send_custom_request conn
-          ["LPUSH"; "jobs"; string_of_int next_id]
+          ["LPUSH"; "submission:job"; string_of_int next_id]
         >>= fun _ ->
         Client.exec conn
         >>= function
