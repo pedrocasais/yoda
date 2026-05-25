@@ -1,16 +1,51 @@
 open Lwt.Infix
 open Redis_lwt
 
+(* define argon2 variables for hashing *)
+let t_cost = 2
+
+and m_cost = 65536
+
+and parallelism = 1
+
+and hash_len = 32
+
+and salt_len = 32
+
+(* get encoded lenght *)
+let encoded_len =
+  Argon2.encoded_len ~t_cost ~m_cost ~parallelism ~salt_len ~hash_len
+    ~kind:ID
+
+let () = Mirage_crypto_rng_unix.use_default ()
+
+(* generate salt for hash *)
+let gen_salt len = Mirage_crypto_rng_unix.getrandom len
+
+(* hash password *)
+let hash_password passwd =
+  Result.map Argon2.ID.encoded_to_string
+    (Argon2.ID.hash_encoded ~t_cost ~m_cost ~parallelism ~hash_len
+       ~encoded_len ~pwd:passwd ~salt:(gen_salt salt_len) )
+
+(* verify password *)
+let verify encoded_hash pwd =
+  match Argon2.verify ~encoded:encoded_hash ~pwd ~kind:ID with
+  | Ok true_or_false -> true_or_false
+  | Error VERIFY_MISMATCH -> false
+  | Error e -> raise (Failure (Argon2.ErrorCodes.message e))
+
 let getAllUsers conn max user =
-  let rec aux conn max count user =
-    if count > int_of_string max then Lwt.return []
+  let rec aux count =
+    if count > max then Lwt.return []
     else
       Client.hgetall conn ("user:" ^ string_of_int count)
       >>= fun lst ->
-      if List.assoc "username" lst = user then Lwt.return lst
-      else aux conn max (count + 1) user
+      match List.assoc_opt "username" lst with
+      | Some u when u = user -> Lwt.return lst
+      | _ -> aux (count + 1)
   in
-  aux conn max 1 user
+  aux 1
 
 (*creates session based on user -> {user: user_id} *)
 let sessions uid =
@@ -56,7 +91,7 @@ let postAuthRegister request =
               ; "username"
               ; user.username
               ; "password"
-              ; user.password
+              ; Result.get_ok (hash_password user.password)
               ; "role"
               ; Openapi.json_of_usersPostRequestRole user.role
               ; "created_at"
@@ -91,7 +126,7 @@ let postAuthRegister request =
               >>= function
               | None -> aux conn user
               | Some id -> (
-                  getAllUsers conn id user.username
+                  getAllUsers conn (int_of_string id) user.username
                   >>= function
                   | [] -> aux conn user
                   | _ ->
@@ -121,12 +156,19 @@ let postAuthLogin request =
           Client.get conn "user:id"
           >>= function
           | None -> Lwt.return []
-          | Some id -> getAllUsers conn id user_req.username )
+          | Some id -> getAllUsers conn (int_of_string id) user_req.username )
       >>= function
-      | lst ->
-          (* Maybe check for session ? *)
-          let pass = List.assoc_opt "password" lst in
-          if Option.get pass = user_req.password then (* TODO : hash here *)
+      | [] ->
+          let error =
+            Openapi.create_authLoginPostResponse41
+              ~error:"Invalid username or password" ()
+          in
+          Dream.json ~code:401
+            ~headers:[("Content-Type", "application/json")]
+            (Openapi.json_of_authLoginPostResponse41 error)
+      | lst -> (
+        match List.assoc_opt "password" lst with
+        | Some pass when verify pass user_req.password ->
             let user =
               Openapi.create_user
                 ~id:(int_of_string (Option.get (List.assoc_opt "id" lst)))
@@ -147,14 +189,14 @@ let postAuthLogin request =
             Dream.json ~code:200
               ~headers:[("Content-Type", "application/json")]
               (Openapi.json_of_authToken res)
-          else
+        | _ ->
             let error =
               Openapi.create_authLoginPostResponse41
                 ~error:"Invalid username or password" ()
             in
             Dream.json ~code:401
               ~headers:[("Content-Type", "application/json")]
-              (Openapi.json_of_authLoginPostResponse41 error) )
+              (Openapi.json_of_authLoginPostResponse41 error) ) )
     (fun exn ->
       let error =
         Openapi.create_authLoginPostResponse41

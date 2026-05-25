@@ -5,7 +5,7 @@ USER root
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
         python3 python3-venv python3-yaml \
-        m4 make gcc pkg-config libev-dev libgmp-dev libssl-dev docker-cli && \
+        m4 make gcc pkg-config libev-dev libgmp-dev libssl-dev docker-cli libffi-dev libargon2-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Add opam user to docker group

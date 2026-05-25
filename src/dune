@@ -15,18 +15,20 @@
 (executable
  (public_name yoda)
  (name router)
- (modules
-  router
-  contests
-  auth
-  judge
-  problems
-  submissions
-  users
-  helpers)
- (libraries dream yojson lwt lwt.unix redis-lwt api_types valkey)
+ (modules router contests auth judge problems submissions users helpers)
+ (libraries
+  dream
+  yojson
+  lwt
+  lwt.unix
+  redis-lwt
+  api_types
+  valkey
+  argon2
+  mirage-crypto-rng-lwt)
  (preprocess
-  (pps lwt_ppx)))
+  (pps lwt_ppx))
+ (flags :standard -cclib -largon2))
 
 (executable
  (public_name yodac)

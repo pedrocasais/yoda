@@ -3,7 +3,7 @@ FROM ocaml/opam:debian-ocaml-5.2
 # Install system dependencies
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    m4 make gcc pkg-config libev-dev libgmp-dev libssl-dev \
+    m4 make gcc pkg-config libev-dev libgmp-dev libssl-dev libffi-dev libargon2-dev\
     docker-cli \
     && rm -rf /var/lib/apt/lists/*
 
