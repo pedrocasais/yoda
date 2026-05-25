@@ -18,6 +18,7 @@ depends: [
   "yaml"
   "atd"
   "atdml"
+  "argon2"
   "odoc" {with-doc}
 ]
 build: [

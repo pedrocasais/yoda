@@ -1,3 +1,8 @@
 (test
  (name test_project)
  (libraries redis-lwt lwt.unix yojson))
+
+(test
+ (name test_argon2)
+ (libraries argon2 mirage-crypto-rng.unix)
+ (flags :standard -cclib -largon2))
