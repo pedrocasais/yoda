@@ -49,6 +49,17 @@ let solution id =
         ; ("source_code", `String (get "source_code")) ]
     in
     Lwt.return (Yojson.Safe.to_string json)
+  
+let problem problem_id =
+  let prob_id = Printf.sprintf "problem:%i" problem_id in
+  Lwt_pool.use Db.pool (fun conn -> Client.hgetall conn prob_id)
+  >>= fun fields ->
+  if fields = [] then Lwt.fail_with "problem not found"
+  else
+    let get f = List.assoc f fields in
+    let time_limit_ms = int_of_string (get "time_limit_ms") in
+    let memory_limit_mb = int_of_string (get "memory_limit_mb") in
+    Lwt.return (time_limit_ms, memory_limit_mb)
 
 let testcases id =
   let prob_id_tc = Printf.sprintf "problem:%i:testcases" id in
@@ -82,8 +93,8 @@ let process_job submission_id =
   let user_id = json |> member "user_id" |> to_int in
   let language = json |> member "language" |> to_string in
   let source_code = json |> member "source_code" |> to_string in
-  testcases  problem_id
-  >>= fun tests ->
+  problem problem_id >>= fun (time_limit_ms, memory_limit_mb) ->
+  testcases  problem_id >>= fun tests ->
   let job_json =
     `Assoc
       [ ("submission_id", `Int (int_of_string submission_id))
@@ -91,6 +102,8 @@ let process_job submission_id =
       ; ("problem_id", `Int  problem_id)
       ; ("language", `String language)
       ; ("source_code", `String source_code)
+      ; ("time_limit_ms", `Int time_limit_ms)
+      ; ("memory_limit_mb", `Int memory_limit_mb)
       ; ("testcases", `List tests) ]
   in
   let job_str = Yojson.Safe.to_string job_json in

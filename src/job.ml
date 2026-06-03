@@ -7,8 +7,10 @@ type job =
   { submission_id: int
   ; user_id: int
   ; problem_id: int
-  ; lang : string
+  ; lang: string
   ; source_code: string
+  ; time_limit_ms: int
+  ; memory_limit_mb: int
   ; testcases: testcase list }
 
 type detail = Openapi.submissionDetails
@@ -25,13 +27,8 @@ type result = Openapi.submission
   | "javascript" -> JavaScript
   | s -> failwith ("Linguagem desconhecida: " ^ s) *)
 
-(* let string_of_lang = function
-  | C -> "c"
-  | Cpp -> "cpp"
-  | OCaml -> "ocaml"   
-  | Python -> "python"
-  | Java -> "java"
-  | JavaScript -> "javascript" *)
+(* let string_of_lang = function | C -> "c" | Cpp -> "cpp" | OCaml -> "ocaml"
+   | Python -> "python" | Java -> "java" | JavaScript -> "javascript" *)
 
 (* Parse JSON -> job *)
 let parse_testcase j =
@@ -61,6 +58,8 @@ let parse_job json_str =
       ; problem_id= j |> member "problem_id" |> to_int
       ; lang= j |> member "language" |> to_string
       ; source_code= j |> member "source_code" |> to_string
+      ; time_limit_ms= j |> member "time_limit_ms" |> to_int
+      ; memory_limit_mb= j |> member "memory_limit_mb" |> to_int
       ; testcases=
           j |> member "testcases" |> to_list |> List.map parse_testcase }
   with _ -> None
