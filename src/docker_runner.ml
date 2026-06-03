@@ -3,8 +3,8 @@ open Job
 let run_testcase (job : job) (workdir : string) (tc : testcase) =
   let run_cmd = Compiler.lang_run_cmd job.lang in
   let image = Compiler.lang_image job.lang in
-  let memory = "256m" in
-  let timeout = 51 in
+  let memory = Printf.sprintf "%i" job.memory_limit_mb in
+  let timeout = (job.time_limit_ms /1000) + 1 in
 
   let input_file = Printf.sprintf "%s/input_%d.txt" workdir tc.id in
   let oc = open_out input_file in
