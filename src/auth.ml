@@ -60,7 +60,7 @@ let sessions uid =
 let postAuthRegister request =
   Lwt.catch
     (fun () ->
-      Helpers.checkPrems request (fun () ->
+      (* Helpers.checkPrems request (fun () -> *)
           Dream.body request
           >>= fun data ->
           let user = Openapi.usersPostRequest_of_json data in
@@ -136,7 +136,7 @@ let postAuthRegister request =
                       in
                       Dream.json ~code:400
                         ~headers:[("Content-Type", "application/json")]
-                        (Openapi.json_of_authLoginPostResponse41 error) ) ) ) )
+                        (Openapi.json_of_authLoginPostResponse41 error) ) ) ) 
     (fun exn ->
       let error =
         Openapi.create_authLoginPostResponse41
