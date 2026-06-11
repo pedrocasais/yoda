@@ -1,39 +1,47 @@
 (library
  (name api_types)
+ (public_name yoda.api_types)
  (wrapped false)
  (modules openapi)
  (libraries yojson))
 
 (library
  (name valkey)
+ (public_name yoda.valkey)
  (wrapped false)
  (modules db)
  (libraries lwt lwt.unix redis-lwt)
- (preprocess
-  (pps lwt_ppx)))
+ (preprocess (pps lwt_ppx)))
+
+(library
+ (name yoda_lib)
+ (public_name yoda.lib)
+ (wrapped false)
+ (modules contests auth judge problems submissions users helpers)
+ (libraries
+  dream yojson lwt lwt.unix redis-lwt
+  api_types valkey argon2 mirage-crypto-rng-lwt)
+ (preprocess (pps lwt_ppx))
+ (flags :standard -cclib -largon2))
 
 (executable
  (public_name yoda)
  (name router)
- (modules router contests auth judge problems submissions users helpers)
- (libraries
-  dream
-  yojson
-  lwt
-  lwt.unix
-  redis-lwt
-  api_types
-  valkey
-  argon2
-  mirage-crypto-rng-lwt)
- (preprocess
-  (pps lwt_ppx))
- (flags :standard -cclib -largon2))
+ (modules router)
+ (libraries yoda_lib)
+ (preprocess (pps lwt_ppx)))
 
+(library
+ (name yodac_lib)
+ (public_name yoda.yodac)
+ (wrapped false)
+ (modules compiler docker_runner job worker)
+ (libraries unix lwt lwt.unix redis-lwt yojson yaml api_types valkey)
+ (preprocess (pps lwt_ppx)))
+ 
 (executable
  (public_name yodac)
  (name yodac)
- (modules yodac compiler docker_runner job worker)
- (libraries unix lwt lwt.unix redis-lwt yojson yaml api_types valkey)
- (preprocess
-  (pps lwt_ppx)))
+ (modules yodac)
+ (libraries yodac_lib)
+ (preprocess (pps lwt_ppx)))
