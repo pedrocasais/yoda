@@ -23,29 +23,61 @@ let persist_submission conn (result : Job.result) =
     |> Yojson.Safe.to_string
   in
   hset_fields conn key
-    [ ("id",         string_of_int result.id)
-    ; ("status",     result.status)
-    ; ("score",      string_of_int result.score)
-    ; ("time_ms",    string_of_int result.time_ms)
-    ; ("memory_kb",  string_of_int result.memory_kb)
-    ; ("details",    details) ]
+    [ ("id", string_of_int result.id)
+    ; ("status", result.status)
+    ; ("score", string_of_int result.score)
+    ; ("time_ms", string_of_int result.time_ms)
+    ; ("memory_kb", string_of_int result.memory_kb)
+    ; ("details", details) ]
 
-(** Escreve o resultado no Valkey e imprime no stdout.
+(** Escreve o resultado da submissão no Valkey e adiciona há scoreboard e imprime no stdout.
     Usa o pool de conexões definido em {!Db}. *)
-let write_result (result : Job.result) =
-  Lwt_pool.use Db.pool (fun conn -> persist_submission conn result)
+let write_result (result : Job.result) (job : Job.job) =
+  Lwt_pool.use Db.pool (fun conn ->
+      persist_submission conn result
+      >>= fun _ ->
+      Client.hget conn
+        ("problem:" ^ string_of_int job.problem_id)
+        "contest_id"
+      >>= fun contest_id ->
+      Client.zadd conn
+        ("contest:" ^ Option.get contest_id ^ ":scoreboard")
+        [(float_of_int result.score, string_of_int job.user_id)]
+      >>= fun _ ->
+      Client.hscan ~pattern:"problem:*:solved" ~count:32 conn
+        ("user:" ^ string_of_int job.user_id ^ ":scoreboard")
+        0
+      >>= fun lst ->
+      let howmany lst =
+        List.fold_left
+          (fun acc (_, v) -> if v = "true" then acc + 1 else acc)
+          0 lst
+      in
+      hset_fields conn
+        ("user:" ^ string_of_int job.user_id ^ ":scoreboard")
+        [ ("solved", string_of_int (howmany (snd lst)))
+        ; ("penalty", string_of_int 0)
+        ; ( "problem:" ^ string_of_int job.problem_id ^ ":solved"
+          , if result.status = "accepted" then string_of_bool true
+            else string_of_bool false )
+        ; ("problem:" ^ string_of_int job.problem_id ^ ":time", "0") ]
+      >>= fun _ ->
+      Client.hincrby conn
+        ("user:" ^ string_of_int job.user_id ^ ":scoreboard")
+        ("problem:" ^ string_of_int job.problem_id ^ ":attempts")
+        1 )
   >>= fun _ ->
-  Lwt_io.printf "Resultado: submission %d -> %s (%d%%)\n%!"
-    result.id result.status result.score
+  Lwt_io.printf "Resultado: submission %d -> %s (%d%%)\n%!" result.id
+    result.status result.score
 
 (** Persiste a solução de um job no Valkey.
     Escreve na chave [submission:{id}:solution]. *)
 let persist_solution conn (job : Job.job) =
   let key = Printf.sprintf "submission:%d:solution" job.submission_id in
   hset_fields conn key
-    [ ("user_id",     string_of_int job.user_id)
-    ; ("problem_id",  string_of_int job.problem_id)
-    ; ("language",    job.lang)
+    [ ("user_id", string_of_int job.user_id)
+    ; ("problem_id", string_of_int job.problem_id)
+    ; ("language", job.lang)
     ; ("source_code", job.source_code) ]
 
 (** Vai buscar a solução de uma submissão ao Valkey.
@@ -103,10 +135,10 @@ let testcases id =
           let get f = List.assoc f fields in
           Lwt.return
             (`Assoc
-               [ ("id",        `Int  (int_of_string tc_id))
-               ; ("input",     `String (get "input"))
-               ; ("output",    `String (get "output"))
-               ; ("is_sample", `Bool   (bool_of_string (get "is_sample"))) ]))
+               [ ("id", `Int (int_of_string tc_id))
+               ; ("input", `String (get "input"))
+               ; ("output", `String (get "output"))
+               ; ("is_sample", `Bool (bool_of_string (get "is_sample"))) ] ) )
       tests
 
 (** Processa uma submissão completa:
@@ -127,41 +159,46 @@ let process_job submission_id =
   >>= fun tests ->
   let job_json =
     `Assoc
-      [ ("submission_id",   `Int (int_of_string submission_id))
-      ; ("user_id",         `Int user_id)
-      ; ("problem_id",      `Int problem_id)
-      ; ("language",        `String language)
-      ; ("source_code",     `String source_code)
-      ; ("time_limit_ms",   `Int time_limit_ms)
+      [ ("submission_id", `Int (int_of_string submission_id))
+      ; ("user_id", `Int user_id)
+      ; ("problem_id", `Int problem_id)
+      ; ("language", `String language)
+      ; ("source_code", `String source_code)
+      ; ("time_limit_ms", `Int time_limit_ms)
       ; ("memory_limit_mb", `Int memory_limit_mb)
-      ; ("testcases",       `List tests) ]
+      ; ("testcases", `List tests) ]
   in
   let job_str = Yojson.Safe.to_string job_json in
   match Job.parse_job job_str with
   | None -> Lwt_io.printf "Erro: JSON inválido\n%!"
-  | Some (job : Job.job) ->
+  | Some (job : Job.job) -> (
       Lwt_io.printf "Job recebido: submission %d lang %s\n%!"
         job.submission_id job.lang
       >>= fun () ->
       let workdir, src = Compiler.prepare_workdir job in
-      (match Compiler.compile job workdir src with
-       | Error err ->
-           Lwt_io.printf "Erro de compilação: %s\n%!" err >>= fun () ->
-           write_result
-             { id= job.submission_id; status= "compile_error"
-             ; score= 0; time_ms= 0; memory_kb= 0; details= [] }
-       | Ok _ ->
-           let result = Docker_runner.run_all job workdir in
-           write_result result)
+      match Compiler.compile job workdir src with
+      | Error err ->
+          Lwt_io.printf "Erro de compilação: %s\n%!" err
+          >>= fun () ->
+          write_result
+            { id= job.submission_id
+            ; status= "compile_error"
+            ; score= 0
+            ; time_ms= 0
+            ; memory_kb= 0
+            ; details= [] }
+            job
+      | Ok _ ->
+          let result = Docker_runner.run_all job workdir in
+          write_result result job )
 
 (** Loop principal do worker.
     Bloqueia com [BRPOP] na fila [submission:job] até haver um job,
     processa-o com {!process_job} e repete indefinidamente. *)
 let rec worker () =
-  Lwt_pool.use Db.pool
-    (fun conn -> Client.brpop conn ["submission:job"] 0)
+  Lwt_pool.use Db.pool (fun conn -> Client.brpop conn ["submission:job"] 0)
   >>= function
-  | None              -> worker ()
+  | None -> worker ()
   | Some (_, job_str) -> process_job job_str >>= fun () -> worker ()
 
 (** Ponto de entrada do YodaC.

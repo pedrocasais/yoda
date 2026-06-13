@@ -51,17 +51,154 @@ let makeProblemList lst =
       List.rev_append [problem] acc )
     [] lst
 
-let getContestsIdScoreboard _request = failwith "getContestsIdScoreboard"
+let getAllSubmissions conn x =
+  let rec aux acc = function
+    | [] -> Lwt.return acc
+    | hd :: tl ->
+        Client.lrange conn ("problem:" ^ hd ^ ":submissions") 0 (-1)
+        >>= fun r -> aux (List.rev_append r acc) tl
+  in
+  let rec aux' acc = function
+    | [] -> Lwt.return acc
+    | hd :: tl ->
+        Client.hgetall conn ("submission:" ^ hd)
+        >>= fun lst' -> aux' (List.rev_append [lst'] acc) tl
+  in
+  aux [] x >>= fun lst -> aux' [] lst
 
-let getContestsContestIdSubmissions _request =
-  failwith "getContestsIdScoreboard"
-(* let id = Dream.param request "contestsId" in Lwt_pool.use Db.pool (fun
-   conn -> Client.smembers conn ("contest:"^id) >>= fun res -> let problems =
-   function | [] -> [] | x -> x in
+let makeSubmissionList lst : Openapi.submission list =
+  List.fold_left
+    (fun acc x ->
+      let submission =
+        Openapi.create_submission
+          ~id:(int_of_string (List.assoc "id" x))
+          ~status:(List.assoc "status" x)
+          ~score:(int_of_string (List.assoc "score" x))
+          ~time_ms:(int_of_string (List.assoc "time_ms" x))
+          ~memory_kb:(int_of_string (List.assoc "memory_kb" x))
+          ~details:
+            (Helpers.makeSubmissionDetailsList (List.assoc "details" x))
+          ()
+      in
+      List.rev_append [submission] acc )
+    [] lst
 
-   let aux x acc = Client.lrange conn ("problem:" ^ x ^ ":submissions") 0
-   (-1) >>= fun r -> Lwt.return (List.rev_append r acc ) in let a = List.map
-   (fun x -> aux x [] )(problems res) in *)
+let getScoreboard conn id =
+  Client.zrange conn ~withscores:true ("contest:" ^ id ^ ":scoreboard") 0 (-1)
+  >>= fun x ->
+  let rec aux acc = function
+    | [] -> Lwt.return (List.rev acc)
+    | `Bulk (Some id) :: `Bulk (Some score) :: tl ->
+        aux ((id, score) :: acc) tl
+    | _ -> Lwt.return (List.rev acc)
+  in
+  aux [] x
+
+let rec makeScoreboardProblemList lst acc = function
+  | [] -> List.rev acc
+  | hd :: tl ->
+      if
+        List.assoc_opt ("problem:" ^ hd ^ ":solved") lst = None
+        || List.assoc_opt ("problem:" ^ hd ^ ":attempts") lst = None
+      then makeScoreboardProblemList lst acc tl
+      else
+        let _a =
+          Printf.sprintf
+            "{\"%s\": {\"solved\": %b, \"attempts\": %d, \"time\": %d}}" hd
+            (bool_of_string (List.assoc ("problem:" ^ hd ^ ":solved") lst))
+            (int_of_string (List.assoc ("problem:" ^ hd ^ ":attempts") lst))
+            ( match List.assoc_opt ("problem:" ^ hd ^ ":time") lst with
+            | None -> 0
+            | Some x -> int_of_string x )
+        in
+        makeScoreboardProblemList lst (_a :: acc) tl
+
+let rec makeUsersScoreboardList conn ids acc = function
+  | [] -> Lwt.return (List.rev acc)
+  | hd :: tl ->
+      Client.hgetall conn ("user:" ^ hd ^ ":scoreboard")
+      >>= fun lst ->
+      makeUsersScoreboardList conn ids
+        ( ( [ ("team", hd)
+            ; ("solved", List.assoc "solved" lst)
+            ; ("penalty", List.assoc "penalty" lst) ]
+          , makeScoreboardProblemList lst [] ids )
+        :: acc )
+        tl
+
+let makeScoreboardEntryList lst =
+  List.fold_left
+    (fun acc (details, problms) ->
+      let a =
+        Openapi.create_scoreboardEntry
+          ~team:(List.assoc "team" details)
+          ~solved:
+            (int_of_float (float_of_string (List.assoc "solved" details)))
+          ~penalty:(int_of_string (List.assoc "penalty" details))
+          ~problems:
+            (Openapi.json__of_json
+               (Yojson.Safe.to_string
+                  (`List (problms |> List.map Yojson.Safe.from_string)) ) )
+          ()
+      in
+      List.rev_append [a] acc )
+    [] lst
+
+let getContestsIdScoreboard request =
+  Lwt.catch
+    (fun () ->
+      let id = Dream.param request "id" in
+      Lwt_pool.use Db.pool (fun conn ->
+          getScoreboard conn id
+          >>= function
+          | [] ->
+              Dream.json ~code:404
+                ~headers:[("Content-Type", "application/json")]
+                "No Scoreboard"
+          | x -> (
+              (*score,user*)
+              Client.smembers conn ("contest:" ^ id ^ ":problems")
+              >>= function
+              | [] ->
+                  Dream.json ~code:200
+                    ~headers:[("Content-Type", "application/json")]
+                    "No Problems for that contest"
+              | problem_ids ->
+                  let idsonly = List.map (fun (x, _) -> x) x in
+                  makeUsersScoreboardList conn problem_ids [] idsonly
+                  >>= fun ls ->
+                  Dream.json ~code:200
+                    ~headers:[("Content-Type", "application/json")]
+                    (Openapi.json_of_contestsIdScoreboardGetResponse2
+                       (makeScoreboardEntryList ls) ) ) ) )
+    (fun exn ->
+      Dream.json ~code:500
+        ~headers:[("Content-Type", "application/json")]
+        (Printexc.to_string exn) )
+
+let getContestsContestIdSubmissions request =
+  Lwt.catch
+    (fun () ->
+      let id = Dream.param request "contestId" in
+      Lwt_pool.use Db.pool (fun conn ->
+          Client.smembers conn ("contest:" ^ id ^ ":problems")
+          >>= function
+          | [] ->
+              Dream.json ~code:400
+                ~headers:[("Content-Type", "application/json")]
+                "No problems/submissions found for that contest."
+          | lst ->
+              (* make sub list *)
+              getAllSubmissions conn lst
+              >>= fun sublist ->
+              Dream.json ~code:200
+                ~headers:[("Content-Type", "application/json")]
+                (Openapi.json_of_contestsContestidSubmissionsGetResponse2
+                   (makeSubmissionList sublist) ) ) )
+    (fun exn ->
+      Dream.json ~code:500
+        ~headers:[("Content-Type", "application/json")]
+        (Printexc.to_string exn) )
 
 (* TODO: contesy_id relly neccessary ???? no json *)
 
@@ -112,9 +249,7 @@ let postContestsContestsIdProblems request =
               ; problem.output_spec ]
             >>= fun _ ->
             Client.send_custom_request conn
-              [ "SADD"
-              ; "contest:" ^ id ^ ":problems"
-              ; string_of_int next_id ]
+              ["SADD"; "contest:" ^ id ^ ":problems"; string_of_int next_id]
             >>= fun _ ->
             Client.exec conn
             >>= function
@@ -344,26 +479,23 @@ let postContests request =
                 | [] ->
                     Dream.log "Error in postAuthRegister! Retrying..." ;
                     aux contest
-                | reply -> (
-                  match reply with
-                  | [`Status "OK"; `Int n] when n >= 1 ->
-                      let contest_res =
-                        Openapi.create_contestsPostRequest
-                          ~title:contest.title
-                          ~description:
-                            ( match contest.description with
-                            | Some x -> x
-                            | None -> "Description." )
-                          ~start_time:contest.start_time
-                          ~end_time:contest.end_time ()
-                      in
-                      Dream.json ~code:200
-                        ~headers:[("Content-Type", "application/json")]
-                        (Openapi.json_of_contestsPostRequest contest_res)
-                  | _ ->
-                      Dream.json ~code:200
-                        ~headers:[("Content-Type", "application/json")]
-                        "Erro" ) )
+                | [`Status "OK"; `Int n] when n >= 1 ->
+                    let contest_res =
+                      Openapi.create_contestsPostRequest ~title:contest.title
+                        ~description:
+                          ( match contest.description with
+                          | Some x -> x
+                          | None -> "Description." )
+                        ~start_time:contest.start_time
+                        ~end_time:contest.end_time ()
+                    in
+                    Dream.json ~code:200
+                      ~headers:[("Content-Type", "application/json")]
+                      (Openapi.json_of_contestsPostRequest contest_res)
+                | _ ->
+                    Dream.json ~code:200
+                      ~headers:[("Content-Type", "application/json")]
+                      "Erro" )
           in
           aux contest ) )
     (fun exn ->
