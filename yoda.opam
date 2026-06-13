@@ -20,6 +20,7 @@ depends: [
   "atdml"
   "argon2"
   "odoc" {with-doc}
+  "docker-api"
 ]
 build: [
   ["dune" "subst"] {dev}
@@ -40,4 +41,5 @@ x-maintenance-intent: ["(latest)"]
 pin-depends: [
   ["atd.dev" "git+https://github.com/ahrefs/atd.git"]
   ["atdml.dev" "git+https://github.com/ahrefs/atd.git"]
+  ["docker-api.dev" "git+https://github.com/pedrodamiao18/ocaml-docker-api.git"]
 ]
