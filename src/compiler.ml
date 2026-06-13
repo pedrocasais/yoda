@@ -6,7 +6,7 @@
 
 open Job
 
-(** Directório raiz onde são criados os ambientes de trabalho.
+(** Diretoria raiz onde são criados os ambientes de trabalho.
     Pode ser configurado via variável de ambiente [YODAC_WORK_ROOT].
     Por omissão: [/yodac]. *)
 let work_root =
@@ -77,7 +77,7 @@ let lang_run_cmd lang =
   | Ok cmd -> cmd
   | Error (`Msg msg) -> failwith msg
 
-(** Cria um directório se não existir e garante permissões de escrita. *)
+(** Cria uma diretoria se não existir e garante permissões de escrita. *)
 let ensure_dir path =
   if not (Sys.file_exists path) then Unix.mkdir path 0o777;
   Unix.chmod path 0o777
