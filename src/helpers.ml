@@ -1,16 +1,17 @@
+(** Funções auxiliares
+
+  Neste módulo estão definidas funções utilizadas por vários módulos. *)
+
 open Lwt.Infix
 open Redis_lwt
 
-(** {1 Módulo de Funções auxiliares } 
-    Neste módulo estão definidas funções utilizadas por vários módulos*)
-
-(** Tipo de acesso para verificar permissões de user*)
+(** Tipo de acesso para verificar permissões de utilizador. *)
 type access = Bad_Request | Unauthorized | Forbidden | Ok
 
-(** [checkPrems request next] verifica se o user tem autorização de Admin para aceder a [request] *)
+(** [checkPrems request next] verifica se o user tem autorização de Admin para aceder a [request]. *)
 let checkPrems request next =
   let id_session = Dream.session_field request "user" in
-  (* obtém role de um dado user:id_session *)
+  (* obtém role de um dado user:id_session. *)
   let aux = function
     | None -> Lwt.return Unauthorized
     | Some id -> (
@@ -50,7 +51,7 @@ let checkPrems request next =
         (Openapi.json_of_authLoginPostResponse41 error)
   | Ok -> next ()
 
-(** [date] get date from today in format year-month-day-hour-min-sec *)
+(** [date] obtém a data no formato year-month-day-hour-min-sec. *)
 let date =
   let today : Unix.tm = Unix.localtime (Unix.time ()) in
   let pp_tm ppf t =
@@ -60,9 +61,10 @@ let date =
   in
   Format.asprintf "%a" pp_tm today
 
-(** [getAllTestCases conn lst] get all testcases from db 
- - conn: conexão [Db]
- - lst: list of testcase to get  *)
+(** [getAllTestCases conn lst] obtém todos os casos de teste pedidos.
+    @param conn conexão com a base de dados
+    @param lst ids de testecases de um dado problema.
+    @return devolve informaçãoes sobre testecases. *)
 let getAllTestCases conn lst =
   let rec aux acc = function
     | [] -> Lwt.return acc
@@ -79,9 +81,9 @@ let getAllTestCases conn lst =
   in
   aux [] lst
 
-(** [makeSubmissionDetailsList lst] make list of submission details convert from string to yojson to
-   Openapi.submission list
-   - lst: list of details to add to final list 
+(** [makeSubmissionDetailsList lst] converte uma string numa lista yojson numa lista de detalhes de submissão, [Openapi.submissionDetails list]
+   @param lst lista de detalhes de submissão
+   @return devolve uma lista de tipo [Openapi.submissionDetails list] para ser usada na criação de [[Openapi.submission list]]
    *)
 let makeSubmissionDetailsList lst =
   Yojson.Basic.Util.to_list (Yojson.Basic.from_string lst)
