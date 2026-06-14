@@ -1,40 +1,63 @@
+(** Módulo de Autenticação
+
+    Este módulo contém funções para criar utilizadores e fazer a sua autenticação. *)
+
 open Lwt.Infix
 open Redis_lwt
 
-(* define argon2 variables for hashing *)
+(** {2 Variáveis de controlo para o Argon2}
+
+    Estes parâmetros controlam a força e performance do algoritmo de hash de passwords.
+*)
+
+(** [t_cost] é o tempo de computação da hash dado em número de iterações *)
 let t_cost = 2
 
+(** [m_cost] é a memória total usada para a hash, em kibibytes*)
 and m_cost = 65536
 
+(** [parallelism] é o número de threads em paralelo usadas para a hash *)
 and parallelism = 1
 
+(** [hash_len] é o tamanho final da hash gerada em bytes *)
 and hash_len = 32
 
+(** [salt_len] é o tamanho do salt usado na hash em bytes *)
 and salt_len = 32
 
-(* get encoded lenght *)
+(** [encoded_len] cálcula o tamanho da hash codificada *)
 let encoded_len =
   Argon2.encoded_len ~t_cost ~m_cost ~parallelism ~salt_len ~hash_len
     ~kind:ID
 
+(** inicializa o Mirage Crypto *)
 let () = Mirage_crypto_rng_unix.use_default ()
 
-(* generate salt for hash *)
+(** [gen_salt len] gera uma string de tamanho [len] com random bytes *)
 let gen_salt len = Mirage_crypto_rng_unix.getrandom len
 
-(* hash password *)
+(** [hash_password passwd]Cria um hash Argon2id para a password fornecida [passwd].
+    @return tuplo com o resultado contendo a hash codificada ou um erro. *)
 let hash_password passwd =
   Result.map Argon2.ID.encoded_to_string
     (Argon2.ID.hash_encoded ~t_cost ~m_cost ~parallelism ~hash_len
        ~encoded_len ~pwd:passwd ~salt:(gen_salt salt_len) )
 
-(* verify password *)
+(** [verify encoded_hash pwd] Verifica se a password,[pwd], corresponde à hash codificada,[encoded_hash].
+    @return [true] se válida, [false] caso contrário. *)
 let verify encoded_hash pwd =
   match Argon2.verify ~encoded:encoded_hash ~pwd ~kind:ID with
   | Ok true_or_false -> true_or_false
   | Error VERIFY_MISMATCH -> false
   | Error e -> raise (Failure (Argon2.ErrorCodes.message e))
 
+(** [getAllUsers conn max user] verifica se [user] existe na [Db]
+  @param conn conexão com a base de dados
+  @param max user_id máximo a procurar 
+  @param user username a verificar
+  @return devolve [(string*string)list Lwt.t] se existir com as informações do utilizador,
+   [[] Lwt.t] caso não exista.
+*)
 let getAllUsers conn max user =
   let rec aux count =
     if count > max then Lwt.return []
@@ -47,24 +70,25 @@ let getAllUsers conn max user =
   in
   aux 1
 
-(*creates session based on user -> {user: user_id} *)
+(** [sessions uid] invalida a sessão atual e criar uma nova para o utilizador com id [uid].
+  @param uid id de utilizador  *)
 let sessions uid =
  fun request ->
-  match Dream.session_field request "user" with
-  | None ->
-      Dream.invalidate_session request
-      >>= fun _ ->
-      Dream.set_session_field request "user" uid >>= fun _ -> Lwt.return_unit
-  | Some _username -> Lwt.return_unit
+  Dream.invalidate_session request
+  >>= fun () -> Dream.set_session_field request "user" uid
 
+(** [postAuthRegister request] Rota para registar um novo utilizador.
+    Apenas administradores podem criar novos utilizadores. 
+    @return devolve o user criado, caso contrário erro *)
 let postAuthRegister request =
   Lwt.catch
     (fun () ->
-      (* Helpers.checkPrems request (fun () -> *)
+      (** [Helpers.checkPrems request] verifica se o utilizador tem permissões de administrador *)
+      Helpers.checkPrems request (fun () ->
           Dream.body request
           >>= fun data ->
           let user = Openapi.usersPostRequest_of_json data in
-          let rec aux conn (user : Openapi.usersPostRequest) =
+          let rec aux conn (user : Openapi.usersPostRequest) attempt passwd =
             let created_at = Helpers.date in
             Client.unwatch conn
             >>= fun _ ->
@@ -91,7 +115,7 @@ let postAuthRegister request =
               ; "username"
               ; user.username
               ; "password"
-              ; Result.get_ok (hash_password user.password)
+              ; passwd
               ; "role"
               ; Openapi.json_of_usersPostRequestRole user.role
               ; "created_at"
@@ -100,8 +124,20 @@ let postAuthRegister request =
             Client.exec conn
             >>= function
             | [] ->
-                Dream.log "Error in postAuthRegister! Retrying..." ;
-                aux conn user
+                if attempt >= 5 then
+                  let error =
+                    Openapi.create_authLoginPostResponse41
+                      ~error:"Max retries exceeded" ()
+                  in
+                  Dream.json ~code:500
+                    ~headers:[("Content-Type", "application/json")]
+                    (Openapi.json_of_authLoginPostResponse41 error)
+                else
+                  let base = 0.05 *. (2.0 *. float_of_int attempt) in
+                  let diff = Random.float base in
+                  Dream.log "Error in postAuthRegister! Retrying..." ;
+                  Lwt_unix.sleep (base +. diff)
+                  >>= fun () -> aux conn user (attempt + 1) passwd
             | [`Status "OK"; `Int n] when n >= 1 ->
                 let user =
                   Openapi.create_user ~id:next_id ~username:user.username
@@ -124,19 +160,23 @@ let postAuthRegister request =
           Lwt_pool.use Db.pool (fun conn ->
               Client.get conn "user:id"
               >>= function
-              | None -> aux conn user
+              | None ->
+                  aux conn user 0
+                    (Result.get_ok (hash_password user.password))
               | Some id -> (
                   getAllUsers conn (int_of_string id) user.username
                   >>= function
-                  | [] -> aux conn user
+                  | [] ->
+                      aux conn user 0
+                        (Result.get_ok (hash_password user.password))
                   | _ ->
                       let error =
                         Openapi.create_authLoginPostResponse41
-                          ~error:"already exits" ()
+                          ~error:"User already exists" ()
                       in
                       Dream.json ~code:400
                         ~headers:[("Content-Type", "application/json")]
-                        (Openapi.json_of_authLoginPostResponse41 error) ) ) ) 
+                        (Openapi.json_of_authLoginPostResponse41 error) ) ) ) )
     (fun exn ->
       let error =
         Openapi.create_authLoginPostResponse41
@@ -146,6 +186,8 @@ let postAuthRegister request =
         ~headers:[("Content-Type", "application/json")]
         (Openapi.json_of_authLoginPostResponse41 error) )
 
+(** [postAuthLogin request] Rota para efetuar o Login de um user.
+  @return Caso bem sucedido devolve um [token] de sessão e o [user], caso contrário erro. *)
 let postAuthLogin request =
   Lwt.catch
     (fun () ->
