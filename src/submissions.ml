@@ -13,18 +13,6 @@ let makeTestCaseList lst =
       List.rev_append [Openapi.json_of_submissionDetails subdetail] acc )
     [] lst
 
-(* make list of submission details convert from string to yojson to
-   Openapi.submission list*)
-let makeSubmissionDetailsList lst =
-  Yojson.Basic.Util.to_list (Yojson.Basic.from_string lst)
-  |> List.map (fun x ->
-      let lst = Yojson.Basic.Util.to_assoc x in
-      Openapi.create_submissionDetails
-        ~testcase_id:
-          (Yojson.Basic.Util.to_int (List.assoc "testcase_id" lst))
-        ~status:(Yojson.Basic.Util.to_string (List.assoc "status" lst))
-        ~time_ms:(Yojson.Basic.Util.to_int (List.assoc "time_ms" lst))
-        () )
 
 (* get submission by id *)
 let getSubmissionsId request =
@@ -45,7 +33,7 @@ let getSubmissionsId request =
               ~score:(int_of_string (List.assoc "score" lst))
               ~time_ms:(int_of_string (List.assoc "time_ms" lst))
               ~memory_kb:(int_of_string (List.assoc "memory_kb" lst))
-              ~details:(makeSubmissionDetailsList (List.assoc "details" lst))
+              ~details:(Helpers.makeSubmissionDetailsList (List.assoc "details" lst))
               ()
           in
           Dream.json ~code:200
@@ -125,7 +113,7 @@ let postSubmissions request =
         >>= function
         | [] ->
             Dream.log "Error in postSubmissions! Retrying..." ;
-            aux solution conn testcases
+            aux solution conn testcases 
         | [`Status "OK"; `Int sub; `Int sol; `Int l1; `Int l2; `Int l3]
           when sub >= 1 && sol >= 1 && l1 >= 0 && l2 >= 0 && l3 >= 0 ->
             let sub =

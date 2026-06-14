@@ -1,11 +1,17 @@
+(** Funções auxiliares
+
+  Neste módulo estão definidas funções utilizadas por vários módulos. *)
+
 open Lwt.Infix
 open Redis_lwt
 
+(** Tipo de acesso para verificar permissões de utilizador. *)
 type access = Bad_Request | Unauthorized | Forbidden | Ok
 
-(* check is user is admin *)
+(** [checkPrems request next] verifica se o user tem autorização de Admin para aceder a [request]. *)
 let checkPrems request next =
   let id_session = Dream.session_field request "user" in
+  (* obtém role de um dado user:id_session. *)
   let aux = function
     | None -> Lwt.return Unauthorized
     | Some id -> (
@@ -45,7 +51,7 @@ let checkPrems request next =
         (Openapi.json_of_authLoginPostResponse41 error)
   | Ok -> next ()
 
-(* get date *)
+(** [date] obtém a data no formato year-month-day-hour-min-sec. *)
 let date =
   let today : Unix.tm = Unix.localtime (Unix.time ()) in
   let pp_tm ppf t =
@@ -55,19 +61,37 @@ let date =
   in
   Format.asprintf "%a" pp_tm today
 
-(* get all testcases from db *)
+(** [getAllTestCases conn lst] obtém todos os casos de teste pedidos.
+    @param conn conexão com a base de dados
+    @param lst ids de testecases de um dado problema.
+    @return devolve informaçãoes sobre testecases. *)
 let getAllTestCases conn lst =
-  let rec aux conn lst acc =
-    if lst = [] then Lwt.return acc
-    else
-      Client.hgetall conn ("testcase:" ^ List.hd lst)
-      >>= function
-      | [] ->
-          Lwt.fail_with
-            (Printf.sprintf
-               "Some testCases maybe be missing. Please check if \
-                testcase:%s is defined in a HASH"
-               (List.hd lst) )
-      | x -> aux conn (List.tl lst) (List.rev_append [x] acc)
+  let rec aux acc = function
+    | [] -> Lwt.return acc
+    | hd :: tl -> (
+        Client.hgetall conn ("testcase:" ^ hd)
+        >>= function
+        | [] ->
+            Lwt.fail_with
+              (Printf.sprintf
+                 "Some testCases maybe be missing. Please check if \
+                  testcase:%s is defined in a HASH"
+                 hd )
+        | x -> aux (List.rev_append [x] acc) tl )
   in
-  aux conn lst []
+  aux [] lst
+
+(** [makeSubmissionDetailsList lst] converte uma string numa lista yojson numa lista de detalhes de submissão, [Openapi.submissionDetails list]
+   @param lst lista de detalhes de submissão
+   @return devolve uma lista de tipo [Openapi.submissionDetails list] para ser usada na criação de [[Openapi.submission list]]
+   *)
+let makeSubmissionDetailsList lst =
+  Yojson.Basic.Util.to_list (Yojson.Basic.from_string lst)
+  |> List.map (fun x ->
+      let lst = Yojson.Basic.Util.to_assoc x in
+      Openapi.create_submissionDetails
+        ~testcase_id:
+          (Yojson.Basic.Util.to_int (List.assoc "testcase_id" lst))
+        ~status:(Yojson.Basic.Util.to_string (List.assoc "status" lst))
+        ~time_ms:(Yojson.Basic.Util.to_int (List.assoc "time_ms" lst))
+        () )
