@@ -219,7 +219,7 @@ let postContestsContestsIdProblems request =
       Dream.body request
       >>= fun data ->
       let problem = Openapi.problem_of_json data in
-      let rec aux conn (problem : Openapi.problem) id =
+      let rec aux conn (problem : Openapi.problem) id attempt =
         Client.unwatch conn
         >>= fun _ ->
         Client.watch conn ["problem:id"]
@@ -261,8 +261,17 @@ let postContestsContestsIdProblems request =
         Client.exec conn
         >>= function
         | [] ->
-            Dream.log "Error in postContestsContestsIdProblems! Retrying..." ;
-            aux conn problem id
+            if attempt >= 5 then
+              Dream.json ~code:500
+                ~headers:[("Content-Type", "application/json")]
+                "Max retries exceeded"
+            else
+              let base = 0.05 *. (2.0 *. float_of_int attempt) in
+              let diff = Random.float base in
+              Dream.log
+                "Error in postContestsContestsIdProblems! Retrying..." ;
+              Lwt_unix.sleep (base +. diff)
+              >>= fun () -> aux conn problem id (attempt + 1)
         | [`Status "OK"; `Int n; `Int x] when x > 0 && n >= 1 ->
             let problem_res =
               Openapi.create_problem ~code:problem.code ~title:problem.title
@@ -283,7 +292,7 @@ let postContestsContestsIdProblems request =
       Lwt_pool.use Db.pool (fun conn ->
           Client.exists conn ("contest:" ^ id)
           >>= function
-          | true -> aux conn problem id
+          | true -> aux conn problem id 0
           | false ->
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]
@@ -466,7 +475,7 @@ let postContests request =
           Dream.body request
           >>= fun data ->
           let contest = Openapi.contest_of_json data in
-          let rec aux (contest : Openapi.contest) =
+          let rec aux (contest : Openapi.contest) attempt =
             Lwt_pool.use Db.pool (fun conn ->
                 Client.unwatch conn
                 >>= fun _ ->
@@ -506,8 +515,16 @@ let postContests request =
                 Client.exec conn
                 >>= function
                 | [] ->
-                    Dream.log "Error in postAuthRegister! Retrying..." ;
-                    aux contest
+                    if attempt >= 5 then
+                      Dream.json ~code:500
+                        ~headers:[("Content-Type", "application/json")]
+                        "Max retries exceeded"
+                    else
+                      let base = 0.05 *. (2.0 *. float_of_int attempt) in
+                      let diff = Random.float base in
+                      Dream.log "Error in postAuthRegister! Retrying..." ;
+                      Lwt_unix.sleep (base +. diff)
+                      >>= fun () -> aux contest (attempt + 1)
                 | [`Status "OK"; `Int n] when n >= 1 ->
                     let contest_res =
                       Openapi.create_contestsPostRequest ~title:contest.title
@@ -526,7 +543,7 @@ let postContests request =
                       ~headers:[("Content-Type", "application/json")]
                       "Erro" )
           in
-          aux contest ) )
+          aux contest 0 ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
