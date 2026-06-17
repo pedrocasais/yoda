@@ -1,7 +1,14 @@
+(** Problemas e TesteCases
+
+    Este módulo contém funções para editar problemas e criar/editar testcases de um determinado problema. *)
+
+
 open Lwt.Infix
 open Redis_lwt
 
-(* make testCase list from a list of pairs with testcases *)
+(** [makeTestCaseList lst] converte uma lista de lista com tuplos numa [Openapi.testCase list]
+@param lst lista com listas de tuplos, contendo as informções de testCases
+@return [Openapi.testCase list] *)
 let makeTestCaseList lst =
   List.fold_left
     (fun acc x ->
@@ -15,7 +22,8 @@ let makeTestCaseList lst =
       List.rev_append [testcase] acc )
     [] lst
 
-(* post problem testcases by id *)
+(** [postProblemsIdTestcases request] cria um novo testCase para o problema com [id] igual ao parâmetro da rota. 
+ @return 200 OK, se for concluído com sucesso, devolve o testcase criado com tipo [Openapi.testCase]; 404 Not Found, se o problema não existir; 400 Bad Request ou 500 Internal Server Error, erro. *)
 let postProblemsIdTestcases request =
   Lwt.catch
     (fun () ->
@@ -86,7 +94,8 @@ let postProblemsIdTestcases request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(* get problem testcases by id *)
+(** [getProblemsIdTestcases request] devolve os testcases que pertencem ao problema com [id] igual ao parâmetro da rota. 
+ @return 200 OK, se for concluído com sucesso, devolve uma lista de testcases com tipo [Openapi.testCase list]; 404 Not Found, se não existirem testcases para o problema com [id] dado; 500 Internal Server Error, erro. *)
 let getProblemsIdTestcases request =
   Lwt.catch
     (fun () ->
@@ -110,7 +119,8 @@ let getProblemsIdTestcases request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(* delete problem by id *)
+(** [deleteProblemsId request] elimina o problema pelo [id], parâmetro na rota.
+ @return 204 No Content, se for eliminado com sucesso; 404 Not Found, se não existir o problema com o [id] ou 500 Internal Server Error    *)
 let deleteProblemsId request =
   Lwt.catch
     (fun () ->
@@ -128,7 +138,8 @@ let deleteProblemsId request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(* update problem by id *)
+(** [putProblemsId request] atualiza os campos [code, title, time_limit_ms, memory_limit_mb, description, input_spec, output_spec] do problema identificado pelo parâmetro de rota [id].
+ @return 200 OK, se for concluído com sucesso devolve o problema atualizado de tipo [Openapi.problem]; 404 Not Found, se não existir o problema com o [id]; 500 Internal Server Error, erro. *)
 let putProblemsId request =
   Lwt.catch
     (fun () ->
@@ -177,7 +188,8 @@ let putProblemsId request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(* get Problem by Id *)
+(** [getProblemsId _request] devolve o problema com [id] igual ao parâmetro da rota. 
+ @return 200 OK, se for concluído com sucesso, devolve problema [Openapi.problem]; 404 Not Found, se não existir o [problem:id] ; 500 Internal Server Error, erro. *)
 let getProblemsId request =
   Lwt.catch
     (fun () ->
