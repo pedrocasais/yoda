@@ -30,45 +30,199 @@ let persist_submission conn (result : Job.result) =
     ; ("memory_kb", string_of_int result.memory_kb)
     ; ("details", details) ]
 
-(** Escreve o resultado da submissão no Valkey e adiciona há scoreboard e imprime no stdout.
-    Usa o pool de conexões definido em {!Db}. *)
+(** [exist] é um tipo que identifica se existe um problema nas scoreboard de um dado user
+  - NoProblems, denota que o utilizador não está na scoreboard, junta um problema de tipo [Openapi.json_]
+  - SameProblem, identifica que o utilizador fez uma submissão num problema já registado, de tipo [string] contendo as informações na scoreboard do user 
+  - NewProblem, identifica utilizador que fez uma submissão num problema não registado na scoreboard, tipo [string] contendo a informação da scoreboard do user  *)
+type exist =
+  | NoProblems of Openapi.json_
+  | SameProblem of string
+  | NewProblem of string
+
+(** [getScoreboard conn] obtém o scoreboard para um dado concurso por [id]
+  @param conn conexão há base de dados
+  @param id id de concurso
+  @return devolve uma [string list Lwt.t] com a scoreboard de um concurso *)
+let getScoreboard conn id =
+  Client.zrange conn ("contest:" ^ id ^ ":scoreboard") 0 (-1)
+  >>= fun x ->
+  let rec aux acc = function
+    | [] -> Lwt.return (List.rev acc)
+    | `Bulk (Some score) :: tl -> aux (score :: acc) tl
+    | _ -> Lwt.return (List.rev acc)
+  in
+  aux [] x
+
+(** [checkExists lst (job : Job.job) (result : Job.result)] verifica se um utilizador já está presente no scoreboard
+  @param lst [string list] scoreboard de um concurso
+  @param job [Job.job] job recebido para avaliação
+  @param result [Job.result] resultado da avaliação de um job
+  @return devolve uma opção do tipo [exist], caso o utilizador não exista [NoProblems], caso exista e submeteu um problema que não esteja presente na scoreboarad [NewProblem], caso contrário [SameProblem] *)
+let checkExists lst (job : Job.job) (result : Job.result) =
+  let score_team =
+    List.find_opt
+      (fun j ->
+        string_of_int job.user_id
+        = List.nth
+            ( Openapi.json__of_json j
+            |> Yojson.Safe.Util.member "team"
+            |> Yojson.Safe.to_string |> String.split_on_char '\"' )
+            1 )
+      lst
+  in
+  match score_team with
+  | Some x ->
+      let problem_id =
+        Yojson.Safe.from_string x
+        |> Yojson.Safe.Util.member "problems"
+        |> Yojson.Safe.Util.member (string_of_int job.problem_id)
+        |> Yojson.Safe.to_string
+      in
+      if problem_id = "null" then NewProblem (Option.get score_team)
+      else SameProblem (Option.get score_team)
+  | None ->
+      let newproblem =
+        `Assoc
+          [ ( string_of_int job.problem_id
+            , `Assoc
+                [ ( "solved"
+                  , if result.status = "accepted" then `Bool true
+                    else `Bool false )
+                ; ("attempts", `Int 1)
+                ; ("time", `Int 0) ] ) ]
+      in
+      NoProblems newproblem
+
+(** [getSolved (result : Job.result) x] atualiza o parâmetro [solved] do scoreboard 
+ @param result [Job.result] resultado de uma avaliação
+ @param x [string] de informações do utilizador no scoreboard 
+ @return número de problemas resolvidos *)
+let getSolved (result : Job.result) x =
+  if result.status = "accepted" then
+    1
+    + ( Yojson.Safe.from_string x
+      |> Yojson.Safe.Util.member "solved"
+      |> Yojson.Safe.Util.to_int )
+  else
+    Yojson.Safe.from_string x
+    |> Yojson.Safe.Util.member "solved"
+    |> Yojson.Safe.Util.to_int
+
+(** [makeScoreboardEntry (job : Job.job) (result : Job.result) exist] converte uma string numa [Openapi.scoreboardEntry] 
+  @param job [Job.job] job recebido para avaliação
+  @param result [Job.result] resultado da avaliação de um job
+  @param exist [exist string] tipo de problema a adicionar no scoreboard 
+  @return devolve [Openapi.scoreboardEntry] para adicionar há scoreboard  *)
+let makeScoreboardEntry (job : Job.job) (result : Job.result) = function
+  | SameProblem x ->
+      let old_problems =
+        Yojson.Safe.from_string x
+        |> Yojson.Safe.Util.member "problems"
+        |> Yojson.Safe.Util.to_assoc
+      in
+      let attempts =
+        match List.assoc_opt (string_of_int job.problem_id) old_problems with
+        | Some prev ->
+            prev
+            |> Yojson.Safe.Util.member "attempts"
+            |> Yojson.Safe.Util.to_int
+        | None -> 0
+      in
+      let new_problem =
+        `Assoc
+          [ ("solved", `Bool (result.status = "accepted"))
+          ; ("attempts", `Int (attempts + 1))
+          ; ("time", `Int 0) ]
+      in
+      Openapi.create_scoreboardEntry
+        ~team:(string_of_int job.user_id)
+        ~solved:(getSolved result x) ~penalty:0
+        ~problems:
+          (Openapi.json__of_json
+             (Yojson.Safe.to_string
+                (`Assoc
+                   ( (string_of_int job.problem_id, new_problem)
+                   :: List.filter
+                        (fun (k, _) -> k <> string_of_int job.problem_id)
+                        old_problems ) ) ) )
+        ()
+  | NewProblem x ->
+      let newproblem =
+        `Assoc
+          [ ("solved", `Bool (result.status = "accepted"))
+          ; ("attempts", `Int 1)
+          ; ("time", `Int 0) ]
+      in
+      let oldproblems =
+        Yojson.Safe.from_string x
+        |> Yojson.Safe.Util.member "problems"
+        |> Yojson.Safe.Util.to_assoc
+      in
+      Openapi.create_scoreboardEntry
+        ~team:(string_of_int job.user_id)
+        ~solved:(getSolved result x) ~penalty:0
+        ~problems:
+          (Openapi.json__of_json
+             (Yojson.Safe.to_string
+                (`Assoc
+                   ( oldproblems
+                   @ [(string_of_int job.problem_id, newproblem)] ) ) ) )
+        ()
+  | NoProblems x ->
+      Openapi.create_scoreboardEntry
+        ~team:(string_of_int job.user_id)
+        ~solved:(if result.status = "accepted" then 1 else 0)
+        ~penalty:0 ~problems:x ()
+
+(** Escreve o resultado da submissão no Valkey, adiciona ao scoreboard e imprime no stdout.
+    Usa uma transição para garantir que todos os dados são guardados e a pool de conexões definido em {!Db}. *)
 let write_result (result : Job.result) (job : Job.job) =
+  let aux conn contest_id str =
+    Client.multi conn
+    >>= fun _ ->
+    ( match str with
+      | SameProblem x ->
+          Client.send_custom_request conn
+            [ "ZADD"
+            ; "contest:" ^ Option.get contest_id ^ ":scoreboard"
+            ; string_of_int (getSolved result x)
+            ; Openapi.json_of_scoreboardEntry
+                (makeScoreboardEntry job result (SameProblem x))
+            ; "ZREM"
+            ; "contest:" ^ Option.get contest_id ^ ":scoreboard"
+            ; x ]
+      | NewProblem x ->
+          Client.send_custom_request conn
+            [ "ZADD"
+            ; "contest:" ^ Option.get contest_id ^ ":scoreboard"
+            ; string_of_int (getSolved result x)
+            ; Openapi.json_of_scoreboardEntry
+                (makeScoreboardEntry job result (NewProblem x))
+            ; "ZREM"
+            ; "contest:" ^ Option.get contest_id ^ ":scoreboard"
+            ; x ]
+      | NoProblems x ->
+          Client.send_custom_request conn
+            [ "ZADD"
+            ; "contest:" ^ Option.get contest_id ^ ":scoreboard"
+            ; string_of_float (if result.status = "accepted" then 1. else 0.)
+            ; Openapi.json_of_scoreboardEntry
+                (makeScoreboardEntry job result (NoProblems x)) ] )
+    >>= fun _ ->
+    Client.exec conn
+    >>= fun _ ->
+    Lwt_io.printf "Resultado: submission %d -> %s (%d%%)\n%!" result.id
+      result.status result.score
+  in
   Lwt_pool.use Db.pool (fun conn ->
-      persist_submission conn result
-      >>= fun _ ->
       Client.hget conn
         ("problem:" ^ string_of_int job.problem_id)
         "contest_id"
       >>= fun contest_id ->
-      Client.zadd conn
-        ("contest:" ^ Option.get contest_id ^ ":scoreboard")
-        [(float_of_int result.score, string_of_int job.user_id)]
-      >>= fun _ ->
-      Client.hscan ~pattern:"problem:*:solved" ~count:32 conn
-        ("user:" ^ string_of_int job.user_id ^ ":scoreboard")
-        0
+      getScoreboard conn (Option.get contest_id)
       >>= fun lst ->
-      let howmany lst =
-        List.fold_left
-          (fun acc (_, v) -> if v = "true" then acc + 1 else acc)
-          0 lst
-      in
-      hset_fields conn
-        ("user:" ^ string_of_int job.user_id ^ ":scoreboard")
-        [ ("solved", string_of_int (howmany (snd lst)))
-        ; ("penalty", string_of_int 0)
-        ; ( "problem:" ^ string_of_int job.problem_id ^ ":solved"
-          , if result.status = "accepted" then string_of_bool true
-            else string_of_bool false )
-        ; ("problem:" ^ string_of_int job.problem_id ^ ":time", "0") ]
-      >>= fun _ ->
-      Client.hincrby conn
-        ("user:" ^ string_of_int job.user_id ^ ":scoreboard")
-        ("problem:" ^ string_of_int job.problem_id ^ ":attempts")
-        1 )
-  >>= fun _ ->
-  Lwt_io.printf "Resultado: submission %d -> %s (%d%%)\n%!" result.id
-    result.status result.score
+      persist_submission conn result
+      >>= fun _ -> aux conn contest_id (checkExists lst job result) )
 
 (** Persiste a solução de um job no Valkey.
     Escreve na chave [submission:{id}:solution]. *)

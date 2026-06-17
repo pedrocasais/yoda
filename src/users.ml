@@ -1,3 +1,8 @@
+(** Users  
+
+    Este módulo contém funções para gerir utilizadores, tais como,
+    criar, obter um ou todos os utilizadores, atualizar ou eliminar utilizadaores. *)
+
 open Lwt.Infix
 open Redis_lwt
 
@@ -12,6 +17,11 @@ open Redis_lwt
    -> Client.hget conn h "username" >>= fun data -> if data = Some target
    then Lwt.return true else userExist conn target t *)
 
+(** [getAllUsers conn max] função auxiliar para obter todos os utilizadores da [DB].
+@param conn conexão há base de dados
+@param max máximo user_id a pesquisar
+@return lista de utilizadores [Openapi.user list]
+*)
 let getAllUsers conn max =
   let rec aux count (acc : Openapi.usersGetResponse2) =
     if count > max then Lwt.return (List.rev acc)
@@ -32,7 +42,8 @@ let getAllUsers conn max =
   in
   aux 1 []
 
-(* delete user by id *)
+(** [deleteUsersId request] elimina o utilizador pelo [id], parâmetro na rota.
+ @return 204 No Content, se for eliminado com sucesso; 404 Not Found, se não existir o user com o [id] ou 500 Internal Server Error    *)
 let deleteUsersId request =
   Lwt.catch
     (fun () ->
@@ -52,7 +63,8 @@ let deleteUsersId request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(* update user by id *)
+(** [putUsersId request] atualiza os campos [username, role] do utilizador identificado pelo parâmetro de rota [id].
+ @return 200 OK, se for concluído com sucesso devolve o user atualizado de tipo [Openapi.user]; 404 Not Found, se não existir o user com o [id]; 400 Bad Request ou 500 Internal Server Error, erro. *)
 let putUsersId request =
   Lwt.catch
     (fun () ->
@@ -107,7 +119,8 @@ let putUsersId request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(* get user by id *)
+(** [getUsersId request] devolve o utilizador com [id] igual ao parâmetro da rota. 
+ @return 200 OK, se for concluído com sucesso, devolve o user [Openapi.user]; 404 Not Found, se não existir o user com o [id]; 500 Internal Server Error, erro. *)
 let getUsersId request =
   Lwt.catch
     (fun () ->
@@ -134,7 +147,7 @@ let getUsersId request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(* TODO: complete *)
+(** [postUsers request] regista um novo utilizador usando a lógica de autenticação partilhada. *)
 let postUsers request = Auth.postAuthRegister request
 (* let pattern = "user:*" in Dream.body request >>= fun data -> let user =
    Openapi.user_of_json data in Lwt_pool.use Db.pool (fun conn -> Client.scan
@@ -147,7 +160,8 @@ let postUsers request = Auth.postAuthRegister request
    "created_at" user.created_at ) >>= fun _ -> Dream.redirect request "/"
    ) *)
 
-(* get all userrs *)
+(** [getUsers _request] devolve todos os utilizadores registados. 
+ @return 200 OK, se for concluído com sucesso, devolve uma lista de users [Openapi.user list]; 404 Not Found, se não existirem users ; 500 Internal Server Error, erro. *)
 let getUsers _request =
   Lwt.catch
     (fun () ->

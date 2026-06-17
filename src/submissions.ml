@@ -1,7 +1,14 @@
+(**  Submissão de soluções 
+  
+  Neste módulo estão presentes funções que permitem realizar a submissão de soluções para posteriormente serem avaliadas 
+  por {!yoda.yodac}*)
+
 open Lwt.Infix
 open Redis_lwt
 
-(* make list of submission details based on tests from determined problem *)
+(** [makeTestCaseList lst] converte uma lista de listas de tuplos, testCases do problema da submissão, para uma string list com elementos de tipo [Openapi.submissionDetails],  .
+@param lst lista de listas de tuplos, lista com dados de testCases 
+@return [string list] constituída por elementos [Openapi.submissionDetails] *)
 let makeTestCaseList lst =
   List.fold_left
     (fun acc x ->
@@ -13,8 +20,8 @@ let makeTestCaseList lst =
       List.rev_append [Openapi.json_of_submissionDetails subdetail] acc )
     [] lst
 
-
-(* get submission by id *)
+(** [getSubmissionsId request] Obtém uma submissão com o [id], parâmetro da rota.
+ @return 200 OK, devolve um submissão com tipo [Openapi.submission]; 404 Not Found, se a submissão não existir; 500 Internal Server Error    *)
 let getSubmissionsId request =
   Lwt.catch
     (fun () ->
@@ -33,7 +40,9 @@ let getSubmissionsId request =
               ~score:(int_of_string (List.assoc "score" lst))
               ~time_ms:(int_of_string (List.assoc "time_ms" lst))
               ~memory_kb:(int_of_string (List.assoc "memory_kb" lst))
-              ~details:(Helpers.makeSubmissionDetailsList (List.assoc "details" lst))
+              ~details:
+                (Helpers.makeSubmissionDetailsList
+                   (List.assoc "details" lst) )
               ()
           in
           Dream.json ~code:200
@@ -44,7 +53,9 @@ let getSubmissionsId request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(* post submission *)
+(** [postSubmissions request] Cria uma nova submissão com base numa solução.
+  Cria uma submissão [Openapi.submission], uma solucao [Openapi.solution] e adiciona aos jobs para avaliação [submission:jobs]
+ @return 201 Created, cria um submissão para avaliação; 404 Not Found, se não existir o testcases para o problema em questão; 400 Bad Request ou 500 Internal Server Error    *)
 let postSubmissions request =
   Lwt.catch
     (fun () ->
@@ -113,7 +124,7 @@ let postSubmissions request =
         >>= function
         | [] ->
             Dream.log "Error in postSubmissions! Retrying..." ;
-            aux solution conn testcases 
+            aux solution conn testcases
         | [`Status "OK"; `Int sub; `Int sol; `Int l1; `Int l2; `Int l3]
           when sub >= 1 && sol >= 1 && l1 >= 0 && l2 >= 0 && l3 >= 0 ->
             let sub =
