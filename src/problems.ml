@@ -2,7 +2,6 @@
 
     Este módulo contém funções para editar problemas e criar/editar testcases de um determinado problema. *)
 
-
 open Lwt.Infix
 open Redis_lwt
 
@@ -31,7 +30,7 @@ let postProblemsIdTestcases request =
       Dream.body request
       >>= fun data ->
       let testCase = Openapi.testCase_of_json data in
-      let rec aux (testCase : Openapi.testCase) id conn =
+      let rec aux (testCase : Openapi.testCase) id conn attempt =
         Client.unwatch conn
         >>= fun _ ->
         Client.watch conn ["testcase:id"]
@@ -65,8 +64,16 @@ let postProblemsIdTestcases request =
         Client.exec conn
         >>= function
         | [] ->
-            Dream.log "Error in postProblemsIdTestcases! Retrying..." ;
-            aux testCase id conn
+            if attempt >= 5 then
+              Dream.json ~code:500
+                ~headers:[("Content-Type", "application/json")]
+                "Max retries exceeded"
+            else
+              let base = 0.05 *. (2.0 *. float_of_int attempt) in
+              let diff = Random.float base in
+              Dream.log "Error in postProblemsIdTestcases! Retrying..." ;
+              Lwt_unix.sleep (base +. diff)
+              >>= fun () -> aux testCase id conn (attempt + 1)
         | [`Status "OK"; `Int probtest; `Int test]
           when test > 0 && probtest > 0 ->
             let testcase =
@@ -84,7 +91,7 @@ let postProblemsIdTestcases request =
       Lwt_pool.use Db.pool (fun conn ->
           Client.exists conn ("problem:" ^ id)
           >>= function
-          | true -> aux testCase id conn
+          | true -> aux testCase id conn 0
           | false ->
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]

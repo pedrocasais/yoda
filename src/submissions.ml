@@ -62,7 +62,7 @@ let postSubmissions request =
       Dream.body request
       >>= fun data ->
       let sub = Openapi.solution_of_json data in
-      let rec aux (solution : Openapi.solution) conn testcases =
+      let rec aux (solution : Openapi.solution) conn testcases attempt =
         Client.unwatch conn
         >>= fun _ ->
         Client.watch conn ["submission:id"]
@@ -123,8 +123,16 @@ let postSubmissions request =
         Client.exec conn
         >>= function
         | [] ->
-            Dream.log "Error in postSubmissions! Retrying..." ;
-            aux solution conn testcases
+            if attempt >= 5 then
+              Dream.json ~code:500
+                ~headers:[("Content-Type", "application/json")]
+                "Max retries exceeded"
+            else
+              let base = 0.05 *. (2.0 *. float_of_int attempt) in
+              let diff = Random.float base in
+              Dream.log "Error in postSubmissions! Retrying..." ;
+              Lwt_unix.sleep (base +. diff)
+              >>= fun () -> aux solution conn testcases (attempt + 1)
         | [`Status "OK"; `Int sub; `Int sol; `Int l1; `Int l2; `Int l3]
           when sub >= 1 && sol >= 1 && l1 >= 0 && l2 >= 0 && l3 >= 0 ->
             let sub =
@@ -152,7 +160,7 @@ let postSubmissions request =
                    sub.problem_id )
           | lst -> (
               Helpers.getAllTestCases conn lst
-              >>= function lst' -> aux sub conn (makeTestCaseList lst') ) ) )
+              >>= function lst' -> aux sub conn (makeTestCaseList lst') 0 ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
