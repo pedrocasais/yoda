@@ -7,29 +7,6 @@
 open Lwt.Infix
 open Redis_lwt
 
-(** Escreve múltiplos campos num Hash do Valkey de uma só vez. *)
-let hset_fields conn key fields =
-  Lwt_list.iter_s
-    (fun (field, value) -> Client.hset conn key field value >|= fun _ -> ())
-    fields
-
-(** Persiste o resultado final de uma submissão no Valkey.
-    Escreve na chave [submission:{id}] os campos status, score,
-    time_ms, memory_kb e details. *)
-let persist_submission conn (result : Job.result) =
-  let key = Printf.sprintf "submission:%d" result.id in
-  let details =
-    `List (List.map Openapi.yojson_of_submissionDetails result.details)
-    |> Yojson.Safe.to_string
-  in
-  hset_fields conn key
-    [ ("id", string_of_int result.id)
-    ; ("status", result.status)
-    ; ("score", string_of_int result.score)
-    ; ("time_ms", string_of_int result.time_ms)
-    ; ("memory_kb", string_of_int result.memory_kb)
-    ; ("details", details) ]
-
 (** [exist] é um tipo que identifica se existe um problema nas scoreboard de um dado user
   - NoProblems, denota que o utilizador não está na scoreboard, junta um problema de tipo [Openapi.json_]
   - SameProblem, identifica que o utilizador fez uma submissão num problema já registado, de tipo [string] contendo as informações na scoreboard do user 
@@ -174,11 +151,50 @@ let makeScoreboardEntry (job : Job.job) (result : Job.result) = function
         ~solved:(if result.status = "accepted" then 1 else 0)
         ~penalty:0 ~problems:x ()
 
+(** Escreve múltiplos campos num Hash do Valkey de uma só vez. *)
+let hset_fields conn key fields =
+  Lwt_list.iter_s
+    (fun (field, value) -> Client.hset conn key field value >|= fun _ -> ())
+    fields
+
+(** Persiste o resultado final de uma submissão no Valkey.
+    Escreve na chave [submission:{id}] os campos status, score,
+    time_ms, memory_kb e details. *)
+let persist_submission conn (result : Job.result) =
+  let key = Printf.sprintf "submission:%d" result.id in
+  let details =
+    `List (List.map Openapi.yojson_of_submissionDetails result.details)
+    |> Yojson.Safe.to_string
+  in
+  hset_fields conn key
+    [ ("id", string_of_int result.id)
+    ; ("status", result.status)
+    ; ("score", string_of_int result.score)
+    ; ("time_ms", string_of_int result.time_ms)
+    ; ("memory_kb", string_of_int result.memory_kb)
+    ; ("details", details) ]
+
 (** Escreve o resultado da submissão no Valkey, adiciona ao scoreboard e imprime no stdout.
-    Usa uma transição para garantir que todos os dados são guardados e a pool de conexões definido em {!Db}. *)
+    Usa uma transação para garantir que todos os dados são guardados e a pool de conexões definido em {!Db}. *)
 let write_result (result : Job.result) (job : Job.job) =
-  let aux conn contest_id str =
+  let aux conn contest_id str details =
     Client.multi conn
+    >>= fun _ ->
+    Client.send_custom_request conn
+      [ "HSET"
+      ; "submission:" ^ string_of_int result.id
+      ; "id"
+      ; string_of_int result.id
+      ; "status"
+      ; result.status
+      ; "score"
+      ; string_of_int result.score
+      ; "time_ms"
+      ; string_of_int result.time_ms
+      ; "memory_kb"
+      ; string_of_int result.memory_kb
+      ; "details"
+      ; details ]
     >>= fun _ ->
     ( match str with
       | SameProblem x ->
@@ -221,18 +237,11 @@ let write_result (result : Job.result) (job : Job.job) =
       >>= fun contest_id ->
       getScoreboard conn (Option.get contest_id)
       >>= fun lst ->
-      persist_submission conn result
-      >>= fun _ -> aux conn contest_id (checkExists lst job result) )
-
-(** Persiste a solução de um job no Valkey.
-    Escreve na chave [submission:{id}:solution]. *)
-let persist_solution conn (job : Job.job) =
-  let key = Printf.sprintf "submission:%d:solution" job.submission_id in
-  hset_fields conn key
-    [ ("user_id", string_of_int job.user_id)
-    ; ("problem_id", string_of_int job.problem_id)
-    ; ("language", job.lang)
-    ; ("source_code", job.source_code) ]
+      let details =
+        `List (List.map Openapi.yojson_of_submissionDetails result.details)
+        |> Yojson.Safe.to_string
+      in
+      aux conn contest_id (checkExists lst job result) details )
 
 (** Vai buscar a solução de uma submissão ao Valkey.
     @param id identificador da submissão como string
