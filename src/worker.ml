@@ -329,8 +329,8 @@ let process_job submission_id =
       Lwt_io.printf "Job recebido: submission %d lang %s\n%!"
         job.submission_id job.lang
       >>= fun () ->
-      let workdir, src = Compiler.prepare_workdir job in
-      match Compiler.compile job workdir src with
+      let workdir, src = Compiler_v2.prepare_workdir job in
+      match Compiler_v2.compile job workdir src with
       | Error err ->
           Lwt_io.printf "Erro de compilação: %s\n%!" err
           >>= fun () ->
@@ -343,7 +343,7 @@ let process_job submission_id =
             ; details= [] }
             job
       | Ok _ ->
-          let result = Docker_runner.run_all job workdir in
+          let result = Docker_runner_v2.run_all job workdir in
           write_result result job )
 
 (** Loop principal do worker.
