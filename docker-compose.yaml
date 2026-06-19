@@ -1,9 +1,33 @@
 services:
+  traefik:
+    image: "traefik:latest"
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxy"
+      - "--entryPoints.web.address=:80"
+      - --api.dashboard=true
+      - --api.insecure=true
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - proxy
+    restart: unless-stopped
+
   yoda:
     build:
       dockerfile: Containerfile
-    ports:
-      - "8001:8001"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.yoda-api.rule=Host(`localhost`) && PathPrefix(`/auth`) || PathPrefix(`/users`) || PathPrefix(`/contests`) || PathPrefix(`/problems`) || PathPrefix(`/submissions`)"
+      - "traefik.http.routers.yoda-api.entrypoints=web"
+      - "traefik.http.routers.yoda-api.priority=20"
+      - "traefik.http.services.yoda-api.loadbalancer.server.port=8001"
+    networks:
+      - proxy
     restart: unless-stopped
 
   yodac:
@@ -18,6 +42,8 @@ services:
       - /tmp/yodac:/tmp/yodac
     environment:
       YODAC_WORK_ROOT: /tmp/yodac
+    networks:
+      - proxy
     restart: unless-stopped
 
   valkey:
@@ -26,7 +52,27 @@ services:
       - "6379:6379"
     volumes:
       - valkey_data:/data
+    networks:
+      - proxy
     restart: unless-stopped
+
+  yodaw:
+    build:
+      context: "../yoda-web/"
+      dockerfile: Containerfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.yodaw.rule=Host(`localhost`)"
+      - "traefik.http.routers.yodaw.entrypoints=web"
+      - "traefik.http.services.yodaw.loadbalancer.server.port=80"
+      - "traefik.http.routers.yodaw.priority=10"
+    networks:
+      - proxy
+    restart: unless-stopped
+
+networks:
+  proxy:
+    name: proxy
 
 volumes:
   valkey_data:
