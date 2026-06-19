@@ -46,7 +46,7 @@
  (name yodac_lib)
  (public_name yoda.yodac)
  (wrapped false)
- (modules compiler docker_runner job worker)
+ (modules compiler docker_runner job worker compiler_v2 docker_runner_v2 common)
  (libraries unix lwt lwt.unix redis-lwt yojson yaml api_types valkey docker-api)
  (preprocess (pps lwt_ppx)))
  

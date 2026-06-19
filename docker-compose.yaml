@@ -39,9 +39,9 @@ services:
       - "8081:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/yodac:/tmp/yodac
+      - /var/lib/yodac:/var/lib/yodac
     environment:
-      YODAC_WORK_ROOT: /tmp/yodac
+      YODAC_WORK_ROOT: /var/lib/yodac
     networks:
       - proxy
     restart: unless-stopped

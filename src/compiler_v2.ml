@@ -5,6 +5,7 @@
     e compilar o código dentro de um container Docker isolado. *)
 
 open Job
+module C = Docker.Container
 
 (** Diretoria raiz onde são criados os ambientes de trabalho.
     Pode ser configurado via variável de ambiente [YODAC_WORK_ROOT].
@@ -16,7 +17,9 @@ let work_root =
     Pode ser configurado via variável de ambiente [YODAC_LANG_CONFIG].
     Por omissão: [languages.yaml]. *)
 let lang_config_path =
-  Option.value (Sys.getenv_opt "YODAC_LANG_CONFIG") ~default:"languages.yaml"
+  Option.value
+    (Sys.getenv_opt "YODAC_LANG_CONFIG")
+    ~default:"languagesv2.yaml"
 
 (** Cache da configuração de linguagens.
     O ficheiro é lido apenas uma vez no arranque do YodaC. *)
@@ -41,7 +44,7 @@ let get_lang_field lang field =
   | None ->
       failwith
         (Printf.sprintf "Linguagem '%s' não configurada em %s" lang
-           lang_config_path)
+           lang_config_path )
   | Some cfg -> (
     match find field cfg with
     | Ok (Some value) -> value
@@ -63,6 +66,11 @@ let lang_image lang =
   | Ok image -> image
   | Error (`Msg msg) -> failwith msg
 
+let lang_tag lang =
+  match Yaml.Util.to_string (get_lang_field lang "tag") with
+  | Ok tag -> tag
+  | Error (`Msg msg) -> failwith msg
+
 (** Devolve o comando de compilação para a linguagem dada.
     Devolve [None] para linguagens interpretadas como Python e JavaScript. *)
 let lang_compile_cmd lang =
@@ -79,47 +87,77 @@ let lang_run_cmd lang =
 
 (** Cria uma diretoria se não existir e garante permissões de escrita. *)
 let ensure_dir path =
-  if not (Sys.file_exists path) then Unix.mkdir path 0o777;
+  if not (Sys.file_exists path) then Unix.mkdir path 0o777 ;
   Unix.chmod path 0o777
 
-(** Prepara o directório de trabalho para uma submissão.
-    Cria [/yodac/submission_{id}/] e escreve o código fonte no ficheiro.
-    @return par [(dir, src)] com o caminho do directório e do ficheiro fonte. *)
 let prepare_workdir job =
-  ensure_dir work_root;
+  ensure_dir work_root ;
   let dir = Printf.sprintf "%s/submission_%d" work_root job.submission_id in
-  ensure_dir dir;
+  ensure_dir dir ;
   let ext = lang_ext job.lang in
   let src = Printf.sprintf "%s/main.%s" dir ext in
   let oc = open_out src in
-  output_string oc job.source_code;
-  close_out oc;
+  output_string oc job.source_code ;
+  close_out oc ;
   (dir, src)
 
-(** Executa um comando e devolve [(exit_code, output)].
-    O stderr é redireccionado para stdout. *)
-let run_command cmd =
-  let ic = Unix.open_process_in (cmd ^ " 2>&1") in
-  let output = In_channel.input_all ic in
-  let status = Unix.close_process_in ic in
-  match status with Unix.WEXITED code -> (code, output) | _ -> (1, output)
+let read_all_timeout ~timeout st =
+  let result = ref None in
+  let _t =
+    Thread.create
+      (fun () ->
+        let s = try Docker.Stream.read_all st with _ -> [] in
+        result := Some s )
+      ()
+  in
+  let deadline = Unix.gettimeofday () +. timeout in
+  let rec poll () =
+    match !result with
+    | Some s -> s
+    | None ->
+        if Unix.gettimeofday () > deadline then []
+        else (Thread.delay 0.05 ; poll ())
+  in
+  poll ()
 
-(** Executa um comando dentro de um container Docker isolado.
-    O directório [dir] é montado em [/work] com permissões de escrita.
-    Sem acesso à rede ([--network none]). *)
 let run_in_sandbox ~dir ~lang cmd =
-  run_command
-    (Printf.sprintf
-       "docker run --rm --network none -v %s:/work:rw -w /work %s sh -c %S"
-       dir (lang_image lang) cmd)
+  let image = lang_image lang in
+  let tag = lang_tag lang in
+  let imagef = Printf.sprintf "%s:%s" image tag in
+  let h =
+    Docker.Container.host
+      ~binds:[Docker.Container.Mount (dir, "/work")]
+      ~network_mode:"none"
+      ()
+  in
+  Common.install_image image ~tag ;
+  let c = C.create imagef ["bash"; "-c"; cmd] ~host:h ~workingdir:"/work" in
+  let st = C.attach ~stdout:true ~stderr:true c `Stream in
+  try
+    C.start c ;
+    let s = read_all_timeout ~timeout:5.0 st in
+    let code = C.wait c in
+    C.rm c ;
+    let identify (ty, s) =
+      match ty with
+      | Docker.Stream.Stdout -> "out> " ^ s
+      | Docker.Stream.Stderr -> "err> " ^ s
+    in
+    let output = String.concat "\n" (List.map identify s) in
+    (code, output)
+  with exn ->
+    (try C.stop c with _ -> ()) ;
+    (try C.rm c with _ -> ()) ;
+    raise exn
 
 (** Compila o código fonte do job dentro de um container Docker.
     Para linguagens interpretadas devolve [Ok dir] sem compilar.
     @return [Ok path] com o caminho do binário, ou [Error msg] se falhar. *)
+
 let compile job dir _src =
   match lang_compile_cmd job.lang with
   | None -> Ok dir
   | Some cmd -> (
     match run_in_sandbox ~dir ~lang:job.lang cmd with
     | 0, _ -> Ok (dir ^ "/main")
-    | _, err -> Error err)
+    | _, err -> Error err )

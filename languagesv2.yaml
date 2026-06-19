@@ -1,0 +1,41 @@
+c:
+  ext: c
+  image: gcc
+  tag: latest
+  compile: gcc -o /work/main /work/main.c -lm
+  run: "/work/main"
+
+cpp:
+  ext: cpp
+  image: gcc
+  tag: latest
+  compile: gcc -o /work/main /work/main.cpp
+  run: "/work/main"
+
+ocaml:
+  ext: ml
+  image: ocaml/opam
+  tag: debian-12-ocaml-5.2
+  compile: opam exec -- ocamlc -o main main.ml
+  run: "/work/main"
+
+java:
+  ext: java
+  image: eclipse-temurin
+  tag: "21"
+  compile: javac -d /work /work/Main.java
+  run: java -cp /work Main
+
+python:
+  ext: py
+  image: python
+  tag: 3.12-slim
+  compile: 
+  run: python3 /work/main.py
+
+javascript:
+  ext: js
+  image: node
+  tag: 22-slim
+  compile: 
+  run: node /work/main.js
