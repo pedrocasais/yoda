@@ -304,15 +304,11 @@ let testcases id =
                ; ("is_sample", `Bool (bool_of_string (get "is_sample"))) ] ) )
       tests
 
-(** Processa uma submissão completa:
-    + vai buscar a solução, o problema e os testcases ao Valkey
-    + constrói o job e faz o parse
-    + compila o código com {!Compiler}
-    + executa na sandbox com {!Docker_runner}
-    + persiste o resultado com {!write_result}
-
-    Em caso de erro de compilação escreve o resultado com
-    status [compile_error] sem executar os testcases. *)
+(** Processa uma submissão completa.
+    Vai buscar a solução, o problema e os testcases ao Valkey,
+    compila com {!Compiler_v2} e executa com {!Docker_runner_v2}.
+    As operações bloqueantes correm em threads via [Lwt_preemptive].
+    Em caso de erro de compilação escreve [compile_error] sem executar testcases. *)
 let process_job submission_id =
   solution submission_id
   >>= fun (problem_id, user_id, language, source_code) ->
@@ -338,8 +334,10 @@ let process_job submission_id =
       Lwt_io.printf "Job recebido: submission %d lang %s\n%!"
         job.submission_id job.lang
       >>= fun () ->
-      let workdir, src = Compiler_v2.prepare_workdir job in
-      match Compiler_v2.compile job workdir src with
+      Lwt_preemptive.detach(fun () -> Compiler_v2.prepare_workdir job) ()
+      >>= fun (workdir, src) ->
+        Lwt_preemptive.detach(fun () -> Compiler_v2.compile job workdir src) ()
+        >>= function
       | Error err ->
           Lwt_io.printf "Erro de compilação: %s\n%!" err
           >>= fun () ->
@@ -352,7 +350,8 @@ let process_job submission_id =
             ; details= [] }
             job
       | Ok _ ->
-          let result = Docker_runner_v2.run_all job workdir in
+            Lwt_preemptive.detach(fun () -> Docker_runner_v2.run_all job workdir) ()
+            >>= fun (result) ->
           write_result result job )
 
 (** Loop principal do worker.
@@ -364,9 +363,11 @@ let rec worker () =
   | None -> worker ()
   | Some (_, job_str) -> process_job job_str >>= fun () -> worker ()
 
-(** Ponto de entrada do YodaC.
-    Imprime o endereço do Valkey e arranca o {!worker}. *)
+
+(** Arranca 4 workers em paralelo via [Lwt.join] e [Lwt_preemptive].
+    Configura o thread pool com mínimo 4 e máximo 16 threads. *)
 let run () =
+  Lwt_preemptive.set_bounds (4, 16);
   Lwt_main.run
     ( Lwt_io.printf "YodaC worker iniciado em %s:%d...\n%!" Db.host Db.port
-    >>= fun () -> worker () )
+    >>= fun () -> Lwt.join [worker (); worker (); worker (); worker ()] )
