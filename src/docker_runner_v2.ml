@@ -1,4 +1,4 @@
-(** Execução segura de código dentro de containers Docker isolados.
+(** Execução segura de código dentro de containers Docker isolados utilizando docker-api.
 
     Este módulo corre o código compilado para cada caso de teste
     e compara o output produzido com o output esperado. *)
@@ -23,6 +23,12 @@ open Job
     @return detalhe com o veredicto e o tempo de execução *)
 module C = Docker.Container
 
+(** Executa um único caso de teste num container Docker isolado.
+    O volume é montado como só de leitura. Garante remoção do container em caso de erro.
+    @param job job com os limites e configuração da linguagem
+    @param workdir diretoria com o binário compilado
+    @param tc caso de teste a executar
+    @return detalhe com o veredicto e o tempo de execução *)
 let run_testcase (job : job) (workdir : string) (tc : testcase) =
   let run_cmd = Compiler_v2.lang_run_cmd job.lang in
   let lang = job.lang in
@@ -42,7 +48,6 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
     Docker.Container.host
       ~binds:[Docker.Container.Mount_ro (workdir, "/work")]
       ~network_mode:"none" ~memory ~memory_swap:memory
-      (* ~policy:`Auto_remove *)
       ()
   in
   Common.install_image image ~tag ;

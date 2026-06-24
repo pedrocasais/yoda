@@ -1,7 +1,7 @@
-(** Compilação de código submetido pelo utilizador.
+(** Compilação de código submetido pelo utilizador utilizando docker-api.
 
     Este módulo é responsável por preparar o ambiente de trabalho,
-    ler a configuração de linguagens do ficheiro {i languages.yaml}
+    ler a configuração de linguagens do ficheiro {i languagesv2.yaml}
     e compilar o código dentro de um container Docker isolado. *)
 
 open Job
@@ -9,13 +9,13 @@ module C = Docker.Container
 
 (** Diretoria raiz onde são criados os ambientes de trabalho.
     Pode ser configurado via variável de ambiente [YODAC_WORK_ROOT].
-    Por omissão: [/yodac]. *)
+    Por omissão: [/var/lib/yodac]. *)
 let work_root =
   Option.value (Sys.getenv_opt "YODAC_WORK_ROOT") ~default:"/var/lib/yodac"
 
 (** Caminho para o ficheiro de configuração de linguagens.
     Pode ser configurado via variável de ambiente [YODAC_LANG_CONFIG].
-    Por omissão: [languages.yaml]. *)
+    Por omissão: [languagesv2.yaml]. *)
 let lang_config_path =
   Option.value
     (Sys.getenv_opt "YODAC_LANG_CONFIG")
@@ -90,6 +90,9 @@ let ensure_dir path =
   if not (Sys.file_exists path) then Unix.mkdir path 0o777 ;
   Unix.chmod path 0o777
 
+(** Prepara a diretoria de trabalho da submissão e escreve o código fonte.
+    Cria [{work_root}/submission_{id}/main.{ext}].
+    @return par [(dir, src)] com a diretoria e o ficheiro fonte. *)
 let prepare_workdir job =
   ensure_dir work_root ;
   let dir = Printf.sprintf "%s/submission_%d" work_root job.submission_id in
@@ -101,6 +104,9 @@ let prepare_workdir job =
   close_out oc ;
   (dir, src)
 
+(** Lê o output de um stream Docker com limite de tempo.
+    Devolve lista vazia se o timeout for atingido.
+    @param timeout limite em segundos *)
 let read_all_timeout ~timeout st =
   let result = ref None in
   let _t =
@@ -120,6 +126,9 @@ let read_all_timeout ~timeout st =
   in
   poll ()
 
+(** Executa um comando de compilação num container Docker isolado.
+    Monta [dir] em [/work] com escrita permitida.
+    Garante que o container é removido mesmo em caso de erro. *)
 let run_in_sandbox ~dir ~lang cmd =
   let image = lang_image lang in
   let tag = lang_tag lang in

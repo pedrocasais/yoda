@@ -13,7 +13,7 @@ cpp:
 ocaml:
   ext: ml
   image: yodac-sandbox
-  compile: opam exec -- ocamlfind ocamlopt -package str -linkpkg -o /work/main /work/main.ml
+  compile: opam exec -- ocamlc -o /work/main /work/main.ml
   run: "/work/main"
 
 java:
@@ -25,11 +25,11 @@ java:
 python:
   ext: py
   image: python:3.12-slim
-  compile: 
+  compile:
   run: python3 /work/main.py
 
 javascript:
   ext: js
   image: node:22-slim
-  compile: 
+  compile:
   run: node /work/main.js
