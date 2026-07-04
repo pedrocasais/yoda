@@ -12,7 +12,7 @@ cpp:
 
 ocaml:
   ext: ml
-  image: yodac-sandbox
+  image: ocaml/opam:debian-12-ocaml-5.2 
   compile: opam exec -- ocamlc -o /work/main /work/main.ml
   run: "/work/main"
 
