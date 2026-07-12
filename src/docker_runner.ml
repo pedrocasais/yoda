@@ -85,6 +85,7 @@ let run_all (job : job) (workdir : string) =
       (List.find (fun (d : detail) -> d.status <> "accepted") details).status
   in
   ( { id= job.submission_id
+    ; problem_id = job.problem_id
     ; status= global_status
     ; score
     ; time_ms

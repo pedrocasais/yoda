@@ -343,6 +343,7 @@ let process_job submission_id =
           >>= fun () ->
           write_result
             { id= job.submission_id
+            ; problem_id = job.problem_id
             ; status= "compile_error"
             ; score= 0
             ; time_ms= 0

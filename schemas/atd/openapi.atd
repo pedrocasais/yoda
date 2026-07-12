@@ -115,6 +115,7 @@ type solution = {
 
 type submission = {
   id : int;
+  problem_id : int;
   status : string;
   score : int;
   time_ms : int;
