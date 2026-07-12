@@ -177,6 +177,7 @@ end
 
 type submission = {
   id: int;
+  problem_id: int;
   status: string;
   score: int;
   time_ms: int;
@@ -184,7 +185,7 @@ type submission = {
   details: submissionDetails list;
 }
 
-val create_submission : id:int -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails list -> unit -> submission
+val create_submission : id:int -> problem_id:int -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails list -> unit -> submission
 val submission_of_yojson : Yojson.Safe.t -> submission
 val yojson_of_submission : submission -> Yojson.Safe.t
 val submission_of_json : string -> submission
@@ -192,7 +193,7 @@ val json_of_submission : submission -> string
 
 module Submission : sig
   type nonrec t = submission
-  val create : id:int -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails list -> unit -> t
+  val create : id:int -> problem_id:int -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

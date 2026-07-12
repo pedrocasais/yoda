@@ -522,6 +522,7 @@ end
 
 type submission = {
   id: int;
+  problem_id: int;
   status: string;
   score: int;
   time_ms: int;
@@ -529,8 +530,8 @@ type submission = {
   details: submissionDetails list;
 }
 
-let create_submission ~id ~status ~score ~time_ms ~memory_kb ~details () : submission =
-  { id; status; score; time_ms; memory_kb; details }
+let create_submission ~id ~problem_id ~status ~score ~time_ms ~memory_kb ~details () : submission =
+  { id; problem_id; status; score; time_ms; memory_kb; details }
 
 let submission_of_yojson (x : Yojson.Safe.t) : submission =
   match x with
@@ -549,6 +550,11 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       match assoc_ "id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "id"
+    in
+    let problem_id =
+      match assoc_ "problem_id" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submission" "problem_id"
     in
     let status =
       match assoc_ "status" with
@@ -575,12 +581,13 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       | Some v -> (Atdml_runtime.Yojson.list_of_yojson submissionDetails_of_yojson) v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "details"
     in
-    { id; status; score; time_ms; memory_kb; details }
+    { id; problem_id; status; score; time_ms; memory_kb; details }
   | _ -> Atdml_runtime.Yojson.bad_type "submission" x
 
 let yojson_of_submission (x : submission) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("id", Atdml_runtime.Yojson.yojson_of_int x.id)];
+    [("problem_id", Atdml_runtime.Yojson.yojson_of_int x.problem_id)];
     [("status", Atdml_runtime.Yojson.yojson_of_string x.status)];
     [("score", Atdml_runtime.Yojson.yojson_of_int x.score)];
     [("time_ms", Atdml_runtime.Yojson.yojson_of_int x.time_ms)];

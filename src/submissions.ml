@@ -27,27 +27,37 @@ let getSubmissionsId request =
     (fun () ->
       let id = Dream.param request "id" in
       Lwt_pool.use Db.pool (fun conn ->
-          Client.hgetall conn ("submission:" ^ id) )
-      >>= function
-      | [] ->
-          Dream.json ~code:404
-            ~headers:[("Content-Type", "application/json")]
-            "Submission not found"
-      | lst ->
-          let sub =
-            Openapi.create_submission ~id:(int_of_string id)
-              ~status:(List.assoc "status" lst)
-              ~score:(int_of_string (List.assoc "score" lst))
-              ~time_ms:(int_of_string (List.assoc "time_ms" lst))
-              ~memory_kb:(int_of_string (List.assoc "memory_kb" lst))
-              ~details:
-                (Helpers.makeSubmissionDetailsList
-                   (List.assoc "details" lst) )
-              ()
-          in
-          Dream.json ~code:200
-            ~headers:[("Content-Type", "application/json")]
-            (Openapi.json_of_submission sub) )
+          Client.hgetall conn ("submission:" ^ id)
+          >>= function
+          | [] ->
+              Dream.json ~code:404
+                ~headers:[("Content-Type", "application/json")]
+                "Submission not found"
+          | lst -> (
+              Client.hget conn
+                ("submission:" ^ id ^ ":solution")
+                "problem_id"
+              >>= function
+              | Some pid ->
+                  let sub =
+                    Openapi.create_submission ~id:(int_of_string id)
+                    ~problem_id:( int_of_string pid) 
+                      ~status:(List.assoc "status" lst)
+                      ~score:(int_of_string (List.assoc "score" lst))
+                      ~time_ms:(int_of_string (List.assoc "time_ms" lst))
+                      ~memory_kb:(int_of_string (List.assoc "memory_kb" lst))
+                      ~details:
+                        (Helpers.makeSubmissionDetailsList
+                           (List.assoc "details" lst) )
+                      ()
+                  in
+                  Dream.json ~code:200
+                    ~headers:[("Content-Type", "application/json")]
+                    (Openapi.json_of_submission sub)
+              | None ->
+                  Dream.json ~code:200
+                    ~headers:[("Content-Type", "application/json")]
+                    "Not Found: problem id" ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
@@ -136,7 +146,7 @@ let postSubmissions request =
         | [`Status "OK"; `Int sub; `Int sol; `Int l1; `Int l2; `Int l3]
           when sub >= 1 && sol >= 1 && l1 >= 0 && l2 >= 0 && l3 >= 0 ->
             let sub =
-              Openapi.create_submission ~id:next_id ~status:"queued" ~score:0
+              Openapi.create_submission ~id:next_id ~problem_id:(solution.problem_id ) ~status:"queued" ~score:0
                 ~time_ms:0 ~memory_kb:0 ~details:[] ()
             in
             Dream.json ~code:201

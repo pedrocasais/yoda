@@ -5,6 +5,9 @@
     "id": {
       "type": "integer"
     },
+    "problem_id": {
+      "type": "integer"
+    },
     "status": {
       "type": "string"
     },
@@ -42,6 +45,7 @@
   },
   "required": [
     "id",
+    "problem_id",
     "status",
     "score",
     "time_ms",
