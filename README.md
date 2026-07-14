@@ -98,4 +98,4 @@ docker pull ghcr.io/pedrocasais/yoda-sandbox:1.0.0
 ```
 
 ## ⚙️ Infrastructure Architecture
-![Image](diagrama1.svg)
+![Image](diagrama.svg)
