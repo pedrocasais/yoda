@@ -718,6 +718,8 @@ components:
           type: integer
         problem_id:
           type: integer
+        language:
+          type: string
         status:
           type: string
         score:

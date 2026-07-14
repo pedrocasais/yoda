@@ -993,6 +993,9 @@
           "problem_id": {
             "type": "integer"
           },
+          "language": {
+            "type": "string"
+          },
           "status": {
             "type": "string"
           },

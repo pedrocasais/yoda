@@ -2,60 +2,70 @@
 
 open Lwt.Infix
 
+  
 let icon_handler _ =
   Lwt_io.(with_file ~mode:Input "./static/resources/ocaml-icon.ico" read)
   >>= fun data ->
-  Dream.respond ~headers:[("Content-Type", "image/x-icon")] data
-
-let login_handler next request =
+  Dream.respond ~headers:[("Content-Type", "image/x-icon")] data 
+ 
+    let login_handler next request =
   match Dream.session_field request "user" with
   | Some _ -> next request
   | None ->
-      Dream.json ~code:401
-        ~headers:[("Content-Type", "application/json")]
+      Dream.json ~code:401 ~headers:[("Content-Type", "application/json")]
         "Unauthorized access"
-
-let () =
-  let app =
-    Dream.router
-      [ Dream.get "/resources/ocaml-icon.ico" icon_handler
-      ; Dream.get "/" (fun _request -> Dream.html "/")
-      ; Dream.scope "/users" [login_handler]
-          [ Dream.get "" Users.getUsers
-          ; Dream.post "" Users.postUsers
-          ; Dream.get "/:id" Users.getUsersId
-          ; Dream.put "/:id" Users.putUsersId
-          ; Dream.delete "/:id" Users.deleteUsersId ]
-      ; Dream.scope "/auth" []
-          [ Dream.post "/login" Auth.postAuthLogin
-          ; Dream.post "/register" Auth.postAuthRegister ]
-      ; Dream.scope "/problems" [login_handler]
-          [ Dream.get "/:id" Problems.getProblemsId
-          ; Dream.put "/:id" Problems.putProblemsId
-          ; Dream.delete "/:id" Problems.deleteProblemsId
-          ; Dream.get "/:id/testcases" Problems.getProblemsIdTestcases
-          ; Dream.post "/:id/testcases" Problems.postProblemsIdTestcases ]
-      ; Dream.scope "/submissions" [login_handler]
-          [ Dream.post "" Submissions.postSubmissions
-          ; Dream.get "/:id" Submissions.getSubmissionsId ]
-      ; Dream.scope "/judge" [login_handler]
-          [ Dream.post "/next" Judge.postJudgeNext
-          ; Dream.post "/:submissionId/result"
-              Judge.postJudgeSubmissionIdResult ]
-      ; Dream.scope "/contests" [login_handler]
-          [ Dream.get "" Contests.getContests
-          ; Dream.post "" Contests.postContests
-          ; Dream.get "/:id" Contests.getContestsId
-          ; Dream.put "/:id" Contests.putContestsId
-          ; Dream.delete "/:id" Contests.deleteContestsId
-          ; Dream.get "/:contestsId/problems"
-              Contests.getContestsContestsIdProblems
-          ; Dream.post "/:contestsId/problems"
-              Contests.postContestsContestsIdProblems
-          ; Dream.get "/:contestId/submissions"
-              Contests.getContestsContestIdSubmissions
-          ; Dream.get "/:id/scoreboard" Contests.getContestsIdScoreboard ] ]
-    |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0)
-    |> Dream.logger
-  in
-  Dream.run ~interface:"0.0.0.0" ~port:8001 app
+  
+ let () = 
+  let app = 
+  Dream.router [
+ 	Dream.get
+   "/resources/ocaml-icon.ico" icon_handler ;
+ 	Dream.get "/" (fun _request
+   -> Dream.html "/")
+;Dream.scope "/users" [login_handler] 
+[
+ Dream.get "" Users.getUsers;
+ Dream.post "" Users.postUsers;
+ Dream.get "/:id" Users.getUsersId;
+ Dream.put "/:id" Users.putUsersId;
+ Dream.delete "/:id" Users.deleteUsersId;
+]
+;Dream.scope "/auth" [] 
+[
+ Dream.post "/login" Auth.postAuthLogin;
+ Dream.post "/register" Auth.postAuthRegister;
+]
+;Dream.scope "/problems" [login_handler] 
+[
+ Dream.get "/:id" Problems.getProblemsId;
+ Dream.put "/:id" Problems.putProblemsId;
+ Dream.delete "/:id" Problems.deleteProblemsId;
+ Dream.get "/:id/testcases" Problems.getProblemsIdTestcases;
+ Dream.post "/:id/testcases" Problems.postProblemsIdTestcases;
+]
+;Dream.scope "/submissions" [login_handler] 
+[
+ Dream.post "" Submissions.postSubmissions;
+ Dream.get "/:id" Submissions.getSubmissionsId;
+]
+;Dream.scope "/judge" [login_handler] 
+[
+ Dream.post "/next" Judge.postJudgeNext;
+ Dream.post "/:submissionId/result" Judge.postJudgeSubmissionIdResult;
+]
+;Dream.scope "/contests" [login_handler] 
+[
+ Dream.get "" Contests.getContests;
+ Dream.post "" Contests.postContests;
+ Dream.get "/:id" Contests.getContestsId;
+ Dream.put "/:id" Contests.putContestsId;
+ Dream.delete "/:id" Contests.deleteContestsId;
+ Dream.get "/:contestsId/problems" Contests.getContestsContestsIdProblems;
+ Dream.post "/:contestsId/problems" Contests.postContestsContestsIdProblems;
+ Dream.get "/:contestId/submissions" Contests.getContestsContestIdSubmissions;
+ Dream.get "/:id/scoreboard" Contests.getContestsIdScoreboard;
+]]
+ |> Dream.memory_sessions ~lifetime:(60.0 *. 60.0) 
+ |> Dream.logger 
+   in 
+ Dream.run ~interface:"0.0.0.0" ~port:8001 app
