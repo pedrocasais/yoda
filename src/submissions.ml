@@ -38,10 +38,10 @@ let getSubmissionsId request =
                 ("submission:" ^ id ^ ":solution")
                 ["problem_id"; "language"]
               >>= function
-              | [Some pid; Some _language] ->
+              | [Some _pid; Some _language] ->
                   let sub =
                     Openapi.create_submission ~id:(int_of_string id)
-                      ~problem_id:(int_of_string pid)
+                      ~problem_id:(int_of_string _pid)
                       ~language:(_language)
                       ~status:(List.assoc "status" lst)
                       ~score:(int_of_string (List.assoc "score" lst))

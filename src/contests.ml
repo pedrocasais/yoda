@@ -88,11 +88,13 @@ let getAllSubmissions conn problems =
     | hd :: tl ->
         Client.hgetall conn ("submission:" ^ hd)
         >>= fun lst' ->
-        Client.hget conn ("submission:" ^ hd ^ ":solution") "problem_id"
-        >>= fun pid ->
-        aux'
-          (List.rev_append [lst' @ [("problem_id", Option.get pid)]] acc)
-          tl
+        Client.hmget conn ("submission:" ^ hd ^ ":solution") ["problem_id"; "language"]
+        >>= function
+        | [Some _pid; Some _language] ->
+            aux'
+              (List.rev_append [lst' @ [("problem_id", _pid); ("language", _language)]] acc)
+              tl
+        | _ -> aux' acc tl
   in
   aux [] problems >>= fun lst -> aux' [] lst
 
@@ -105,7 +107,9 @@ let getAllSubmissions conn problems =
       let submission =
         Openapi.create_submission
           ~id:(int_of_string (List.assoc "id" x))
-          ~problem_id:(int_of_string  (List.assoc "problem_id" x)) ~status:(List.assoc "status" x)
+          ~problem_id:(int_of_string  (List.assoc "problem_id" x))
+          ~language:(List.assoc "language" x)
+          ~status:(List.assoc "status" x)
           ~score:(int_of_string (List.assoc "score" x))
           ~time_ms:(int_of_string (List.assoc "time_ms" x))
           ~memory_kb:(int_of_string (List.assoc "memory_kb" x))
