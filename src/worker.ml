@@ -344,6 +344,7 @@ let process_job submission_id =
           write_result
             { id= job.submission_id
             ; problem_id = job.problem_id
+            ; language= Some job.lang
             ; status= "compile_error"
             ; score= 0
             ; time_ms= 0

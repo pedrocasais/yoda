@@ -34,14 +34,15 @@ let getSubmissionsId request =
                 ~headers:[("Content-Type", "application/json")]
                 "Submission not found"
           | lst -> (
-              Client.hget conn
+              Client.hmget conn
                 ("submission:" ^ id ^ ":solution")
-                "problem_id"
+                ["problem_id"; "language"]
               >>= function
-              | Some pid ->
+              | [Some pid; Some _language] ->
                   let sub =
                     Openapi.create_submission ~id:(int_of_string id)
-                    ~problem_id:( int_of_string pid) 
+                      ~problem_id:(int_of_string pid)
+                      ~language:(_language)
                       ~status:(List.assoc "status" lst)
                       ~score:(int_of_string (List.assoc "score" lst))
                       ~time_ms:(int_of_string (List.assoc "time_ms" lst))
@@ -54,10 +55,10 @@ let getSubmissionsId request =
                   Dream.json ~code:200
                     ~headers:[("Content-Type", "application/json")]
                     (Openapi.json_of_submission sub)
-              | None ->
+              | _ ->
                   Dream.json ~code:200
                     ~headers:[("Content-Type", "application/json")]
-                    "Not Found: problem id" ) ) )
+                    "Not Found: problem_id language" ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
