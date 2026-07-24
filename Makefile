@@ -4,7 +4,7 @@ start:
 	docker compose up -d --build
 
 build:
-	dune build --profile=release @doc
+	dune build --profile=release @doc @install
 
 atd-to-ml:
 	cd ./src && atdml ./../schemas/atd/openapi.atd

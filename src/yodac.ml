@@ -1,1 +1,1 @@
-let () = Worker.run ()
+let () = Config.init () ; Worker.run ()

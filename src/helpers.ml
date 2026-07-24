@@ -51,8 +51,8 @@ let checkPrems request next =
         (Openapi.json_of_authLoginPostResponse41 error)
   | Ok -> next ()
 
-(** [date] obtém a data no formato year-month-day-hour-min-sec. *)
-let date =
+(** [date] obtém a data atual no formato year-month-day-hour-min-sec. *)
+let date () =
   let today : Unix.tm = Unix.localtime (Unix.time ()) in
   let pp_tm ppf t =
     Format.fprintf ppf "%4d-%02d-%02dT%02d:%02d:%02dZ"

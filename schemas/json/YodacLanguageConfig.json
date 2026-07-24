@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "language": {
+      "type": "string"
+    },
+    "ext": {
+      "type": "string"
+    },
+    "image": {
+      "type": "string"
+    },
+    "tag": {
+      "type": "string"
+    },
+    "compile": {
+      "type": "string",
+      "nullable": true
+    },
+    "run": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "language",
+    "ext",
+    "image",
+    "tag",
+    "run"
+  ]
+}

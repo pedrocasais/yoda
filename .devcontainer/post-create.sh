@@ -19,10 +19,11 @@ opam update
 
 # Pin the atdgen packages to the latest version in the ahrefs/atd repository, which includes support for OCaml 5.0.
 opam pin add -y atdgen-runtime.dev https://github.com/ahrefs/atd.git
+opam pin add -y atd.dev https://github.com/ahrefs/atd.git
 opam pin add -y atdgen.dev https://github.com/ahrefs/atd.git
 opam pin add -y docker-api.dev https://github.com/pedrodamiao18/ocaml-docker-api.git
 
 opam install -y . --deps-only
 opam install -y jsonschema2atd
 
-opam install -y ocamlformat ocaml-lsp-server
+opam install -y ocamlformat merlin ocamlformat-rpc ocaml-lsp-server

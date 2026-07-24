@@ -17,12 +17,13 @@ services:
       - proxy
     restart: unless-stopped
 
-  yoda:
+  yodab:
     build:
-      dockerfile: Containerfile
+      dockerfile: Containerfile.yodab
+    image: yodab-dev
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.yoda-api.rule=Host(`localhost`) && PathPrefix(`/auth`) || PathPrefix(`/users`) || PathPrefix(`/contests`) || PathPrefix(`/problems`) || PathPrefix(`/submissions`)"
+      - "traefik.http.routers.yoda-api.rule=Host(`localhost`) && PathPrefix(`/auth`) || PathPrefix(`/admin`) || PathPrefix(`/users`) || PathPrefix(`/contests`) || PathPrefix(`/problems`) || PathPrefix(`/submissions`)"
       - "traefik.http.routers.yoda-api.entrypoints=web"
       - "traefik.http.routers.yoda-api.priority=20"
       - "traefik.http.services.yoda-api.loadbalancer.server.port=8001"
@@ -32,8 +33,8 @@ services:
 
   yodac:
     build:
-      dockerfile: Containerfile.sandbox
-    image: yodac-sandbox
+      dockerfile: Containerfile.yodac
+    image: yodac-dev
     user: "0:0"
     ports:
       - "8081:8080"
@@ -57,9 +58,7 @@ services:
     restart: unless-stopped
 
   yodaw:
-    build:
-      context: "../yoda-web/"
-      dockerfile: Containerfile
+    image: ghcr.io/anmaped/yoda-web:latest
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.yodaw.rule=Host(`localhost`)"

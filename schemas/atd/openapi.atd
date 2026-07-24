@@ -85,6 +85,39 @@ type usersPostRequest = {
 
 type usersGetResponse2 = user list 
 
+type yodacConfigHistoryGetResponse = yodacConfigHistoryEntry list 
+
+type yodacConfigHistoryEntry = {
+  version : int;
+  timestamp : string;
+  changed_by : string;
+  action : string;
+  ?previous_config : json nullable option;
+  new_config : yodacLanguagesConfig;
+} 
+
+type yodacConfigGetResponse = {
+  config : yodacLanguagesConfig;
+  version : int;
+  updated_at : string;
+  updated_by : string;
+} 
+
+type yodacConfigPutRequest = {
+  config : yodacLanguagesConfig;
+} 
+
+type yodacLanguagesConfig = yodacLanguageConfig list 
+
+type yodacLanguageConfig = {
+  language : string;
+  ext : string;
+  image : string;
+  tag : string;
+  ?compile : string nullable option;
+  run : string;
+} 
+
 type authToken = {
   token : string;
   user : user;

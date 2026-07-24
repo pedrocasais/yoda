@@ -310,6 +310,8 @@ let testcases id =
     As operações bloqueantes correm em threads via [Lwt_preemptive].
     Em caso de erro de compilação escreve [compile_error] sem executar testcases. *)
 let process_job submission_id =
+  Config.update_config ()
+  >>= fun () ->
   solution submission_id
   >>= fun (problem_id, user_id, language, source_code) ->
   problem problem_id
@@ -334,16 +336,18 @@ let process_job submission_id =
       Lwt_io.printf "Job recebido: submission %d lang %s\n%!"
         job.submission_id job.lang
       >>= fun () ->
-      Lwt_preemptive.detach(fun () -> Compiler_v2.prepare_workdir job) ()
+      Lwt_preemptive.detach (fun () -> Compiler.prepare_workdir job) ()
       >>= fun (workdir, src) ->
-        Lwt_preemptive.detach(fun () -> Compiler_v2.compile job workdir src) ()
-        >>= function
+      Lwt_preemptive.detach
+        (fun () -> Compiler.compile job workdir src)
+        ()
+      >>= function
       | Error err ->
           Lwt_io.printf "Erro de compilação: %s\n%!" err
           >>= fun () ->
           write_result
             { id= job.submission_id
-            ; problem_id = job.problem_id
+            ; problem_id= job.problem_id
             ; language= Some job.lang
             ; status= "compile_error"
             ; score= 0
@@ -352,9 +356,10 @@ let process_job submission_id =
             ; details= [] }
             job
       | Ok _ ->
-            Lwt_preemptive.detach(fun () -> Docker_runner_v2.run_all job workdir) ()
-            >>= fun (result) ->
-          write_result result job )
+          Lwt_preemptive.detach
+            (fun () -> Docker_runner.run_all job workdir)
+            ()
+          >>= fun result -> write_result result job )
 
 (** Loop principal do worker.
     Bloqueia com [BRPOP] na fila [submission:job] até haver um job,
@@ -365,11 +370,19 @@ let rec worker () =
   | None -> worker ()
   | Some (_, job_str) -> process_job job_str >>= fun () -> worker ()
 
-
 (** Arranca 4 workers em paralelo via [Lwt.join] e [Lwt_preemptive].
     Configura o thread pool com mínimo 4 e máximo 16 threads. *)
 let run () =
-  Lwt_preemptive.set_bounds (4, 16);
+  Lwt_preemptive.set_bounds (4, 16) ;
   Lwt_main.run
-    ( Lwt_io.printf "YodaC worker iniciado em %s:%d...\n%!" Db.host Db.port
+    ( Lwt.catch
+        (fun () ->
+          Config.init_config ()
+          >>= fun () -> Config.update_config ~force:true () )
+        (fun exn ->
+          Lwt_io.eprintf
+            "YodaC: failed to initialize runtime language config: %s\n%!"
+            (Printexc.to_string exn) )
+    >>= fun () ->
+    Lwt_io.printf "YodaC worker iniciado em %s:%d...\n%!" Db.host Db.port
     >>= fun () -> Lwt.join [worker (); worker (); worker (); worker ()] )

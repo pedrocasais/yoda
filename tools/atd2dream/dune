@@ -1,4 +1,4 @@
 (executable
  (public_name tools)
  (name generator)
- (libraries str yojson yaml))
+ (libraries str yojson yaml unix))

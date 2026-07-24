@@ -1,4 +1,4 @@
-name: Build and Push Sandbox Container
+name: Build and Push YodaB Container
 
 on:
   push:
@@ -9,11 +9,11 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-sandbox
+  IMAGE_NAME: ${{ github.repository }}-b
 
 jobs:
   build:
-    name: Build and push yoda sandbox container
+    name: Build and push yodab container
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,7 +48,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Containerfile.sandbox
+          file: ./Containerfile.yodab
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
