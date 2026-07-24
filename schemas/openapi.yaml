@@ -654,6 +654,66 @@ paths:
         "500":
           description: Server error
 
+  /admin/yodac/config:
+    get:
+      summary: Get active YodaC language configuration
+      description: Admin only. Returns current runtime language configuration used by YodaC.
+      responses:
+        "200":
+          description: Current YodaC language configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YodacConfigGetResponse"
+        "401":
+          description: Unauthorized access
+        "403":
+          description: Forbidden - admin only
+        "500":
+          description: Server error
+    put:
+      summary: Update YodaC language configuration
+      description: Admin only. Updates runtime language configuration and appends an audit history entry.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/YodacConfigPutRequest"
+      responses:
+        "200":
+          description: Updated YodaC language configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YodacConfigGetResponse"
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized access
+        "403":
+          description: Forbidden - admin only
+        "500":
+          description: Server error
+
+  /admin/yodac/config/history:
+    get:
+      summary: Get full YodaC config history
+      description: Admin only. Returns full ordered audit history, including previous and new snapshots.
+      responses:
+        "200":
+          description: Ordered history of YodaC configuration changes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YodacConfigHistoryGetResponse"
+        "401":
+          description: Unauthorized access
+        "403":
+          description: Forbidden - admin only
+        "500":
+          description: Server error
+
 components:
   schemas:
     User:
@@ -806,3 +866,76 @@ components:
         user:
           $ref: "#/components/schemas/User"
       required: ["token", "user"]
+
+    YodacLanguageConfig:
+      type: object
+      properties:
+        language:
+          type: string
+        ext:
+          type: string
+        image:
+          type: string
+        tag:
+          type: string
+        compile:
+          type: string
+          nullable: true
+        run:
+          type: string
+      required: ["language", "ext", "image", "tag", "run"]
+
+    YodacLanguagesConfig:
+      type: array
+      items:
+        $ref: "#/components/schemas/YodacLanguageConfig"
+
+    YodacConfigPutRequest:
+      type: object
+      properties:
+        config:
+          $ref: "#/components/schemas/YodacLanguagesConfig"
+      required: ["config"]
+
+    YodacConfigGetResponse:
+      type: object
+      properties:
+        config:
+          $ref: "#/components/schemas/YodacLanguagesConfig"
+        version:
+          type: integer
+        updated_at:
+          type: string
+        updated_by:
+          type: string
+      required: ["config", "version", "updated_at", "updated_by"]
+
+    YodacConfigHistoryEntry:
+      type: object
+      properties:
+        version:
+          type: integer
+        timestamp:
+          type: string
+        changed_by:
+          type: string
+        action:
+          type: string
+        previous_config:
+          $ref: "#/components/schemas/YodacLanguagesConfig"
+          nullable: true
+        new_config:
+          $ref: "#/components/schemas/YodacLanguagesConfig"
+      required:
+        [
+          "version",
+          "timestamp",
+          "changed_by",
+          "action",
+          "new_config",
+        ]
+
+    YodacConfigHistoryGetResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/YodacConfigHistoryEntry"

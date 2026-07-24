@@ -1,4 +1,4 @@
-name: Build and Push Container
+name: Build and Push YodaC Container
 
 on:
   push:
@@ -9,11 +9,11 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}-c
 
 jobs:
   build:
-    name: Build and push yoda container
+    name: Build and push yodac container
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,7 +48,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Containerfile
+          file: ./Containerfile.yodac
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

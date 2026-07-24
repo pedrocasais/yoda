@@ -85,6 +85,355 @@ module Atdml_runtime = struct
   end
 end
 
+type yodacLanguageConfig = {
+  language: string;
+  ext: string;
+  image: string;
+  tag: string;
+  compile: string option option;
+  run: string;
+}
+
+let create_yodacLanguageConfig ~language ~ext ~image ~tag ?compile ~run () : yodacLanguageConfig =
+  { language; ext; image; tag; compile; run }
+
+let yodacLanguageConfig_of_yojson (x : Yojson.Safe.t) : yodacLanguageConfig =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let language =
+      match assoc "language" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacLanguageConfig" "language"
+    in
+    let ext =
+      match assoc "ext" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacLanguageConfig" "ext"
+    in
+    let image =
+      match assoc "image" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacLanguageConfig" "image"
+    in
+    let tag =
+      match assoc "tag" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacLanguageConfig" "tag"
+    in
+    let compile =
+      match assoc "compile" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some ((Atdml_runtime.Yojson.nullable_of_yojson Atdml_runtime.Yojson.string_of_yojson) v)
+    in
+    let run =
+      match assoc "run" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacLanguageConfig" "run"
+    in
+    { language; ext; image; tag; compile; run }
+  | _ -> Atdml_runtime.Yojson.bad_type "yodacLanguageConfig" x
+
+let yojson_of_yodacLanguageConfig (x : yodacLanguageConfig) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("language", Atdml_runtime.Yojson.yojson_of_string x.language)];
+    [("ext", Atdml_runtime.Yojson.yojson_of_string x.ext)];
+    [("image", Atdml_runtime.Yojson.yojson_of_string x.image)];
+    [("tag", Atdml_runtime.Yojson.yojson_of_string x.tag)];
+    (match x.compile with None -> [] | Some v -> [("compile", (Atdml_runtime.Yojson.yojson_of_nullable Atdml_runtime.Yojson.yojson_of_string) v)]);
+    [("run", Atdml_runtime.Yojson.yojson_of_string x.run)];
+  ])
+
+let yodacLanguageConfig_of_json s =
+  yodacLanguageConfig_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_yodacLanguageConfig x =
+  Yojson.Safe.to_string (yojson_of_yodacLanguageConfig x)
+
+module YodacLanguageConfig = struct
+  type nonrec t = yodacLanguageConfig
+  let create = create_yodacLanguageConfig
+  let of_yojson = yodacLanguageConfig_of_yojson
+  let to_yojson = yojson_of_yodacLanguageConfig
+  let of_json = yodacLanguageConfig_of_json
+  let to_json = json_of_yodacLanguageConfig
+end
+
+type yodacLanguagesConfig = yodacLanguageConfig list
+
+let yodacLanguagesConfig_of_yojson (x : Yojson.Safe.t) : yodacLanguagesConfig =
+  (Atdml_runtime.Yojson.list_of_yojson yodacLanguageConfig_of_yojson) x
+
+let yojson_of_yodacLanguagesConfig (x : yodacLanguagesConfig) : Yojson.Safe.t =
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_yodacLanguageConfig) x
+
+let yodacLanguagesConfig_of_json s =
+  yodacLanguagesConfig_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_yodacLanguagesConfig x =
+  Yojson.Safe.to_string (yojson_of_yodacLanguagesConfig x)
+
+module YodacLanguagesConfig = struct
+  type nonrec t = yodacLanguagesConfig
+  let of_yojson = yodacLanguagesConfig_of_yojson
+  let to_yojson = yojson_of_yodacLanguagesConfig
+  let of_json = yodacLanguagesConfig_of_json
+  let to_json = json_of_yodacLanguagesConfig
+end
+
+type yodacConfigPutRequest = {
+  config: yodacLanguagesConfig;
+}
+
+let create_yodacConfigPutRequest ~config () : yodacConfigPutRequest =
+  { config }
+
+let yodacConfigPutRequest_of_yojson (x : Yojson.Safe.t) : yodacConfigPutRequest =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let config =
+      match assoc "config" with
+      | Some v -> yodacLanguagesConfig_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigPutRequest" "config"
+    in
+    { config }
+  | _ -> Atdml_runtime.Yojson.bad_type "yodacConfigPutRequest" x
+
+let yojson_of_yodacConfigPutRequest (x : yodacConfigPutRequest) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("config", yojson_of_yodacLanguagesConfig x.config)];
+  ])
+
+let yodacConfigPutRequest_of_json s =
+  yodacConfigPutRequest_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_yodacConfigPutRequest x =
+  Yojson.Safe.to_string (yojson_of_yodacConfigPutRequest x)
+
+module YodacConfigPutRequest = struct
+  type nonrec t = yodacConfigPutRequest
+  let create = create_yodacConfigPutRequest
+  let of_yojson = yodacConfigPutRequest_of_yojson
+  let to_yojson = yojson_of_yodacConfigPutRequest
+  let of_json = yodacConfigPutRequest_of_json
+  let to_json = json_of_yodacConfigPutRequest
+end
+
+type json_ = Yojson.Safe.t
+
+let json__of_yojson (x : Yojson.Safe.t) : json_ =
+  (fun x -> x) x
+
+let yojson_of_json_ (x : json_) : Yojson.Safe.t =
+  (fun x -> x) x
+
+let json__of_json s =
+  json__of_yojson (Yojson.Safe.from_string s)
+
+let json_of_json_ x =
+  Yojson.Safe.to_string (yojson_of_json_ x)
+
+module Json_ = struct
+  type nonrec t = json_
+  let of_yojson = json__of_yojson
+  let to_yojson = yojson_of_json_
+  let of_json = json__of_json
+  let to_json = json_of_json_
+end
+
+type yodacConfigHistoryEntry = {
+  version: int;
+  timestamp: string;
+  changed_by: string;
+  action: string;
+  previous_config: json_ option option;
+  new_config: yodacLanguagesConfig;
+}
+
+let create_yodacConfigHistoryEntry ~version ~timestamp ~changed_by ~action ?previous_config ~new_config () : yodacConfigHistoryEntry =
+  { version; timestamp; changed_by; action; previous_config; new_config }
+
+let yodacConfigHistoryEntry_of_yojson (x : Yojson.Safe.t) : yodacConfigHistoryEntry =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let version =
+      match assoc "version" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigHistoryEntry" "version"
+    in
+    let timestamp =
+      match assoc "timestamp" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigHistoryEntry" "timestamp"
+    in
+    let changed_by =
+      match assoc "changed_by" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigHistoryEntry" "changed_by"
+    in
+    let action =
+      match assoc "action" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigHistoryEntry" "action"
+    in
+    let previous_config =
+      match assoc "previous_config" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some ((Atdml_runtime.Yojson.nullable_of_yojson json__of_yojson) v)
+    in
+    let new_config =
+      match assoc "new_config" with
+      | Some v -> yodacLanguagesConfig_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigHistoryEntry" "new_config"
+    in
+    { version; timestamp; changed_by; action; previous_config; new_config }
+  | _ -> Atdml_runtime.Yojson.bad_type "yodacConfigHistoryEntry" x
+
+let yojson_of_yodacConfigHistoryEntry (x : yodacConfigHistoryEntry) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("version", Atdml_runtime.Yojson.yojson_of_int x.version)];
+    [("timestamp", Atdml_runtime.Yojson.yojson_of_string x.timestamp)];
+    [("changed_by", Atdml_runtime.Yojson.yojson_of_string x.changed_by)];
+    [("action", Atdml_runtime.Yojson.yojson_of_string x.action)];
+    (match x.previous_config with None -> [] | Some v -> [("previous_config", (Atdml_runtime.Yojson.yojson_of_nullable yojson_of_json_) v)]);
+    [("new_config", yojson_of_yodacLanguagesConfig x.new_config)];
+  ])
+
+let yodacConfigHistoryEntry_of_json s =
+  yodacConfigHistoryEntry_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_yodacConfigHistoryEntry x =
+  Yojson.Safe.to_string (yojson_of_yodacConfigHistoryEntry x)
+
+module YodacConfigHistoryEntry = struct
+  type nonrec t = yodacConfigHistoryEntry
+  let create = create_yodacConfigHistoryEntry
+  let of_yojson = yodacConfigHistoryEntry_of_yojson
+  let to_yojson = yojson_of_yodacConfigHistoryEntry
+  let of_json = yodacConfigHistoryEntry_of_json
+  let to_json = json_of_yodacConfigHistoryEntry
+end
+
+type yodacConfigHistoryGetResponse = yodacConfigHistoryEntry list
+
+let yodacConfigHistoryGetResponse_of_yojson (x : Yojson.Safe.t) : yodacConfigHistoryGetResponse =
+  (Atdml_runtime.Yojson.list_of_yojson yodacConfigHistoryEntry_of_yojson) x
+
+let yojson_of_yodacConfigHistoryGetResponse (x : yodacConfigHistoryGetResponse) : Yojson.Safe.t =
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_yodacConfigHistoryEntry) x
+
+let yodacConfigHistoryGetResponse_of_json s =
+  yodacConfigHistoryGetResponse_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_yodacConfigHistoryGetResponse x =
+  Yojson.Safe.to_string (yojson_of_yodacConfigHistoryGetResponse x)
+
+module YodacConfigHistoryGetResponse = struct
+  type nonrec t = yodacConfigHistoryGetResponse
+  let of_yojson = yodacConfigHistoryGetResponse_of_yojson
+  let to_yojson = yojson_of_yodacConfigHistoryGetResponse
+  let of_json = yodacConfigHistoryGetResponse_of_json
+  let to_json = json_of_yodacConfigHistoryGetResponse
+end
+
+type yodacConfigGetResponse = {
+  config: yodacLanguagesConfig;
+  version: int;
+  updated_at: string;
+  updated_by: string;
+}
+
+let create_yodacConfigGetResponse ~config ~version ~updated_at ~updated_by () : yodacConfigGetResponse =
+  { config; version; updated_at; updated_by }
+
+let yodacConfigGetResponse_of_yojson (x : Yojson.Safe.t) : yodacConfigGetResponse =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let config =
+      match assoc "config" with
+      | Some v -> yodacLanguagesConfig_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigGetResponse" "config"
+    in
+    let version =
+      match assoc "version" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigGetResponse" "version"
+    in
+    let updated_at =
+      match assoc "updated_at" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigGetResponse" "updated_at"
+    in
+    let updated_by =
+      match assoc "updated_by" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "yodacConfigGetResponse" "updated_by"
+    in
+    { config; version; updated_at; updated_by }
+  | _ -> Atdml_runtime.Yojson.bad_type "yodacConfigGetResponse" x
+
+let yojson_of_yodacConfigGetResponse (x : yodacConfigGetResponse) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("config", yojson_of_yodacLanguagesConfig x.config)];
+    [("version", Atdml_runtime.Yojson.yojson_of_int x.version)];
+    [("updated_at", Atdml_runtime.Yojson.yojson_of_string x.updated_at)];
+    [("updated_by", Atdml_runtime.Yojson.yojson_of_string x.updated_by)];
+  ])
+
+let yodacConfigGetResponse_of_json s =
+  yodacConfigGetResponse_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_yodacConfigGetResponse x =
+  Yojson.Safe.to_string (yojson_of_yodacConfigGetResponse x)
+
+module YodacConfigGetResponse = struct
+  type nonrec t = yodacConfigGetResponse
+  let create = create_yodacConfigGetResponse
+  let of_yojson = yodacConfigGetResponse_of_yojson
+  let to_yojson = yojson_of_yodacConfigGetResponse
+  let of_json = yodacConfigGetResponse_of_json
+  let to_json = json_of_yodacConfigGetResponse
+end
+
 type usersPostRequestRole =
   | User
   | Judge
@@ -132,7 +481,7 @@ let usersPostRequest_of_yojson (x : Yojson.Safe.t) : usersPostRequest =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -140,17 +489,17 @@ let usersPostRequest_of_yojson (x : Yojson.Safe.t) : usersPostRequest =
       else (fun key -> List.assoc_opt key fields)
     in
     let username =
-      match assoc_ "username" with
+      match assoc "username" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "usersPostRequest" "username"
     in
     let password =
-      match assoc_ "password" with
+      match assoc "password" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "usersPostRequest" "password"
     in
     let role =
-      match assoc_ "role" with
+      match assoc "role" with
       | Some v -> usersPostRequestRole_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "usersPostRequest" "role"
     in
@@ -225,7 +574,7 @@ let usersIdPutRequest_of_yojson (x : Yojson.Safe.t) : usersIdPutRequest =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -233,14 +582,14 @@ let usersIdPutRequest_of_yojson (x : Yojson.Safe.t) : usersIdPutRequest =
       else (fun key -> List.assoc_opt key fields)
     in
     let username =
-      match assoc_ "username" with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
+      match assoc "username" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let role =
-      match assoc_ "role" with
-      | None | Some `Null -> None
-      | Some v -> Some (usersIdPutRequestRole_of_yojson v)
+      match assoc "role" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (usersIdPutRequestRole_of_yojson v)
     in
     { username; role }
   | _ -> Atdml_runtime.Yojson.bad_type "usersIdPutRequest" x
@@ -314,7 +663,7 @@ let user_of_yojson (x : Yojson.Safe.t) : user =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -322,22 +671,22 @@ let user_of_yojson (x : Yojson.Safe.t) : user =
       else (fun key -> List.assoc_opt key fields)
     in
     let id =
-      match assoc_ "id" with
+      match assoc "id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "user" "id"
     in
     let username =
-      match assoc_ "username" with
+      match assoc "username" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "user" "username"
     in
     let role =
-      match assoc_ "role" with
+      match assoc "role" with
       | Some v -> userRole_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "user" "role"
     in
     let created_at =
-      match assoc_ "created_at" with
+      match assoc "created_at" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "user" "created_at"
     in
@@ -405,7 +754,7 @@ let testCase_of_yojson (x : Yojson.Safe.t) : testCase =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -413,22 +762,22 @@ let testCase_of_yojson (x : Yojson.Safe.t) : testCase =
       else (fun key -> List.assoc_opt key fields)
     in
     let id =
-      match assoc_ "id" with
+      match assoc "id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "testCase" "id"
     in
     let input =
-      match assoc_ "input" with
+      match assoc "input" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "testCase" "input"
     in
     let output =
-      match assoc_ "output" with
+      match assoc "output" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "testCase" "output"
     in
     let is_sample =
-      match assoc_ "is_sample" with
+      match assoc "is_sample" with
       | Some v -> Atdml_runtime.Yojson.bool_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "testCase" "is_sample"
     in
@@ -473,7 +822,7 @@ let submissionDetails_of_yojson (x : Yojson.Safe.t) : submissionDetails =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -481,17 +830,17 @@ let submissionDetails_of_yojson (x : Yojson.Safe.t) : submissionDetails =
       else (fun key -> List.assoc_opt key fields)
     in
     let testcase_id =
-      match assoc_ "testcase_id" with
+      match assoc "testcase_id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submissionDetails" "testcase_id"
     in
     let status =
-      match assoc_ "status" with
+      match assoc "status" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submissionDetails" "status"
     in
     let time_ms =
-      match assoc_ "time_ms" with
+      match assoc "time_ms" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submissionDetails" "time_ms"
     in
@@ -540,7 +889,7 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -548,42 +897,42 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       else (fun key -> List.assoc_opt key fields)
     in
     let id =
-      match assoc_ "id" with
+      match assoc "id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "id"
     in
     let problem_id =
-      match assoc_ "problem_id" with
+      match assoc "problem_id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "problem_id"
     in
     let language =
-      match assoc_ "language" with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
+      match assoc "language" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let status =
-      match assoc_ "status" with
+      match assoc "status" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "status"
     in
     let score =
-      match assoc_ "score" with
+      match assoc "score" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "score"
     in
     let time_ms =
-      match assoc_ "time_ms" with
+      match assoc "time_ms" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "time_ms"
     in
     let memory_kb =
-      match assoc_ "memory_kb" with
+      match assoc "memory_kb" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "memory_kb"
     in
     let details =
-      match assoc_ "details" with
+      match assoc "details" with
       | Some v -> (Atdml_runtime.Yojson.list_of_yojson submissionDetails_of_yojson) v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "details"
     in
@@ -633,7 +982,7 @@ let solution_of_yojson (x : Yojson.Safe.t) : solution =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -641,22 +990,22 @@ let solution_of_yojson (x : Yojson.Safe.t) : solution =
       else (fun key -> List.assoc_opt key fields)
     in
     let user_id =
-      match assoc_ "user_id" with
+      match assoc "user_id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "solution" "user_id"
     in
     let problem_id =
-      match assoc_ "problem_id" with
+      match assoc "problem_id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "solution" "problem_id"
     in
     let language =
-      match assoc_ "language" with
+      match assoc "language" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "solution" "language"
     in
     let source_code =
-      match assoc_ "source_code" with
+      match assoc "source_code" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "solution" "source_code"
     in
@@ -686,28 +1035,6 @@ module Solution = struct
   let to_json = json_of_solution
 end
 
-type json_ = Yojson.Safe.t
-
-let json__of_yojson (x : Yojson.Safe.t) : json_ =
-  (fun x -> x) x
-
-let yojson_of_json_ (x : json_) : Yojson.Safe.t =
-  (fun x -> x) x
-
-let json__of_json s =
-  json__of_yojson (Yojson.Safe.from_string s)
-
-let json_of_json_ x =
-  Yojson.Safe.to_string (yojson_of_json_ x)
-
-module Json_ = struct
-  type nonrec t = json_
-  let of_yojson = json__of_yojson
-  let to_yojson = yojson_of_json_
-  let of_json = json__of_json
-  let to_json = json_of_json_
-end
-
 type scoreboardEntry = {
   team: string;
   solved: int;
@@ -724,7 +1051,7 @@ let scoreboardEntry_of_yojson (x : Yojson.Safe.t) : scoreboardEntry =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -732,22 +1059,22 @@ let scoreboardEntry_of_yojson (x : Yojson.Safe.t) : scoreboardEntry =
       else (fun key -> List.assoc_opt key fields)
     in
     let team =
-      match assoc_ "team" with
+      match assoc "team" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "scoreboardEntry" "team"
     in
     let solved =
-      match assoc_ "solved" with
+      match assoc "solved" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "scoreboardEntry" "solved"
     in
     let penalty =
-      match assoc_ "penalty" with
+      match assoc "penalty" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "scoreboardEntry" "penalty"
     in
     let problems =
-      match assoc_ "problems" with
+      match assoc "problems" with
       | Some v -> json__of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "scoreboardEntry" "problems"
     in
@@ -818,7 +1145,7 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -826,37 +1153,37 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
       else (fun key -> List.assoc_opt key fields)
     in
     let code =
-      match assoc_ "code" with
+      match assoc "code" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "code"
     in
     let title =
-      match assoc_ "title" with
+      match assoc "title" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "title"
     in
     let time_limit_ms =
-      match assoc_ "time_limit_ms" with
+      match assoc "time_limit_ms" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "time_limit_ms"
     in
     let memory_limit_mb =
-      match assoc_ "memory_limit_mb" with
+      match assoc "memory_limit_mb" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "memory_limit_mb"
     in
     let description =
-      match assoc_ "description" with
+      match assoc "description" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "description"
     in
     let input_spec =
-      match assoc_ "input_spec" with
+      match assoc "input_spec" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "input_spec"
     in
     let output_spec =
-      match assoc_ "output_spec" with
+      match assoc "output_spec" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "output_spec"
     in
@@ -931,7 +1258,7 @@ let contestsPostRequest_of_yojson (x : Yojson.Safe.t) : contestsPostRequest =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -939,22 +1266,22 @@ let contestsPostRequest_of_yojson (x : Yojson.Safe.t) : contestsPostRequest =
       else (fun key -> List.assoc_opt key fields)
     in
     let title =
-      match assoc_ "title" with
+      match assoc "title" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "contestsPostRequest" "title"
     in
     let description =
-      match assoc_ "description" with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
+      match assoc "description" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let start_time =
-      match assoc_ "start_time" with
+      match assoc "start_time" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "contestsPostRequest" "start_time"
     in
     let end_time =
-      match assoc_ "end_time" with
+      match assoc "end_time" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "contestsPostRequest" "end_time"
     in
@@ -1055,7 +1382,7 @@ let contestsIdPutRequest_of_yojson (x : Yojson.Safe.t) : contestsIdPutRequest =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -1063,29 +1390,29 @@ let contestsIdPutRequest_of_yojson (x : Yojson.Safe.t) : contestsIdPutRequest =
       else (fun key -> List.assoc_opt key fields)
     in
     let title =
-      match assoc_ "title" with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
+      match assoc "title" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let description =
-      match assoc_ "description" with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
+      match assoc "description" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let start_time =
-      match assoc_ "start_time" with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
+      match assoc "start_time" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let end_time =
-      match assoc_ "end_time" with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
+      match assoc "end_time" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let status =
-      match assoc_ "status" with
-      | None | Some `Null -> None
-      | Some v -> Some (contestsIdPutRequestStatus_of_yojson v)
+      match assoc "status" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (contestsIdPutRequestStatus_of_yojson v)
     in
     { title; description; start_time; end_time; status }
   | _ -> Atdml_runtime.Yojson.bad_type "contestsIdPutRequest" x
@@ -1164,7 +1491,7 @@ let contest_of_yojson (x : Yojson.Safe.t) : contest =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -1172,32 +1499,32 @@ let contest_of_yojson (x : Yojson.Safe.t) : contest =
       else (fun key -> List.assoc_opt key fields)
     in
     let id =
-      match assoc_ "id" with
+      match assoc "id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "contest" "id"
     in
     let title =
-      match assoc_ "title" with
+      match assoc "title" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "contest" "title"
     in
     let description =
-      match assoc_ "description" with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
+      match assoc "description" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let start_time =
-      match assoc_ "start_time" with
+      match assoc "start_time" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "contest" "start_time"
     in
     let end_time =
-      match assoc_ "end_time" with
+      match assoc "end_time" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "contest" "end_time"
     in
     let status =
-      match assoc_ "status" with
+      match assoc "status" with
       | Some v -> contestStatus_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "contest" "status"
     in
@@ -1309,7 +1636,7 @@ let authToken_of_yojson (x : Yojson.Safe.t) : authToken =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -1317,12 +1644,12 @@ let authToken_of_yojson (x : Yojson.Safe.t) : authToken =
       else (fun key -> List.assoc_opt key fields)
     in
     let token =
-      match assoc_ "token" with
+      match assoc "token" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "authToken" "token"
     in
     let user =
-      match assoc_ "user" with
+      match assoc "user" with
       | Some v -> user_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "authToken" "user"
     in
@@ -1363,7 +1690,7 @@ let authLoginPostResponse41_of_yojson (x : Yojson.Safe.t) : authLoginPostRespons
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -1371,7 +1698,7 @@ let authLoginPostResponse41_of_yojson (x : Yojson.Safe.t) : authLoginPostRespons
       else (fun key -> List.assoc_opt key fields)
     in
     let error =
-      match assoc_ "error" with
+      match assoc "error" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "authLoginPostResponse41" "error"
     in
@@ -1412,7 +1739,7 @@ let authLoginPostRequest_of_yojson (x : Yojson.Safe.t) : authLoginPostRequest =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -1420,12 +1747,12 @@ let authLoginPostRequest_of_yojson (x : Yojson.Safe.t) : authLoginPostRequest =
       else (fun key -> List.assoc_opt key fields)
     in
     let username =
-      match assoc_ "username" with
+      match assoc "username" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "authLoginPostRequest" "username"
     in
     let password =
-      match assoc_ "password" with
+      match assoc "password" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "authLoginPostRequest" "password"
     in

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer"
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "changed_by": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "previous_config": {
+      "$ref": "#/components/schemas/YodacLanguagesConfig",
+      "nullable": true
+    },
+    "new_config": {
+      "$ref": "#/components/schemas/YodacLanguagesConfig"
+    }
+  },
+  "required": [
+    "version",
+    "timestamp",
+    "changed_by",
+    "action",
+    "new_config"
+  ]
+}

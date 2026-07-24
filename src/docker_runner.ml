@@ -1,4 +1,4 @@
-(** Execução segura de código dentro de containers Docker isolados.
+(** Execução segura de código dentro de containers Docker isolados utilizando docker-api.
 
     Este módulo corre o código compilado para cada caso de teste
     e compara o output produzido com o output esperado. *)
@@ -21,42 +21,65 @@ open Job
     @param workdir diretoria com o binário compilado
     @param tc caso de teste a executar
     @return detalhe com o veredicto e o tempo de execução *)
+module C = Docker.Container
+
+(** Executa um único caso de teste num container Docker isolado.
+    O volume é montado como só de leitura. Garante remoção do container em caso de erro.
+    @param job job com os limites e configuração da linguagem
+    @param workdir diretoria com o binário compilado
+    @param tc caso de teste a executar
+    @return detalhe com o veredicto e o tempo de execução *)
 let run_testcase (job : job) (workdir : string) (tc : testcase) =
   let run_cmd = Compiler.lang_run_cmd job.lang in
-  let image = Compiler.lang_image job.lang in
-  let memory = Printf.sprintf "%im" job.memory_limit_mb in
-  let timeout = (job.time_limit_ms / 1000) + 1 in
+  let lang = job.lang in
+  let tag = Compiler.lang_tag lang in
+  let image = Compiler.lang_image lang in
+  let imagef = Printf.sprintf "%s:%s" image tag in
+  let memory = job.memory_limit_mb * 1024 * 1024 in
+  (*mb para bytes*)
+  let timeout = float_of_int ((job.time_limit_ms / 1000) + 1) in
   let input_file = Printf.sprintf "%s/input_%d.txt" workdir tc.id in
   let oc = open_out input_file in
   output_string oc tc.input ;
   close_out oc ;
-  let cmd =
-    Printf.sprintf
-      "timeout %d docker run --rm --network none --memory %s --cpus 0.5 \
-       --read-only --tmpfs /tmp:size=16m --entrypoint /bin/sh -v \
-       %s:/work:ro %s -c '%s < /work/input_%d.txt' 2>&1"
-      timeout memory workdir image run_cmd tc.id
-  in
+  let cmd = Printf.sprintf "%s < /work/input_%d.txt" run_cmd tc.id in
   let start = Unix.gettimeofday () in
-  let ic = Unix.open_process_in cmd in
-  let output = In_channel.input_all ic in
-  let status = Unix.close_process_in ic in
-  let time_ms = int_of_float ((Unix.gettimeofday () -. start) *. 1000.) in
-  let normalize s = String.trim s in
-  let detail_status =
-    match status with
-    | Unix.WEXITED 0 ->
-        if normalize output = normalize tc.output then "accepted"
-        else "wrong_answer"
-    | Unix.WEXITED 124 -> "time_limit_exceeded"
-    | Unix.WEXITED code ->
-        Printf.eprintf "Runtime error (exit %d): %s\n%!" code output ;
-        "runtime_error"
-    | _ ->
-        Printf.eprintf "Runtime error: %s\n%!" output ;
-        "runtime_error"
+  let h =
+    Docker.Container.host
+      ~binds:[Docker.Container.Mount_ro (workdir, "/work")]
+      ~network_mode:"none" ~memory ~memory_swap:memory ()
   in
-  ({testcase_id= tc.id; status= detail_status; time_ms} : detail)
+  Common.install_image image ~tag ;
+  let c = C.create imagef ["bash"; "-c"; cmd] ~host:h ~workingdir:"/work" in
+  let st = C.attach ~stdout:true ~stderr:true c `Stream in
+  try
+    C.start c ;
+    let s = Compiler.read_all_timeout ~timeout st in
+    let code = C.wait c in
+    C.rm c ;
+    let identify (ty, s) =
+      match ty with
+      | Docker.Stream.Stdout -> "out> " ^ s
+      | Docker.Stream.Stderr -> "err> " ^ s
+    in
+    let output = String.concat "\n" (List.map identify s) in
+    let time_ms = int_of_float ((Unix.gettimeofday () -. start) *. 1000.) in
+    let normalize s = String.trim s in
+    let detail_status =
+      match code with
+      | 0 ->
+          if normalize output = normalize tc.output then "accepted"
+          else "wrong_answer"
+      | 124 -> "time_limit_exceeded"
+      | _ ->
+          Printf.eprintf "Runtime error (exit %d): %s\n%!" code output ;
+          "runtime_error"
+    in
+    ({testcase_id= tc.id; status= detail_status; time_ms} : detail)
+  with exn ->
+    (try C.stop c with _ -> ()) ;
+    (try C.rm c with _ -> ()) ;
+    raise exn
 
 (** Executa todos os casos de teste e agrega o resultado final.
 

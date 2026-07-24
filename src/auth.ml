@@ -89,7 +89,7 @@ let postAuthRegister request =
           >>= fun data ->
           let user = Openapi.usersPostRequest_of_json data in
           let rec aux conn (user : Openapi.usersPostRequest) attempt passwd =
-            let created_at = Helpers.date in
+            let created_at = Helpers.date () in
             Client.unwatch conn
             >>= fun _ ->
             Client.watch conn ["user:id"]

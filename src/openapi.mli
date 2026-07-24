@@ -1,5 +1,139 @@
 (* Auto-generated from "openapi.atd" by atdml. *)
 
+type yodacLanguageConfig = {
+  language: string;
+  ext: string;
+  image: string;
+  tag: string;
+  compile: string option option;
+  run: string;
+}
+
+val create_yodacLanguageConfig : language:string -> ext:string -> image:string -> tag:string -> ?compile:string option -> run:string -> unit -> yodacLanguageConfig
+val yodacLanguageConfig_of_yojson : Yojson.Safe.t -> yodacLanguageConfig
+val yojson_of_yodacLanguageConfig : yodacLanguageConfig -> Yojson.Safe.t
+val yodacLanguageConfig_of_json : string -> yodacLanguageConfig
+val json_of_yodacLanguageConfig : yodacLanguageConfig -> string
+
+module YodacLanguageConfig : sig
+  type nonrec t = yodacLanguageConfig
+  val create : language:string -> ext:string -> image:string -> tag:string -> ?compile:string option -> run:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type yodacLanguagesConfig = yodacLanguageConfig list
+
+val yodacLanguagesConfig_of_yojson : Yojson.Safe.t -> yodacLanguagesConfig
+val yojson_of_yodacLanguagesConfig : yodacLanguagesConfig -> Yojson.Safe.t
+val yodacLanguagesConfig_of_json : string -> yodacLanguagesConfig
+val json_of_yodacLanguagesConfig : yodacLanguagesConfig -> string
+
+module YodacLanguagesConfig : sig
+  type nonrec t = yodacLanguagesConfig
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type yodacConfigPutRequest = {
+  config: yodacLanguagesConfig;
+}
+
+val create_yodacConfigPutRequest : config:yodacLanguagesConfig -> unit -> yodacConfigPutRequest
+val yodacConfigPutRequest_of_yojson : Yojson.Safe.t -> yodacConfigPutRequest
+val yojson_of_yodacConfigPutRequest : yodacConfigPutRequest -> Yojson.Safe.t
+val yodacConfigPutRequest_of_json : string -> yodacConfigPutRequest
+val json_of_yodacConfigPutRequest : yodacConfigPutRequest -> string
+
+module YodacConfigPutRequest : sig
+  type nonrec t = yodacConfigPutRequest
+  val create : config:yodacLanguagesConfig -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type json_ = Yojson.Safe.t
+
+val json__of_yojson : Yojson.Safe.t -> json_
+val yojson_of_json_ : json_ -> Yojson.Safe.t
+val json__of_json : string -> json_
+val json_of_json_ : json_ -> string
+
+module Json_ : sig
+  type nonrec t = json_
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type yodacConfigHistoryEntry = {
+  version: int;
+  timestamp: string;
+  changed_by: string;
+  action: string;
+  previous_config: json_ option option;
+  new_config: yodacLanguagesConfig;
+}
+
+val create_yodacConfigHistoryEntry : version:int -> timestamp:string -> changed_by:string -> action:string -> ?previous_config:json_ option -> new_config:yodacLanguagesConfig -> unit -> yodacConfigHistoryEntry
+val yodacConfigHistoryEntry_of_yojson : Yojson.Safe.t -> yodacConfigHistoryEntry
+val yojson_of_yodacConfigHistoryEntry : yodacConfigHistoryEntry -> Yojson.Safe.t
+val yodacConfigHistoryEntry_of_json : string -> yodacConfigHistoryEntry
+val json_of_yodacConfigHistoryEntry : yodacConfigHistoryEntry -> string
+
+module YodacConfigHistoryEntry : sig
+  type nonrec t = yodacConfigHistoryEntry
+  val create : version:int -> timestamp:string -> changed_by:string -> action:string -> ?previous_config:json_ option -> new_config:yodacLanguagesConfig -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type yodacConfigHistoryGetResponse = yodacConfigHistoryEntry list
+
+val yodacConfigHistoryGetResponse_of_yojson : Yojson.Safe.t -> yodacConfigHistoryGetResponse
+val yojson_of_yodacConfigHistoryGetResponse : yodacConfigHistoryGetResponse -> Yojson.Safe.t
+val yodacConfigHistoryGetResponse_of_json : string -> yodacConfigHistoryGetResponse
+val json_of_yodacConfigHistoryGetResponse : yodacConfigHistoryGetResponse -> string
+
+module YodacConfigHistoryGetResponse : sig
+  type nonrec t = yodacConfigHistoryGetResponse
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type yodacConfigGetResponse = {
+  config: yodacLanguagesConfig;
+  version: int;
+  updated_at: string;
+  updated_by: string;
+}
+
+val create_yodacConfigGetResponse : config:yodacLanguagesConfig -> version:int -> updated_at:string -> updated_by:string -> unit -> yodacConfigGetResponse
+val yodacConfigGetResponse_of_yojson : Yojson.Safe.t -> yodacConfigGetResponse
+val yojson_of_yodacConfigGetResponse : yodacConfigGetResponse -> Yojson.Safe.t
+val yodacConfigGetResponse_of_json : string -> yodacConfigGetResponse
+val json_of_yodacConfigGetResponse : yodacConfigGetResponse -> string
+
+module YodacConfigGetResponse : sig
+  type nonrec t = yodacConfigGetResponse
+  val create : config:yodacLanguagesConfig -> version:int -> updated_at:string -> updated_by:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type usersPostRequestRole =
   | User
   | Judge
@@ -217,21 +351,6 @@ val json_of_solution : solution -> string
 module Solution : sig
   type nonrec t = solution
   val create : user_id:int -> problem_id:int -> language:string -> source_code:string -> unit -> t
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type json_ = Yojson.Safe.t
-
-val json__of_yojson : Yojson.Safe.t -> json_
-val yojson_of_json_ : json_ -> Yojson.Safe.t
-val json__of_json : string -> json_
-val json_of_json_ : json_ -> string
-
-module Json_ : sig
-  type nonrec t = json_
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
