@@ -20,14 +20,9 @@ type lang_config_entry =
 
 (** Caminho para o ficheiro de configuração de linguagens.
     Pode ser configurado via variável de ambiente [YODAC_LANG_CONFIG].
-    Por omissão: [languagesv2.yaml]. *)
+    Por omissão: [languages.yaml]. *)
 let lang_config_path =
   Option.value (Sys.getenv_opt "YODAC_LANG_CONFIG") ~default:"languages.yaml"
-
-let normalize_compile = function
-  | None -> None
-  | Some None -> None
-  | Some (Some x) -> Some x
 
 let validate_languages_config (cfgs : Openapi.yodacLanguagesConfig) =
   let rec loop seen (items : Openapi.yodacLanguageConfig list) =
@@ -52,7 +47,7 @@ let runtime_of_languages_config (cfgs : Openapi.yodacLanguagesConfig) =
         { ext= cfg.Openapi.ext
         ; image= cfg.Openapi.image
         ; tag= cfg.Openapi.tag
-        ; compile= normalize_compile cfg.Openapi.compile
+        ; compile= Option.join cfg.Openapi.compile
         ; run= cfg.Openapi.run } )
     cfgs ;
   tbl
@@ -71,6 +66,27 @@ let languages_of_config_json json = Openapi.yodacLanguagesConfig_of_json json
 
 let runtime_of_config_json json =
   json |> languages_of_config_json |> runtime_of_languages_config
+
+let equivalent_languages_config
+    (a : Openapi.yodacLanguagesConfig)
+    (b : Openapi.yodacLanguagesConfig) =
+  let ta = runtime_of_languages_config a in
+  let tb = runtime_of_languages_config b in
+  if Hashtbl.length ta <> Hashtbl.length tb then false
+  else
+    Hashtbl.fold
+      (fun lang va acc ->
+        acc
+        &&
+        match Hashtbl.find_opt tb lang with
+           | None -> false
+           | Some vb ->
+               va.ext = vb.ext
+               && va.image = vb.image
+               && va.tag = vb.tag
+               && va.compile = vb.compile
+               && va.run = vb.run )
+      ta true
 
 let config_json_of_runtime tbl =
   tbl |> languages_config_of_runtime |> config_json_of_languages
@@ -150,7 +166,7 @@ let get_default_config_json () =
           fields
       in
       config_json_of_languages languages
-  | Ok _ -> failwith "languagesv2.yaml: formato inválido"
+  | Ok _ -> failwith "languages.yaml: formato inválido"
   | Error (`Msg msg) -> failwith msg
 
 (** Inicializa a configuração no Valkey se não existir.

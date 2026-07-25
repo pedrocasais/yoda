@@ -3,10 +3,9 @@
 ## Compile and evaluate programs in OCaml
 
 ![OCaml](https://img.shields.io/badge/OCaml-3C873A?logo=ocaml\&logoColor=white)
-![WebAssembly](https://img.shields.io/badge/WebAssembly-654FF0?logo=webassembly\&logoColor=white)
 
-[![Build and Push Container](https://github.com/pedrocasais/yoda/actions/workflows/build.yml/badge.svg)](https://github.com/pedrocasais/yoda/actions/workflows/build.yml)
-[![Build and Push Sandbox Container](https://github.com/pedrocasais/yoda/actions/workflows/build-sandbox.yml/badge.svg)](https://github.com/pedrocasais/yoda/actions/workflows/build-sandbox.yml)
+[![Build and Push YodaB Container](https://github.com/pedrocasais/yoda/actions/workflows/build-yodab.yml/badge.svg)](https://github.com/pedrocasais/yoda/actions/workflows/build.yml)
+[![Build and Push YodaC Container](https://github.com/pedrocasais/yoda/actions/workflows/build-yodac.yml/badge.svg)](https://github.com/pedrocasais/yoda/actions/workflows/build-sandbox.yml)
 
 
 ## 📝 Description
@@ -80,21 +79,21 @@ Pre-built images are published to the GitHub Container Registry on every push to
 
 | Image | Description |
 |-------|-------------|
-| `ghcr.io/pedrocasais/yoda` | YodaB — REST API server |
-| `ghcr.io/pedrocasais/yoda-sandbox` | YodaC — Compiler & judge sandbox |
+| `ghcr.io/pedrocasais/yoda-b` | YodaB — REST API server |
+| `ghcr.io/pedrocasais/yoda-c` | YodaC — Compiler & judge sandbox |
 
 **Pull the latest images:**
 
 ```bash
-docker pull ghcr.io/pedrocasais/yoda:main
-docker pull ghcr.io/pedrocasais/yoda-sandbox:main
+docker pull ghcr.io/pedrocasais/yoda-b:master
+docker pull ghcr.io/pedrocasais/yoda-c:master
 ```
 
 **Pull a specific release:**
 
 ```bash
-docker pull ghcr.io/pedrocasais/yoda:1.0.0
-docker pull ghcr.io/pedrocasais/yoda-sandbox:1.0.0
+docker pull ghcr.io/pedrocasais/yoda-b:1.0.0
+docker pull ghcr.io/pedrocasais/yoda-c:1.0.0
 ```
 
 ## ⚙️ Infrastructure Architecture
