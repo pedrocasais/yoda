@@ -87,8 +87,8 @@ let postAuthRegister request =
       Helpers.checkPrems request (fun () ->
           Dream.body request
           >>= fun data ->
-          let user = Openapi.usersPostRequest_of_json data in
-          let rec aux conn (user : Openapi.usersPostRequest) attempt passwd =
+          let user = Openapi.AdminUsersPostRequest.of_json data in
+          let rec aux conn (user : Openapi.AdminUsersPostRequest.t) attempt passwd =
             let created_at = Helpers.date () in
             Client.unwatch conn
             >>= fun _ ->
@@ -117,7 +117,7 @@ let postAuthRegister request =
               ; "password"
               ; passwd
               ; "role"
-              ; Openapi.json_of_usersPostRequestRole user.role
+              ; Openapi.AdminUsersPostRequestRole.to_json user.role
               ; "created_at"
               ; created_at ]
             >>= fun _ ->
@@ -143,7 +143,7 @@ let postAuthRegister request =
                   Openapi.create_user ~id:next_id ~username:user.username
                     ~role:
                       (Openapi.userRole_of_json
-                         (Openapi.json_of_usersPostRequestRole user.role) )
+                         (Openapi.AdminUsersPostRequestRole.to_json user.role) )
                     ~created_at ()
                 in
                 Dream.json ~code:200

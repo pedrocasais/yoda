@@ -434,187 +434,6 @@ module YodacConfigGetResponse = struct
   let to_json = json_of_yodacConfigGetResponse
 end
 
-type usersPostRequestRole =
-  | User
-  | Judge
-  | Admin
-
-let usersPostRequestRole_of_yojson (x : Yojson.Safe.t) : usersPostRequestRole =
-  match x with
-  | `String "user" -> User
-  | `String "judge" -> Judge
-  | `String "admin" -> Admin
-  | _ -> Atdml_runtime.Yojson.bad_sum "usersPostRequestRole" x
-
-let yojson_of_usersPostRequestRole (x : usersPostRequestRole) : Yojson.Safe.t =
-  match x with
-  | User -> `String "user"
-  | Judge -> `String "judge"
-  | Admin -> `String "admin"
-
-let usersPostRequestRole_of_json s =
-  usersPostRequestRole_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_usersPostRequestRole x =
-  Yojson.Safe.to_string (yojson_of_usersPostRequestRole x)
-
-module UsersPostRequestRole = struct
-  type nonrec t = usersPostRequestRole
-  let of_yojson = usersPostRequestRole_of_yojson
-  let to_yojson = yojson_of_usersPostRequestRole
-  let of_json = usersPostRequestRole_of_json
-  let to_json = json_of_usersPostRequestRole
-end
-
-type usersPostRequest = {
-  username: string;
-  password: string;
-  role: usersPostRequestRole;
-}
-
-let create_usersPostRequest ~username ~password ~role () : usersPostRequest =
-  { username; password; role }
-
-let usersPostRequest_of_yojson (x : Yojson.Safe.t) : usersPostRequest =
-  match x with
-  | `Assoc fields ->
-    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
-       be unique). Below the threshold, List.assoc_opt returns the first binding;
-       above it, the hashtable returns the last. *)
-    let assoc =
-      if Atdml_runtime.list_length_gt 5 fields then
-        let tbl = Hashtbl.create 16 in
-        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
-        (fun key -> Hashtbl.find_opt tbl key)
-      else (fun key -> List.assoc_opt key fields)
-    in
-    let username =
-      match assoc "username" with
-      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "usersPostRequest" "username"
-    in
-    let password =
-      match assoc "password" with
-      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "usersPostRequest" "password"
-    in
-    let role =
-      match assoc "role" with
-      | Some v -> usersPostRequestRole_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "usersPostRequest" "role"
-    in
-    { username; password; role }
-  | _ -> Atdml_runtime.Yojson.bad_type "usersPostRequest" x
-
-let yojson_of_usersPostRequest (x : usersPostRequest) : Yojson.Safe.t =
-  `Assoc (List.concat [
-    [("username", Atdml_runtime.Yojson.yojson_of_string x.username)];
-    [("password", Atdml_runtime.Yojson.yojson_of_string x.password)];
-    [("role", yojson_of_usersPostRequestRole x.role)];
-  ])
-
-let usersPostRequest_of_json s =
-  usersPostRequest_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_usersPostRequest x =
-  Yojson.Safe.to_string (yojson_of_usersPostRequest x)
-
-module UsersPostRequest = struct
-  type nonrec t = usersPostRequest
-  let create = create_usersPostRequest
-  let of_yojson = usersPostRequest_of_yojson
-  let to_yojson = yojson_of_usersPostRequest
-  let of_json = usersPostRequest_of_json
-  let to_json = json_of_usersPostRequest
-end
-
-type usersIdPutRequestRole =
-  | User
-  | Judge
-  | Admin
-
-let usersIdPutRequestRole_of_yojson (x : Yojson.Safe.t) : usersIdPutRequestRole =
-  match x with
-  | `String "user" -> User
-  | `String "judge" -> Judge
-  | `String "admin" -> Admin
-  | _ -> Atdml_runtime.Yojson.bad_sum "usersIdPutRequestRole" x
-
-let yojson_of_usersIdPutRequestRole (x : usersIdPutRequestRole) : Yojson.Safe.t =
-  match x with
-  | User -> `String "user"
-  | Judge -> `String "judge"
-  | Admin -> `String "admin"
-
-let usersIdPutRequestRole_of_json s =
-  usersIdPutRequestRole_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_usersIdPutRequestRole x =
-  Yojson.Safe.to_string (yojson_of_usersIdPutRequestRole x)
-
-module UsersIdPutRequestRole = struct
-  type nonrec t = usersIdPutRequestRole
-  let of_yojson = usersIdPutRequestRole_of_yojson
-  let to_yojson = yojson_of_usersIdPutRequestRole
-  let of_json = usersIdPutRequestRole_of_json
-  let to_json = json_of_usersIdPutRequestRole
-end
-
-type usersIdPutRequest = {
-  username: string option;
-  role: usersIdPutRequestRole option;
-}
-
-let create_usersIdPutRequest ?username ?role () : usersIdPutRequest =
-  { username; role }
-
-let usersIdPutRequest_of_yojson (x : Yojson.Safe.t) : usersIdPutRequest =
-  match x with
-  | `Assoc fields ->
-    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
-       be unique). Below the threshold, List.assoc_opt returns the first binding;
-       above it, the hashtable returns the last. *)
-    let assoc =
-      if Atdml_runtime.list_length_gt 5 fields then
-        let tbl = Hashtbl.create 16 in
-        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
-        (fun key -> Hashtbl.find_opt tbl key)
-      else (fun key -> List.assoc_opt key fields)
-    in
-    let username =
-      match assoc "username" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
-    in
-    let role =
-      match assoc "role" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some (usersIdPutRequestRole_of_yojson v)
-    in
-    { username; role }
-  | _ -> Atdml_runtime.Yojson.bad_type "usersIdPutRequest" x
-
-let yojson_of_usersIdPutRequest (x : usersIdPutRequest) : Yojson.Safe.t =
-  `Assoc (List.concat [
-    (match x.username with None -> [] | Some v -> [("username", Atdml_runtime.Yojson.yojson_of_string v)]);
-    (match x.role with None -> [] | Some v -> [("role", yojson_of_usersIdPutRequestRole v)]);
-  ])
-
-let usersIdPutRequest_of_json s =
-  usersIdPutRequest_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_usersIdPutRequest x =
-  Yojson.Safe.to_string (yojson_of_usersIdPutRequest x)
-
-module UsersIdPutRequest = struct
-  type nonrec t = usersIdPutRequest
-  let create = create_usersIdPutRequest
-  let of_yojson = usersIdPutRequest_of_yojson
-  let to_yojson = yojson_of_usersIdPutRequest
-  let of_json = usersIdPutRequest_of_json
-  let to_json = json_of_usersIdPutRequest
-end
-
 type userRole =
   | User
   | Judge
@@ -714,28 +533,6 @@ module User = struct
   let to_yojson = yojson_of_user
   let of_json = user_of_json
   let to_json = json_of_user
-end
-
-type usersGetResponse2 = user list
-
-let usersGetResponse2_of_yojson (x : Yojson.Safe.t) : usersGetResponse2 =
-  (Atdml_runtime.Yojson.list_of_yojson user_of_yojson) x
-
-let yojson_of_usersGetResponse2 (x : usersGetResponse2) : Yojson.Safe.t =
-  (Atdml_runtime.Yojson.yojson_of_list yojson_of_user) x
-
-let usersGetResponse2_of_json s =
-  usersGetResponse2_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_usersGetResponse2 x =
-  Yojson.Safe.to_string (yojson_of_usersGetResponse2 x)
-
-module UsersGetResponse2 = struct
-  type nonrec t = usersGetResponse2
-  let of_yojson = usersGetResponse2_of_yojson
-  let to_yojson = yojson_of_usersGetResponse2
-  let of_json = usersGetResponse2_of_json
-  let to_json = json_of_usersGetResponse2
 end
 
 type testCase = {
@@ -1778,5 +1575,208 @@ module AuthLoginPostRequest = struct
   let to_yojson = yojson_of_authLoginPostRequest
   let of_json = authLoginPostRequest_of_json
   let to_json = json_of_authLoginPostRequest
+end
+
+type adminUsersPostRequestRole =
+  | User
+  | Judge
+  | Admin
+
+let adminUsersPostRequestRole_of_yojson (x : Yojson.Safe.t) : adminUsersPostRequestRole =
+  match x with
+  | `String "user" -> User
+  | `String "judge" -> Judge
+  | `String "admin" -> Admin
+  | _ -> Atdml_runtime.Yojson.bad_sum "adminUsersPostRequestRole" x
+
+let yojson_of_adminUsersPostRequestRole (x : adminUsersPostRequestRole) : Yojson.Safe.t =
+  match x with
+  | User -> `String "user"
+  | Judge -> `String "judge"
+  | Admin -> `String "admin"
+
+let adminUsersPostRequestRole_of_json s =
+  adminUsersPostRequestRole_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_adminUsersPostRequestRole x =
+  Yojson.Safe.to_string (yojson_of_adminUsersPostRequestRole x)
+
+module AdminUsersPostRequestRole = struct
+  type nonrec t = adminUsersPostRequestRole
+  let of_yojson = adminUsersPostRequestRole_of_yojson
+  let to_yojson = yojson_of_adminUsersPostRequestRole
+  let of_json = adminUsersPostRequestRole_of_json
+  let to_json = json_of_adminUsersPostRequestRole
+end
+
+type adminUsersPostRequest = {
+  username: string;
+  password: string;
+  role: adminUsersPostRequestRole;
+}
+
+let create_adminUsersPostRequest ~username ~password ~role () : adminUsersPostRequest =
+  { username; password; role }
+
+let adminUsersPostRequest_of_yojson (x : Yojson.Safe.t) : adminUsersPostRequest =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let username =
+      match assoc "username" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminUsersPostRequest" "username"
+    in
+    let password =
+      match assoc "password" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminUsersPostRequest" "password"
+    in
+    let role =
+      match assoc "role" with
+      | Some v -> adminUsersPostRequestRole_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminUsersPostRequest" "role"
+    in
+    { username; password; role }
+  | _ -> Atdml_runtime.Yojson.bad_type "adminUsersPostRequest" x
+
+let yojson_of_adminUsersPostRequest (x : adminUsersPostRequest) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("username", Atdml_runtime.Yojson.yojson_of_string x.username)];
+    [("password", Atdml_runtime.Yojson.yojson_of_string x.password)];
+    [("role", yojson_of_adminUsersPostRequestRole x.role)];
+  ])
+
+let adminUsersPostRequest_of_json s =
+  adminUsersPostRequest_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_adminUsersPostRequest x =
+  Yojson.Safe.to_string (yojson_of_adminUsersPostRequest x)
+
+module AdminUsersPostRequest = struct
+  type nonrec t = adminUsersPostRequest
+  let create = create_adminUsersPostRequest
+  let of_yojson = adminUsersPostRequest_of_yojson
+  let to_yojson = yojson_of_adminUsersPostRequest
+  let of_json = adminUsersPostRequest_of_json
+  let to_json = json_of_adminUsersPostRequest
+end
+
+type adminUsersIdPutRequestRole =
+  | User
+  | Judge
+  | Admin
+
+let adminUsersIdPutRequestRole_of_yojson (x : Yojson.Safe.t) : adminUsersIdPutRequestRole =
+  match x with
+  | `String "user" -> User
+  | `String "judge" -> Judge
+  | `String "admin" -> Admin
+  | _ -> Atdml_runtime.Yojson.bad_sum "adminUsersIdPutRequestRole" x
+
+let yojson_of_adminUsersIdPutRequestRole (x : adminUsersIdPutRequestRole) : Yojson.Safe.t =
+  match x with
+  | User -> `String "user"
+  | Judge -> `String "judge"
+  | Admin -> `String "admin"
+
+let adminUsersIdPutRequestRole_of_json s =
+  adminUsersIdPutRequestRole_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_adminUsersIdPutRequestRole x =
+  Yojson.Safe.to_string (yojson_of_adminUsersIdPutRequestRole x)
+
+module AdminUsersIdPutRequestRole = struct
+  type nonrec t = adminUsersIdPutRequestRole
+  let of_yojson = adminUsersIdPutRequestRole_of_yojson
+  let to_yojson = yojson_of_adminUsersIdPutRequestRole
+  let of_json = adminUsersIdPutRequestRole_of_json
+  let to_json = json_of_adminUsersIdPutRequestRole
+end
+
+type adminUsersIdPutRequest = {
+  username: string option;
+  role: adminUsersIdPutRequestRole option;
+}
+
+let create_adminUsersIdPutRequest ?username ?role () : adminUsersIdPutRequest =
+  { username; role }
+
+let adminUsersIdPutRequest_of_yojson (x : Yojson.Safe.t) : adminUsersIdPutRequest =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let username =
+      match assoc "username" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let role =
+      match assoc "role" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (adminUsersIdPutRequestRole_of_yojson v)
+    in
+    { username; role }
+  | _ -> Atdml_runtime.Yojson.bad_type "adminUsersIdPutRequest" x
+
+let yojson_of_adminUsersIdPutRequest (x : adminUsersIdPutRequest) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    (match x.username with None -> [] | Some v -> [("username", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.role with None -> [] | Some v -> [("role", yojson_of_adminUsersIdPutRequestRole v)]);
+  ])
+
+let adminUsersIdPutRequest_of_json s =
+  adminUsersIdPutRequest_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_adminUsersIdPutRequest x =
+  Yojson.Safe.to_string (yojson_of_adminUsersIdPutRequest x)
+
+module AdminUsersIdPutRequest = struct
+  type nonrec t = adminUsersIdPutRequest
+  let create = create_adminUsersIdPutRequest
+  let of_yojson = adminUsersIdPutRequest_of_yojson
+  let to_yojson = yojson_of_adminUsersIdPutRequest
+  let of_json = adminUsersIdPutRequest_of_json
+  let to_json = json_of_adminUsersIdPutRequest
+end
+
+type adminUsersGetResponse2 = user list
+
+let adminUsersGetResponse2_of_yojson (x : Yojson.Safe.t) : adminUsersGetResponse2 =
+  (Atdml_runtime.Yojson.list_of_yojson user_of_yojson) x
+
+let yojson_of_adminUsersGetResponse2 (x : adminUsersGetResponse2) : Yojson.Safe.t =
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_user) x
+
+let adminUsersGetResponse2_of_json s =
+  adminUsersGetResponse2_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_adminUsersGetResponse2 x =
+  Yojson.Safe.to_string (yojson_of_adminUsersGetResponse2 x)
+
+module AdminUsersGetResponse2 = struct
+  type nonrec t = adminUsersGetResponse2
+  let of_yojson = adminUsersGetResponse2_of_yojson
+  let to_yojson = yojson_of_adminUsersGetResponse2
+  let of_json = adminUsersGetResponse2_of_json
+  let to_json = json_of_adminUsersGetResponse2
 end
 

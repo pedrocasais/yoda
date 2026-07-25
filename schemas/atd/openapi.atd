@@ -20,13 +20,13 @@ type contestStatus = [
   | Finished <json name="finished">
 ] 
 
-type usersPostRequestRole = [
+type adminUsersPostRequestRole = [
   | User <json name="user">
   | Judge <json name="judge">
   | Admin <json name="admin">
 ] 
 
-type usersIdPutRequestRole = [
+type adminUsersIdPutRequestRole = [
   | User <json name="user">
   | Judge <json name="judge">
   | Admin <json name="admin">
@@ -72,18 +72,18 @@ type authLoginPostRequest = {
   password : string;
 } 
 
-type usersIdPutRequest = {
+type adminUsersIdPutRequest = {
   ?username : string option;
-  ?role : usersIdPutRequestRole option;
+  ?role : adminUsersIdPutRequestRole option;
 } 
 
-type usersPostRequest = {
+type adminUsersPostRequest = {
   username : string;
   password : string;
-  role : usersPostRequestRole;
+  role : adminUsersPostRequestRole;
 } 
 
-type usersGetResponse2 = user list 
+type adminUsersGetResponse2 = user list 
 
 type yodacConfigHistoryGetResponse = yodacConfigHistoryEntry list 
 
