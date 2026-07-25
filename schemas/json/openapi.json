@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.4",
   "info": {
-    "title": "Backend API OCaml Dream",
-    "description": "API specification for Yoda.",
+    "title": "API specification for Yoda",
+    "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
     "version": "1.0"
   },
   "paths": {
@@ -990,6 +990,14 @@
   },
   "components": {
     "schemas": {
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "user",
+          "judge",
+          "admin"
+        ]
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -1000,12 +1008,7 @@
             "type": "string"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "user",
-              "judge",
-              "admin"
-            ]
+            "$ref": "#/components/schemas/UserRole"
           },
           "created_at": {
             "type": "string"
@@ -1373,12 +1376,7 @@
             "type": "string"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "user",
-              "judge",
-              "admin"
-            ]
+            "$ref": "#/components/schemas/UserRole"
           }
         },
         "required": [
@@ -1394,12 +1392,7 @@
             "type": "string"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "user",
-              "judge",
-              "admin"
-            ]
+            "$ref": "#/components/schemas/UserRole"
           }
         }
       },

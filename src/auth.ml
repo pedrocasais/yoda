@@ -117,7 +117,7 @@ let postAuthRegister request =
               ; "password"
               ; passwd
               ; "role"
-              ; Openapi.AdminUsersPostRequestRole.to_json user.role
+              ; Openapi.UserRole.to_json user.role
               ; "created_at"
               ; created_at ]
             >>= fun _ ->
@@ -143,7 +143,7 @@ let postAuthRegister request =
                   Openapi.create_user ~id:next_id ~username:user.username
                     ~role:
                       (Openapi.userRole_of_json
-                         (Openapi.AdminUsersPostRequestRole.to_json user.role) )
+                         (Openapi.UserRole.to_json user.role) )
                     ~created_at ()
                 in
                 Dream.json ~code:200

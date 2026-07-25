@@ -568,31 +568,13 @@ module AuthLoginPostRequest : sig
   val to_json : t -> string
 end
 
-type adminUsersPostRequestRole =
-  | User
-  | Judge
-  | Admin
-
-val adminUsersPostRequestRole_of_yojson : Yojson.Safe.t -> adminUsersPostRequestRole
-val yojson_of_adminUsersPostRequestRole : adminUsersPostRequestRole -> Yojson.Safe.t
-val adminUsersPostRequestRole_of_json : string -> adminUsersPostRequestRole
-val json_of_adminUsersPostRequestRole : adminUsersPostRequestRole -> string
-
-module AdminUsersPostRequestRole : sig
-  type nonrec t = adminUsersPostRequestRole
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
 type adminUsersPostRequest = {
   username: string;
   password: string;
-  role: adminUsersPostRequestRole;
+  role: userRole;
 }
 
-val create_adminUsersPostRequest : username:string -> password:string -> role:adminUsersPostRequestRole -> unit -> adminUsersPostRequest
+val create_adminUsersPostRequest : username:string -> password:string -> role:userRole -> unit -> adminUsersPostRequest
 val adminUsersPostRequest_of_yojson : Yojson.Safe.t -> adminUsersPostRequest
 val yojson_of_adminUsersPostRequest : adminUsersPostRequest -> Yojson.Safe.t
 val adminUsersPostRequest_of_json : string -> adminUsersPostRequest
@@ -600,25 +582,7 @@ val json_of_adminUsersPostRequest : adminUsersPostRequest -> string
 
 module AdminUsersPostRequest : sig
   type nonrec t = adminUsersPostRequest
-  val create : username:string -> password:string -> role:adminUsersPostRequestRole -> unit -> t
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type adminUsersIdPutRequestRole =
-  | User
-  | Judge
-  | Admin
-
-val adminUsersIdPutRequestRole_of_yojson : Yojson.Safe.t -> adminUsersIdPutRequestRole
-val yojson_of_adminUsersIdPutRequestRole : adminUsersIdPutRequestRole -> Yojson.Safe.t
-val adminUsersIdPutRequestRole_of_json : string -> adminUsersIdPutRequestRole
-val json_of_adminUsersIdPutRequestRole : adminUsersIdPutRequestRole -> string
-
-module AdminUsersIdPutRequestRole : sig
-  type nonrec t = adminUsersIdPutRequestRole
+  val create : username:string -> password:string -> role:userRole -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -627,10 +591,10 @@ end
 
 type adminUsersIdPutRequest = {
   username: string option;
-  role: adminUsersIdPutRequestRole option;
+  role: userRole option;
 }
 
-val create_adminUsersIdPutRequest : ?username:string -> ?role:adminUsersIdPutRequestRole -> unit -> adminUsersIdPutRequest
+val create_adminUsersIdPutRequest : ?username:string -> ?role:userRole -> unit -> adminUsersIdPutRequest
 val adminUsersIdPutRequest_of_yojson : Yojson.Safe.t -> adminUsersIdPutRequest
 val yojson_of_adminUsersIdPutRequest : adminUsersIdPutRequest -> Yojson.Safe.t
 val adminUsersIdPutRequest_of_json : string -> adminUsersIdPutRequest
@@ -638,7 +602,7 @@ val json_of_adminUsersIdPutRequest : adminUsersIdPutRequest -> string
 
 module AdminUsersIdPutRequest : sig
   type nonrec t = adminUsersIdPutRequest
-  val create : ?username:string -> ?role:adminUsersIdPutRequestRole -> unit -> t
+  val create : ?username:string -> ?role:userRole -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
