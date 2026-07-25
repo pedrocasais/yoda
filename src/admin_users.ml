@@ -94,7 +94,7 @@ let putUsersId request =
                     ; "role"
                     ; ( match data.role with
                       | Some x ->
-                          Openapi.AdminUsersIdPutRequestRole.to_json x
+                          Openapi.UserRole.to_json x
                       | None -> Option.get (List.nth lst 2) ) ]
                   >>= function
                   | `Status "OK" | `Int _ ->

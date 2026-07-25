@@ -2,12 +2,6 @@
 type json <ocaml module="Yojson.Basic" t="t"> = abstract
 type int64 = int <ocaml repr="int64">
 
-type userRole = [
-  | User <json name="user">
-  | Judge <json name="judge">
-  | Admin <json name="admin">
-] 
-
 type submissionDetails = {
   testcase_id : int;
   status : string;
@@ -18,18 +12,6 @@ type contestStatus = [
   | Upcoming <json name="upcoming">
   | Running <json name="running">
   | Finished <json name="finished">
-] 
-
-type adminUsersPostRequestRole = [
-  | User <json name="user">
-  | Judge <json name="judge">
-  | Admin <json name="admin">
-] 
-
-type adminUsersIdPutRequestRole = [
-  | User <json name="user">
-  | Judge <json name="judge">
-  | Admin <json name="admin">
 ] 
 
 type contestsIdPutRequestStatus = [
@@ -74,13 +56,13 @@ type authLoginPostRequest = {
 
 type adminUsersIdPutRequest = {
   ?username : string option;
-  ?role : adminUsersIdPutRequestRole option;
+  ?role : userRole option;
 } 
 
 type adminUsersPostRequest = {
   username : string;
   password : string;
-  role : adminUsersPostRequestRole;
+  role : userRole;
 } 
 
 type adminUsersGetResponse2 = user list 
@@ -180,3 +162,9 @@ type user = {
   role : userRole;
   created_at : string;
 } 
+
+type userRole = [
+  | User <json name="user">
+  | Judge <json name="judge">
+  | Admin <json name="admin">
+] 

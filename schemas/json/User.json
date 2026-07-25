@@ -9,12 +9,7 @@
       "type": "string"
     },
     "role": {
-      "type": "string",
-      "enum": [
-        "user",
-        "judge",
-        "admin"
-      ]
+      "$ref": "#/components/schemas/UserRole"
     },
     "created_at": {
       "type": "string"
