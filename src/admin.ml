@@ -74,46 +74,62 @@ let putAdminYodacConfig request =
                     >>= fun current_version_raw ->
                     Client.get conn Config.config_key
                     >>= fun previous_cfg_raw ->
-                    let current_version =
-                      match current_version_raw with
-                      | Some x -> int_of_string x
-                      | None -> 0
+                    let unchanged =
+                      match previous_cfg_raw with
+                      | None -> false
+                      | Some current_json ->
+                          let current_cfg =
+                            Config.languages_of_config_json current_json
+                          in
+                          Config.equivalent_languages_config current_cfg
+                            payload.config
                     in
-                    let next_version = current_version + 1 in
-                    let ts = Helpers.date () in
-                    let history_json =
-                      Config.make_history_entry_json
-                        ~version:next_version ~timestamp:ts
-                        ~changed_by:actor ~action:"update"
-                        ~previous_config_json:previous_cfg_raw
-                        ~new_config:payload.config
-                    in
-                    Client.multi conn
-                    >>= fun _ ->
-                    Client.send_custom_request conn
-                      ["SET"; Config.config_key; new_cfg_json]
-                    >>= fun _ ->
-                    Client.send_custom_request conn
-                      ["SET"; Config.version_key; string_of_int next_version]
-                    >>= fun _ ->
-                    Client.send_custom_request conn ["SET"; Config.updated_at_key; ts]
-                    >>= fun _ ->
-                    Client.send_custom_request conn ["SET"; Config.updated_by_key; actor]
-                    >>= fun _ ->
-                    Client.send_custom_request conn
-                      ["RPUSH"; Config.history_key; history_json]
-                    >>= fun _ ->
-                    Client.exec conn
-                    >>= function
-                    | [] ->
-                        if retries >= 5 then
-                          error_json ~code:500 "Max retries exceeded"
-                        else attempt (retries + 1)
-                    | _ ->
-                        Dream.json ~code:200 ~headers:json_headers
-                          (Config.make_get_response_json
-                            ~config_json:new_cfg_json ~version:next_version
-                            ~updated_at:ts ~updated_by:actor )
+                    if unchanged then
+                      error_json ~code:400
+                        "Configuration is unchanged; update skipped"
+                    else
+                      let current_version =
+                        match current_version_raw with
+                        | Some x -> int_of_string x
+                        | None -> 0
+                      in
+                      let next_version = current_version + 1 in
+                      let ts = Helpers.date () in
+                      let history_json =
+                        Config.make_history_entry_json
+                          ~version:next_version ~timestamp:ts
+                          ~changed_by:actor ~action:"update"
+                          ~previous_config_json:previous_cfg_raw
+                          ~new_config:payload.config
+                      in
+                      Client.multi conn
+                      >>= fun _ ->
+                      Client.send_custom_request conn
+                        ["SET"; Config.config_key; new_cfg_json]
+                      >>= fun _ ->
+                      Client.send_custom_request conn
+                        ["SET"; Config.version_key; string_of_int next_version]
+                      >>= fun _ ->
+                      Client.send_custom_request conn
+                        ["SET"; Config.updated_at_key; ts]
+                      >>= fun _ ->
+                      Client.send_custom_request conn
+                        ["SET"; Config.updated_by_key; actor]
+                      >>= fun _ ->
+                      Client.send_custom_request conn
+                        ["RPUSH"; Config.history_key; history_json]
+                      >>= fun _ ->
+                      Client.exec conn
+                      >>= function
+                      | [] ->
+                          if retries >= 5 then
+                            error_json ~code:500 "Max retries exceeded"
+                          else attempt (retries + 1)
+                      | _ ->
+                          Dream.json ~code:200 ~headers:json_headers
+                            (Config.make_get_response_json
+                              ~config_json:new_cfg_json ~version:next_version
+                              ~updated_at:ts ~updated_by:actor )
                   in
                   attempt 0 ) ) )
     (fun exn -> error_json ~code:500 (Printexc.to_string exn))

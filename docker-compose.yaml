@@ -17,7 +17,7 @@ services:
       - proxy
     restart: unless-stopped
 
-  yodab:
+  yoda-b:
     build:
       dockerfile: Containerfile.yodab
     image: yodab-dev
@@ -31,7 +31,7 @@ services:
       - proxy
     restart: unless-stopped
 
-  yodac:
+  yoda-c:
     build:
       dockerfile: Containerfile.yodac
     image: yodac-dev
@@ -57,7 +57,7 @@ services:
       - proxy
     restart: unless-stopped
 
-  yodaw:
+  yoda-a:
     image: ghcr.io/anmaped/yoda-web:latest
     labels:
       - "traefik.enable=true"

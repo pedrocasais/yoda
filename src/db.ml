@@ -3,7 +3,7 @@
 open Lwt.Infix
 open Redis_lwt
 
-(** Configurações de conexão há [Db] *)
+(** Configurações de conexão à [Db] *)
 
 let host =
   let default = "valkey" in
@@ -15,7 +15,7 @@ let port =
 
 let config = {Client.host; Client.port}
 
-(** [pool] criar uma pool de conexões há [Db]  *)
+(** [pool] criar uma pool de conexões à [Db]  *)
 let pool =
   Lwt_pool.create 10
     (fun () -> Client.connect config)
