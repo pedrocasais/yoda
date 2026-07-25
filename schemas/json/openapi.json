@@ -6,17 +6,17 @@
     "version": "1.0"
   },
   "paths": {
-    "/users": {
+    "/admin/users": {
       "get": {
         "summary": "Returns a list of users.",
-        "description": "Returns a list of users.",
+        "description": "Admin only. Returns a list of users.",
         "responses": {
           "200": {
             "description": "A JSON array of user objects",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UsersGetResponse200"
+                  "$ref": "#/components/schemas/AdminUsersGetResponse200"
                 },
                 "example": [
                   {
@@ -45,13 +45,13 @@
       },
       "post": {
         "summary": "Creates a user.",
-        "description": "Creates a new user.",
+        "description": "Admin only. Creates a new user.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UsersPostRequest"
+                "$ref": "#/components/schemas/AdminUsersPostRequest"
               }
             }
           }
@@ -79,7 +79,7 @@
         }
       }
     },
-    "/users/{id}": {
+    "/admin/users/{id}": {
       "parameters": [
         {
           "name": "id",
@@ -92,7 +92,7 @@
       ],
       "get": {
         "summary": "Returns a user.",
-        "description": "Returns a user.",
+        "description": "Admin only. Returns a user.",
         "responses": {
           "200": {
             "description": "A user object",
@@ -117,13 +117,13 @@
       },
       "put": {
         "summary": "Update a user.",
-        "description": "Updates an existing user.",
+        "description": "Admin only. Updates an existing user.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UsersIdPutRequest"
+                "$ref": "#/components/schemas/AdminUsersIdPutRequest"
               }
             }
           }
@@ -155,7 +155,7 @@
       },
       "delete": {
         "summary": "Deletes a user.",
-        "description": "Deletes an existing user.",
+        "description": "Admin only. Deletes an existing user.",
         "responses": {
           "204": {
             "description": "User deleted successfully"
@@ -235,7 +235,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UsersPostRequest"
+                "$ref": "#/components/schemas/AdminUsersPostRequest"
               }
             }
           }
@@ -1357,13 +1357,13 @@
           "$ref": "#/components/schemas/YodacConfigHistoryEntry"
         }
       },
-      "UsersGetResponse200": {
+      "AdminUsersGetResponse200": {
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/User"
         }
       },
-      "UsersPostRequest": {
+      "AdminUsersPostRequest": {
         "type": "object",
         "properties": {
           "username": {
@@ -1387,7 +1387,7 @@
           "role"
         ]
       },
-      "UsersIdPutRequest": {
+      "AdminUsersIdPutRequest": {
         "type": "object",
         "properties": {
           "username": {

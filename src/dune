@@ -34,7 +34,7 @@
  (name yoda_lib)
  (public_name yoda.lib)
  (wrapped false)
- (modules contests auth judge problems submissions users admin)
+ (modules contests auth judge problems submissions admin_users admin_yodac admin)
  (libraries
   api_types
   valkey

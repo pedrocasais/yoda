@@ -23,7 +23,7 @@ open Redis_lwt
 @return lista de utilizadores [Openapi.user list]
 *)
 let getAllUsers conn max =
-  let rec aux count (acc : Openapi.usersGetResponse2) =
+  let rec aux count (acc : Openapi.AdminUsersGetResponse2.t) =
     if count > max then Lwt.return (List.rev acc)
     else
       let () = Dream.log "id --> %d" count in
@@ -79,7 +79,7 @@ let putUsersId request =
                 ~headers:[("Content-Type", "application/json")]
                 "User not found\n"
           | true -> (
-              let data = Openapi.usersIdPutRequest_of_json update in
+              let data = Openapi.AdminUsersIdPutRequest.of_json update in
               let key = "user:" ^ id in
               Client.hmget conn key ["id"; "username"; "role"; "created_at"]
               >>= function
@@ -93,7 +93,8 @@ let putUsersId request =
                       | None -> Option.get (List.nth lst 1) )
                     ; "role"
                     ; ( match data.role with
-                      | Some x -> Openapi.json_of_usersIdPutRequestRole x
+                      | Some x ->
+                          Openapi.AdminUsersIdPutRequestRole.to_json x
                       | None -> Option.get (List.nth lst 2) ) ]
                   >>= function
                   | `Status "OK" | `Int _ ->
@@ -149,16 +150,6 @@ let getUsersId request =
 
 (** [postUsers request] regista um novo utilizador usando a lógica de autenticação partilhada. *)
 let postUsers request = Auth.postAuthRegister request
-(* let pattern = "user:*" in Dream.body request >>= fun data -> let user =
-   Openapi.user_of_json data in Lwt_pool.use Db.pool (fun conn -> Client.scan
-   conn 0 ~pattern >>= fun (next_cursor, users) -> aux conn next_cursor users
-   pattern >>= fun allusers -> userExist conn user.username allusers >>= fun
-   res -> if res then Dream.html "ja exites" else Client.incr conn "u:id" >>=
-   (fun id -> let key = "user:" ^ string_of_int id in Client.hset conn key
-   "username" user.username >>= fun _ -> Client.hset conn key "role"
-   (Openapi.UserRole.to_json user.role) >>= fun _ -> Client.hset conn key
-   "created_at" user.created_at ) >>= fun _ -> Dream.redirect request "/"
-   ) *)
 
 (** [getUsers _request] devolve todos os utilizadores registados. 
  @return 200 OK, se for concluído com sucesso, devolve uma lista de users [Openapi.user list]; 404 Not Found, se não existirem users ; 500 Internal Server Error, erro. *)
@@ -177,7 +168,7 @@ let getUsers _request =
               >>= fun lst ->
               Dream.json ~code:200
                 ~headers:[("Content-Type", "application/json")]
-                (Openapi.json_of_usersGetResponse2 lst) ) )
+                (Openapi.AdminUsersGetResponse2.to_json lst) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
