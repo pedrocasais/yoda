@@ -227,6 +227,8 @@ let write_result (result : Job.result) (job : Job.job) =
     >>= fun _ ->
     Client.exec conn
     >>= fun _ ->
+    Stats.record_processed_job ()
+    >>= fun () ->
     Lwt_io.printf "Resultado: submission %d -> %s (%d%%)\n%!" result.id
       result.status result.score
   in
@@ -338,9 +340,7 @@ let process_job submission_id =
       >>= fun () ->
       Lwt_preemptive.detach (fun () -> Compiler.prepare_workdir job) ()
       >>= fun (workdir, src) ->
-      Lwt_preemptive.detach
-        (fun () -> Compiler.compile job workdir src)
-        ()
+      Lwt_preemptive.detach (fun () -> Compiler.compile job workdir src) ()
       >>= function
       | Error err ->
           Lwt_io.printf "Erro de compilação: %s\n%!" err

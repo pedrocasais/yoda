@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "api_version": {
+      "type": "string"
+    },
+    "yoda_version": {
+      "type": "string"
+    },
+    "contributors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "yodab": {
+      "$ref": "#/components/schemas/AdminYodabStats"
+    },
+    "yodac": {
+      "$ref": "#/components/schemas/AdminYodacStats"
+    }
+  },
+  "required": [
+    "api_version",
+    "yoda_version",
+    "contributors",
+    "yodab",
+    "yodac"
+  ]
+}

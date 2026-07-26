@@ -67,6 +67,28 @@ type adminUsersPostRequest = {
 
 type adminUsersGetResponse2 = user list 
 
+type adminStatsResponse = {
+  api_version : string;
+  yoda_version : string;
+  contributors : string list;
+  yodab : adminYodabStats;
+  yodac : adminYodacStats;
+} 
+
+type adminYodacStats = {
+  ?queued_jobs_total : int option;
+  queued_jobs_per_minute : int;
+  processed_jobs_total : int;
+  processed_jobs_per_minute : int;
+} 
+
+type adminYodabStats = {
+  yodab_requests_total : int;
+  yodab_requests_per_minute : int;
+  submissions_total : int;
+  submissions_per_minute : int;
+} 
+
 type yodacConfigHistoryGetResponse = yodacConfigHistoryEntry list 
 
 type yodacConfigHistoryEntry = {

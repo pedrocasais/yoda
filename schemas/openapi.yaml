@@ -711,6 +711,24 @@ paths:
         "500":
           description: Server error
 
+  /admin/stats:
+    get:
+      summary: Get internal Yoda stats
+      description: Admin only. Returns internal runtime statistics for YodaB and YodaC.
+      responses:
+        "200":
+          description: Internal runtime statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStatsResponse"
+        "401":
+          description: Unauthorized access
+        "403":
+          description: Forbidden - admin only
+        "500":
+          description: Server error
+
 components:
   schemas:
     UserRole:
@@ -939,3 +957,59 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/YodacConfigHistoryEntry"
+
+    AdminYodabStats:
+      type: object
+      properties:
+        yodab_requests_total:
+          type: integer
+        yodab_requests_per_minute:
+          type: integer
+        submissions_total:
+          type: integer
+        submissions_per_minute:
+          type: integer
+      required:
+        [
+          "yodab_requests_total",
+          "yodab_requests_per_minute",
+          "submissions_total",
+          "submissions_per_minute",
+        ]
+
+    AdminYodacStats:
+      type: object
+      properties:
+        queued_jobs_total:
+          type: integer
+        queued_jobs_per_minute:
+          type: integer
+        processed_jobs_total:
+          type: integer
+        processed_jobs_per_minute:
+          type: integer
+      required:
+        [
+          "queued_jobs",
+          "queued_jobs_per_minute",
+          "processed_jobs_total",
+          "processed_jobs_per_minute",
+        ]
+
+    AdminStatsResponse:
+      type: object
+      properties:
+        api_version:
+          type: string
+        yoda_version:
+          type: string
+        contributors:
+          type: array
+          items:
+            type: string
+        yodab:
+          $ref: "#/components/schemas/AdminYodabStats"
+        yodac:
+          $ref: "#/components/schemas/AdminYodacStats"
+      required:
+        ["api_version", "yoda_version", "contributors", "yodab", "yodac"]

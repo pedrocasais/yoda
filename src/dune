@@ -31,15 +31,34 @@
  (libraries api_types valkey helpers yojson yaml lwt lwt.unix redis-lwt))
 
 (library
+ (name stats)
+ (public_name yoda.stats)
+ (wrapped false)
+ (modules stats)
+ (libraries api_types valkey lwt lwt.unix redis-lwt dream)
+ (preprocess
+  (pps lwt_ppx)))
+
+(library
  (name yoda_lib)
  (public_name yoda.lib)
  (wrapped false)
- (modules contests auth judge problems submissions admin_users admin_yodac admin)
+ (modules
+  contests
+  auth
+  judge
+  problems
+  submissions
+  admin_users
+  admin_yodac
+  admin_stats
+  admin)
  (libraries
   api_types
   valkey
   helpers
   config
+  stats
   dream
   yojson
   lwt
@@ -64,17 +83,13 @@
  (name yodac_lib)
  (public_name yoda.yodac)
  (wrapped false)
- (modules
-  compiler
-  docker_runner
-  job
-  worker
-  common)
+ (modules compiler docker_runner job worker common)
  (libraries
   api_types
   valkey
   helpers
   config
+  stats
   unix
   lwt
   lwt.unix

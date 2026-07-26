@@ -93,8 +93,7 @@ let putUsersId request =
                       | None -> Option.get (List.nth lst 1) )
                     ; "role"
                     ; ( match data.role with
-                      | Some x ->
-                          Openapi.UserRole.to_json x
+                      | Some x -> Openapi.UserRole.to_json x
                       | None -> Option.get (List.nth lst 2) ) ]
                   >>= function
                   | `Status "OK" | `Int _ ->

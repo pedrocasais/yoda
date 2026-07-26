@@ -67,8 +67,7 @@ let languages_of_config_json json = Openapi.yodacLanguagesConfig_of_json json
 let runtime_of_config_json json =
   json |> languages_of_config_json |> runtime_of_languages_config
 
-let equivalent_languages_config
-    (a : Openapi.yodacLanguagesConfig)
+let equivalent_languages_config (a : Openapi.yodacLanguagesConfig)
     (b : Openapi.yodacLanguagesConfig) =
   let ta = runtime_of_languages_config a in
   let tb = runtime_of_languages_config b in
@@ -79,13 +78,10 @@ let equivalent_languages_config
         acc
         &&
         match Hashtbl.find_opt tb lang with
-           | None -> false
-           | Some vb ->
-               va.ext = vb.ext
-               && va.image = vb.image
-               && va.tag = vb.tag
-               && va.compile = vb.compile
-               && va.run = vb.run )
+        | None -> false
+        | Some vb ->
+            va.ext = vb.ext && va.image = vb.image && va.tag = vb.tag
+            && va.compile = vb.compile && va.run = vb.run )
       ta true
 
 let config_json_of_runtime tbl =

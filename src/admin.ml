@@ -5,6 +5,9 @@ let putAdminYodacConfig = Admin_yodac.putConfig
 
 let getAdminYodacConfigHistory = Admin_yodac.getConfigHistory
 
+(* Stats *)
+let getAdminStats = Admin_stats.getStats
+
 (* Users *)
 let getAdminUsers = Admin_users.getUsers
 
