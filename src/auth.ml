@@ -123,7 +123,7 @@ let postAuthRegister request =
               ; "groups"
               ; ( match user.groups with
                 | Some g -> Openapi.UserGroup.to_json g
-                | None -> "" )
+                | None -> Openapi.UserGroup.to_json [] )
               ; "created_at"
               ; created_at ]
             >>= fun _ ->
