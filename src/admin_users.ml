@@ -29,12 +29,13 @@ let getAllUsers conn max =
       let () = Dream.log "id --> %d" count in
       Client.hmget conn
         ("user:" ^ string_of_int count)
-        ["id"; "username"; "role"; "created_at"]
+        ["id"; "username"; "role"; "groups"; "created_at"]
       >>= function
-      | [Some id; Some username; Some role; Some created_at] ->
+      | [Some id; Some username; Some role; Some groups_json; Some created_at] ->
           let user =
             Openapi.create_user ~id:(int_of_string id) ~username
               ~role:(Openapi.userRole_of_json role)
+              ~groups:(Openapi.userGroup_of_json groups_json)
               ~created_at ()
           in
           aux (count + 1) (List.rev_append [user] acc)
@@ -63,7 +64,7 @@ let deleteUsersId request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(** [putUsersId request] atualiza os campos [username, role] do utilizador identificado pelo parâmetro de rota [id].
+(** [putUsersId request] atualiza os campos [username, role, groups] do utilizador identificado pelo parâmetro de rota [id].
  @return 200 OK, se for concluído com sucesso devolve o user atualizado de tipo [Openapi.user]; 404 Not Found, se não existir o user com o [id]; 400 Bad Request ou 500 Internal Server Error, erro. *)
 let putUsersId request =
   Lwt.catch
@@ -79,9 +80,10 @@ let putUsersId request =
                 ~headers:[("Content-Type", "application/json")]
                 "User not found\n"
           | true -> (
-              let data = Openapi.AdminUsersIdPutRequest.of_json update in
+              let data = Openapi.UserUpdateRequest.of_json update in
               let key = "user:" ^ id in
-              Client.hmget conn key ["id"; "username"; "role"; "created_at"]
+              Client.hmget conn key
+                ["id"; "username"; "role"; "groups"; "created_at"]
               >>= function
               | lst -> (
                   Client.send_custom_request conn
@@ -94,7 +96,11 @@ let putUsersId request =
                     ; "role"
                     ; ( match data.role with
                       | Some x -> Openapi.UserRole.to_json x
-                      | None -> Option.get (List.nth lst 2) ) ]
+                      | None -> Option.get (List.nth lst 2) )
+                    ; "groups"
+                    ; ( match data.groups with
+                      | Some x -> Openapi.UserGroup.to_json x
+                      | None -> Option.get (List.nth lst 3) ) ]
                   >>= function
                   | `Status "OK" | `Int _ ->
                       let user =
@@ -104,7 +110,10 @@ let putUsersId request =
                           ~role:
                             (Openapi.userRole_of_json
                                (Option.get (List.nth lst 2)) )
-                          ~created_at:(Option.get (List.nth lst 3))
+                          ~groups:
+                            (Openapi.userGroup_of_json
+                               (Option.get (List.nth lst 3)) )
+                          ~created_at:(Option.get (List.nth lst 4))
                           ()
                       in
                       Dream.json ~code:200
@@ -127,12 +136,13 @@ let getUsersId request =
       let id = Dream.param request "id" in
       Lwt_pool.use Db.pool (fun conn ->
           Client.hmget conn ("user:" ^ id)
-            ["id"; "username"; "role"; "created_at"] )
+            ["id"; "username"; "role"; "groups"; "created_at"] )
       >>= function
-      | [Some id; Some username; Some role; Some created_at] ->
+      | [Some id; Some username; Some role; Some groups_json; Some created_at] ->
           let user =
             Openapi.create_user ~id:(int_of_string id) ~username
               ~role:(Openapi.userRole_of_json role)
+              ~groups:(Openapi.userGroup_of_json groups_json)
               ~created_at ()
           in
           Dream.json ~code:200

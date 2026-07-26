@@ -2,7 +2,7 @@ openapi: 3.0.4
 info:
   title: "API specification for Yoda"
   description: "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications."
-  version: "1.0"
+  version: "1.1"
 
 paths:
   /admin/users:
@@ -39,15 +39,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                password:
-                  type: string
-                role:
-                  $ref: "#/components/schemas/UserRole"
-              required: ["username", "password", "role"]
+              $ref: "#/components/schemas/UserCreateRequest"
       responses:
         "201":
           description: User created successfully
@@ -93,12 +85,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                role:
-                  $ref: "#/components/schemas/UserRole"
+              $ref: "#/components/schemas/UserUpdateRequest"
       responses:
         "200":
           description: Updated user object
@@ -734,6 +721,11 @@ components:
     UserRole:
       type: string
       enum: ["user", "judge", "admin"]
+    
+    UserGroup:
+      type: array
+      items:
+        type: string
 
     User:
       type: object
@@ -744,9 +736,34 @@ components:
           type: string
         role:
           $ref: "#/components/schemas/UserRole"
+        groups:
+          $ref: "#/components/schemas/UserGroup"
         created_at:
           type: string
-      required: ["id", "username", "role", "created_at"]
+      required: ["id", "username", "role", "groups", "created_at"]
+
+    UserCreateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        groups:
+          $ref: "#/components/schemas/UserGroup"
+      required: ["username", "password", "role"]
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        groups:
+          $ref: "#/components/schemas/UserGroup"
 
     Problem:
       type: object

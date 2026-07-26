@@ -51,7 +51,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminUsersPostRequest"
+                "$ref": "#/components/schemas/UserCreateRequest"
               }
             }
           }
@@ -123,7 +123,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminUsersIdPutRequest"
+                "$ref": "#/components/schemas/UserUpdateRequest"
               }
             }
           }
@@ -235,7 +235,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminUsersPostRequest"
+                "$ref": "#/components/schemas/AuthRegisterPostRequest"
               }
             }
           }
@@ -1025,6 +1025,12 @@
           "admin"
         ]
       },
+      "UserGroup": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -1037,6 +1043,9 @@
           "role": {
             "$ref": "#/components/schemas/UserRole"
           },
+          "groups": {
+            "$ref": "#/components/schemas/UserGroup"
+          },
           "created_at": {
             "type": "string"
           }
@@ -1045,8 +1054,45 @@
           "id",
           "username",
           "role",
+          "groups",
           "created_at"
         ]
+      },
+      "UserCreateRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "groups": {
+            "$ref": "#/components/schemas/UserGroup"
+          }
+        },
+        "required": [
+          "username",
+          "password",
+          "role"
+        ]
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "groups": {
+            "$ref": "#/components/schemas/UserGroup"
+          }
+        }
       },
       "Problem": {
         "type": "object",
@@ -1469,36 +1515,6 @@
           "$ref": "#/components/schemas/User"
         }
       },
-      "AdminUsersPostRequest": {
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          },
-          "role": {
-            "$ref": "#/components/schemas/UserRole"
-          }
-        },
-        "required": [
-          "username",
-          "password",
-          "role"
-        ]
-      },
-      "AdminUsersIdPutRequest": {
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string"
-          },
-          "role": {
-            "$ref": "#/components/schemas/UserRole"
-          }
-        }
-      },
       "AuthLoginPostRequest": {
         "type": "object",
         "properties": {
@@ -1523,6 +1539,25 @@
         },
         "required": [
           "error"
+        ]
+      },
+      "AuthRegisterPostRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          }
+        },
+        "required": [
+          "username",
+          "password",
+          "role"
         ]
       },
       "ContestsGetResponse200": {

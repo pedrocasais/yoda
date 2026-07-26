@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "id": {
-      "type": "integer"
-    },
     "username": {
+      "type": "string"
+    },
+    "password": {
       "type": "string"
     },
     "role": {
@@ -13,16 +13,11 @@
     },
     "groups": {
       "$ref": "#/components/schemas/UserGroup"
-    },
-    "created_at": {
-      "type": "string"
     }
   },
   "required": [
-    "id",
     "username",
-    "role",
-    "groups",
-    "created_at"
+    "password",
+    "role"
   ]
 }
