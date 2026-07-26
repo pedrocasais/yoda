@@ -1,5 +1,4 @@
 open Lwt.Infix
-open Redis_lwt
 
 let json_headers = [("Content-Type", "application/json")]
 
