@@ -2,69 +2,6 @@ open Lwt.Infix
 
 let json_headers = [("Content-Type", "application/json")]
 
-let parse_api_version_from_openapi_info () =
-  let openapi_path = "schemas/openapi.yaml" in
-  if Sys.file_exists openapi_path then
-    let ic = open_in openapi_path in
-    let content =
-      Fun.protect
-        ~finally:(fun () -> close_in_noerr ic)
-        (fun () -> really_input_string ic (in_channel_length ic))
-    in
-    let marker = "version:" in
-    let lines = String.split_on_char '\n' content in
-    let rec find = function
-      | [] -> "1.0"
-      | line :: tl ->
-          let trimmed = String.trim line in
-          if
-            String.length trimmed >= String.length marker
-            && String.sub trimmed 0 (String.length marker) = marker
-          then
-            let raw =
-              String.sub trimmed (String.length marker)
-                (String.length trimmed - String.length marker)
-              |> String.trim
-            in
-            String.trim raw
-            |> String.map (fun c -> if c = '"' then ' ' else c)
-            |> String.trim
-          else find tl
-    in
-    find lines
-  else "1.0"
-
-let run_cmd_capture cmd =
-  try
-    let ic = Unix.open_process_in cmd in
-    let out = input_line ic |> String.trim in
-    let _ = Unix.close_process_in ic in
-    out
-  with _ -> ""
-
-let unique_sorted xs =
-  xs |> List.filter (fun s -> s <> "") |> List.sort_uniq String.compare
-
-let read_contributors_from_git () =
-  let cmd = "git log --format='%aN'" in
-  let ic = Unix.open_process_in cmd in
-  let rec loop acc =
-    match input_line ic with
-    | line -> loop (String.trim line :: acc)
-    | exception End_of_file -> List.rev acc
-  in
-  let names = try loop [] with _ -> [] in
-  let _ = Unix.close_process_in ic in
-  let sorted = unique_sorted names in
-  if sorted = [] then ["unknown"] else sorted
-
-let read_yoda_version_from_git () =
-  let short = run_cmd_capture "git rev-parse --short HEAD" in
-  if short = "" then "sha-unknown"
-  else
-    let dirty = run_cmd_capture "git status --porcelain" in
-    if dirty = "" then "sha-" ^ short else "dirty-" ^ short
-
 let getStats request =
   Lwt.catch
     (fun () ->
@@ -75,13 +12,13 @@ let getStats request =
               let payload =
                 `Assoc
                   [ ( "api_version"
-                    , `String (parse_api_version_from_openapi_info ()) )
-                  ; ("yoda_version", `String (read_yoda_version_from_git ()))
+                    , `String Build_info.api_version )
+                  ; ("yoda_version", `String Build_info.yoda_version)
                   ; ( "contributors"
                     , `List
                         (List.map
                            (fun name -> `String name)
-                           (read_contributors_from_git ()) ) )
+                           Build_info.contributors ) )
                   ; ( "yodab"
                     , `Assoc
                         [ ( "yodab_requests_total"

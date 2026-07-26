@@ -44,6 +44,7 @@
  (public_name yoda.lib)
  (wrapped false)
  (modules
+  build_info
   contests
   auth
   judge
@@ -106,3 +107,9 @@
  (libraries yodac_lib)
  (preprocess
   (pps lwt_ppx)))
+
+(rule
+ (target build_info.ml)
+ (deps ../tools/generate_build_info.sh ../schemas/openapi.yaml)
+ (action
+  (run sh %{dep:../tools/generate_build_info.sh} %{target})))
