@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "queued_jobs_total": {
+      "type": "integer"
+    },
+    "queued_jobs_per_minute": {
+      "type": "integer"
+    },
+    "processed_jobs_total": {
+      "type": "integer"
+    },
+    "processed_jobs_per_minute": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "queued_jobs",
+    "queued_jobs_per_minute",
+    "processed_jobs_total",
+    "processed_jobs_per_minute"
+  ]
+}

@@ -41,8 +41,7 @@ let getSubmissionsId request =
               | [Some _pid; Some _language] ->
                   let sub =
                     Openapi.create_submission ~id:(int_of_string id)
-                      ~problem_id:(int_of_string _pid)
-                      ~language:(_language)
+                      ~problem_id:(int_of_string _pid) ~language:_language
                       ~status:(List.assoc "status" lst)
                       ~score:(int_of_string (List.assoc "score" lst))
                       ~time_ms:(int_of_string (List.assoc "time_ms" lst))
@@ -146,8 +145,11 @@ let postSubmissions request =
               >>= fun () -> aux solution conn testcases (attempt + 1)
         | [`Status "OK"; `Int sub; `Int sol; `Int l1; `Int l2; `Int l3]
           when sub >= 1 && sol >= 1 && l1 >= 0 && l2 >= 0 && l3 >= 0 ->
+            Stats.record_submission_created ()
+            >>= fun () ->
             let sub =
-              Openapi.create_submission ~id:next_id ~problem_id:(solution.problem_id ) ~status:"queued" ~score:0
+              Openapi.create_submission ~id:next_id
+                ~problem_id:solution.problem_id ~status:"queued" ~score:0
                 ~time_ms:0 ~memory_kb:0 ~details:[] ()
             in
             Dream.json ~code:201

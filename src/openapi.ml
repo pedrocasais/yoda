@@ -1577,6 +1577,144 @@ module AuthLoginPostRequest = struct
   let to_json = json_of_authLoginPostRequest
 end
 
+type adminYodacStats = {
+  queued_jobs_total: int option;
+  queued_jobs_per_minute: int;
+  processed_jobs_total: int;
+  processed_jobs_per_minute: int;
+}
+
+let create_adminYodacStats ?queued_jobs_total ~queued_jobs_per_minute ~processed_jobs_total ~processed_jobs_per_minute () : adminYodacStats =
+  { queued_jobs_total; queued_jobs_per_minute; processed_jobs_total; processed_jobs_per_minute }
+
+let adminYodacStats_of_yojson (x : Yojson.Safe.t) : adminYodacStats =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let queued_jobs_total =
+      match assoc "queued_jobs_total" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
+    in
+    let queued_jobs_per_minute =
+      match assoc "queued_jobs_per_minute" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminYodacStats" "queued_jobs_per_minute"
+    in
+    let processed_jobs_total =
+      match assoc "processed_jobs_total" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminYodacStats" "processed_jobs_total"
+    in
+    let processed_jobs_per_minute =
+      match assoc "processed_jobs_per_minute" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminYodacStats" "processed_jobs_per_minute"
+    in
+    { queued_jobs_total; queued_jobs_per_minute; processed_jobs_total; processed_jobs_per_minute }
+  | _ -> Atdml_runtime.Yojson.bad_type "adminYodacStats" x
+
+let yojson_of_adminYodacStats (x : adminYodacStats) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    (match x.queued_jobs_total with None -> [] | Some v -> [("queued_jobs_total", Atdml_runtime.Yojson.yojson_of_int v)]);
+    [("queued_jobs_per_minute", Atdml_runtime.Yojson.yojson_of_int x.queued_jobs_per_minute)];
+    [("processed_jobs_total", Atdml_runtime.Yojson.yojson_of_int x.processed_jobs_total)];
+    [("processed_jobs_per_minute", Atdml_runtime.Yojson.yojson_of_int x.processed_jobs_per_minute)];
+  ])
+
+let adminYodacStats_of_json s =
+  adminYodacStats_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_adminYodacStats x =
+  Yojson.Safe.to_string (yojson_of_adminYodacStats x)
+
+module AdminYodacStats = struct
+  type nonrec t = adminYodacStats
+  let create = create_adminYodacStats
+  let of_yojson = adminYodacStats_of_yojson
+  let to_yojson = yojson_of_adminYodacStats
+  let of_json = adminYodacStats_of_json
+  let to_json = json_of_adminYodacStats
+end
+
+type adminYodabStats = {
+  yodab_requests_total: int;
+  yodab_requests_per_minute: int;
+  submissions_total: int;
+  submissions_per_minute: int;
+}
+
+let create_adminYodabStats ~yodab_requests_total ~yodab_requests_per_minute ~submissions_total ~submissions_per_minute () : adminYodabStats =
+  { yodab_requests_total; yodab_requests_per_minute; submissions_total; submissions_per_minute }
+
+let adminYodabStats_of_yojson (x : Yojson.Safe.t) : adminYodabStats =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let yodab_requests_total =
+      match assoc "yodab_requests_total" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminYodabStats" "yodab_requests_total"
+    in
+    let yodab_requests_per_minute =
+      match assoc "yodab_requests_per_minute" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminYodabStats" "yodab_requests_per_minute"
+    in
+    let submissions_total =
+      match assoc "submissions_total" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminYodabStats" "submissions_total"
+    in
+    let submissions_per_minute =
+      match assoc "submissions_per_minute" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminYodabStats" "submissions_per_minute"
+    in
+    { yodab_requests_total; yodab_requests_per_minute; submissions_total; submissions_per_minute }
+  | _ -> Atdml_runtime.Yojson.bad_type "adminYodabStats" x
+
+let yojson_of_adminYodabStats (x : adminYodabStats) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("yodab_requests_total", Atdml_runtime.Yojson.yojson_of_int x.yodab_requests_total)];
+    [("yodab_requests_per_minute", Atdml_runtime.Yojson.yojson_of_int x.yodab_requests_per_minute)];
+    [("submissions_total", Atdml_runtime.Yojson.yojson_of_int x.submissions_total)];
+    [("submissions_per_minute", Atdml_runtime.Yojson.yojson_of_int x.submissions_per_minute)];
+  ])
+
+let adminYodabStats_of_json s =
+  adminYodabStats_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_adminYodabStats x =
+  Yojson.Safe.to_string (yojson_of_adminYodabStats x)
+
+module AdminYodabStats = struct
+  type nonrec t = adminYodabStats
+  let create = create_adminYodabStats
+  let of_yojson = adminYodabStats_of_yojson
+  let to_yojson = yojson_of_adminYodabStats
+  let of_json = adminYodabStats_of_json
+  let to_json = json_of_adminYodabStats
+end
+
 type adminUsersPostRequest = {
   username: string;
   password: string;
@@ -1714,5 +1852,81 @@ module AdminUsersGetResponse2 = struct
   let to_yojson = yojson_of_adminUsersGetResponse2
   let of_json = adminUsersGetResponse2_of_json
   let to_json = json_of_adminUsersGetResponse2
+end
+
+type adminStatsResponse = {
+  api_version: string;
+  yoda_version: string;
+  contributors: string list;
+  yodab: adminYodabStats;
+  yodac: adminYodacStats;
+}
+
+let create_adminStatsResponse ~api_version ~yoda_version ~contributors ~yodab ~yodac () : adminStatsResponse =
+  { api_version; yoda_version; contributors; yodab; yodac }
+
+let adminStatsResponse_of_yojson (x : Yojson.Safe.t) : adminStatsResponse =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let api_version =
+      match assoc "api_version" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminStatsResponse" "api_version"
+    in
+    let yoda_version =
+      match assoc "yoda_version" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminStatsResponse" "yoda_version"
+    in
+    let contributors =
+      match assoc "contributors" with
+      | Some v -> (Atdml_runtime.Yojson.list_of_yojson Atdml_runtime.Yojson.string_of_yojson) v
+      | None -> Atdml_runtime.Yojson.missing_field "adminStatsResponse" "contributors"
+    in
+    let yodab =
+      match assoc "yodab" with
+      | Some v -> adminYodabStats_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminStatsResponse" "yodab"
+    in
+    let yodac =
+      match assoc "yodac" with
+      | Some v -> adminYodacStats_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "adminStatsResponse" "yodac"
+    in
+    { api_version; yoda_version; contributors; yodab; yodac }
+  | _ -> Atdml_runtime.Yojson.bad_type "adminStatsResponse" x
+
+let yojson_of_adminStatsResponse (x : adminStatsResponse) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("api_version", Atdml_runtime.Yojson.yojson_of_string x.api_version)];
+    [("yoda_version", Atdml_runtime.Yojson.yojson_of_string x.yoda_version)];
+    [("contributors", (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string) x.contributors)];
+    [("yodab", yojson_of_adminYodabStats x.yodab)];
+    [("yodac", yojson_of_adminYodacStats x.yodac)];
+  ])
+
+let adminStatsResponse_of_json s =
+  adminStatsResponse_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_adminStatsResponse x =
+  Yojson.Safe.to_string (yojson_of_adminStatsResponse x)
+
+module AdminStatsResponse = struct
+  type nonrec t = adminStatsResponse
+  let create = create_adminStatsResponse
+  let of_yojson = adminStatsResponse_of_yojson
+  let to_yojson = yojson_of_adminStatsResponse
+  let of_json = adminStatsResponse_of_json
+  let to_json = json_of_adminStatsResponse
 end
 

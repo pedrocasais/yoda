@@ -24,6 +24,9 @@ openapi-all: openapi-yaml-to-json openapi-json-to-atd
 
 all: openapi-all atd-to-dream atd-to-ml build
 
+format:
+	dune build @fmt --auto-promote
+
 clean:
 	dune clean
 	rm -rf _build

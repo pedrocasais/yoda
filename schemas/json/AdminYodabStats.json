@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "yodab_requests_total": {
+      "type": "integer"
+    },
+    "yodab_requests_per_minute": {
+      "type": "integer"
+    },
+    "submissions_total": {
+      "type": "integer"
+    },
+    "submissions_per_minute": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "yodab_requests_total",
+    "yodab_requests_per_minute",
+    "submissions_total",
+    "submissions_per_minute"
+  ]
+}
