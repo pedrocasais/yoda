@@ -83,12 +83,14 @@ let sessions uid =
 let postAuthRegister request =
   Lwt.catch
     (fun () ->
-      (** [Helpers.checkPrems request] verifica se o utilizador tem permissões de administrador *)
+      (* [Helpers.checkPrems request] verifica se o utilizador tem permissões
+         de administrador *)
       Helpers.checkPrems request (fun () ->
           Dream.body request
           >>= fun data ->
-          let user = Openapi.AdminUsersPostRequest.of_json data in
-          let rec aux conn (user : Openapi.AdminUsersPostRequest.t) attempt passwd =
+          let user = Openapi.UserCreateRequest.of_json data in
+          let rec aux conn (user : Openapi.UserCreateRequest.t) attempt
+              passwd =
             let created_at = Helpers.date () in
             Client.unwatch conn
             >>= fun _ ->
@@ -118,6 +120,10 @@ let postAuthRegister request =
               ; passwd
               ; "role"
               ; Openapi.UserRole.to_json user.role
+              ; "groups"
+              ; ( match user.groups with
+                | Some g -> Openapi.UserGroup.to_json g
+                | None -> "" )
               ; "created_at"
               ; created_at ]
             >>= fun _ ->
@@ -144,6 +150,7 @@ let postAuthRegister request =
                     ~role:
                       (Openapi.userRole_of_json
                          (Openapi.UserRole.to_json user.role) )
+                    ~groups:(Option.value user.groups ~default:[])
                     ~created_at ()
                 in
                 Dream.json ~code:200
@@ -218,6 +225,9 @@ let postAuthLogin request =
                 ~role:
                   (Openapi.userRole_of_json
                      (Option.get (List.assoc_opt "role" lst)) )
+                ~groups:
+                  (Openapi.userGroup_of_json
+                     (Option.get (List.assoc_opt "groups" lst)) )
                 ~created_at:(Option.get (List.assoc_opt "created_at" lst))
                 ()
             in

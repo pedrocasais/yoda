@@ -45,6 +45,12 @@ type contestsPostRequest = {
 
 type contestsGetResponse2 = contest list 
 
+type authRegisterPostRequest = {
+  username : string;
+  password : string;
+  role : userRole;
+} 
+
 type authLoginPostResponse41 = {
   error : string;
 } 
@@ -52,17 +58,6 @@ type authLoginPostResponse41 = {
 type authLoginPostRequest = {
   username : string;
   password : string;
-} 
-
-type adminUsersIdPutRequest = {
-  ?username : string option;
-  ?role : userRole option;
-} 
-
-type adminUsersPostRequest = {
-  username : string;
-  password : string;
-  role : userRole;
 } 
 
 type adminUsersGetResponse2 = user list 
@@ -178,12 +173,28 @@ type problem = {
   output_spec : string;
 } 
 
+type userUpdateRequest = {
+  ?username : string option;
+  ?role : userRole option;
+  ?groups : userGroup option;
+} 
+
+type userCreateRequest = {
+  username : string;
+  password : string;
+  role : userRole;
+  ?groups : userGroup option;
+} 
+
 type user = {
   id : int;
   username : string;
   role : userRole;
+  groups : userGroup;
   created_at : string;
 } 
+
+type userGroup = string list 
 
 type userRole = [
   | User <json name="user">
