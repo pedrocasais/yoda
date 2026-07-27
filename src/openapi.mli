@@ -216,9 +216,10 @@ type user = {
   role: userRole;
   groups: userGroup;
   created_at: string;
+  last_seen_at: string option;
 }
 
-val create_user : id:int -> username:string -> role:userRole -> groups:userGroup -> created_at:string -> unit -> user
+val create_user : id:int -> username:string -> role:userRole -> groups:userGroup -> created_at:string -> ?last_seen_at:string -> unit -> user
 val user_of_yojson : Yojson.Safe.t -> user
 val yojson_of_user : user -> Yojson.Safe.t
 val user_of_json : string -> user
@@ -226,7 +227,7 @@ val json_of_user : user -> string
 
 module User : sig
   type nonrec t = user
-  val create : id:int -> username:string -> role:userRole -> groups:userGroup -> created_at:string -> unit -> t
+  val create : id:int -> username:string -> role:userRole -> groups:userGroup -> created_at:string -> ?last_seen_at:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

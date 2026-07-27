@@ -16,6 +16,9 @@
     },
     "created_at": {
       "type": "string"
+    },
+    "last_seen_at": {
+      "type": "string"
     }
   },
   "required": [

@@ -625,10 +625,11 @@ type user = {
   role: userRole;
   groups: userGroup;
   created_at: string;
+  last_seen_at: string option;
 }
 
-let create_user ~id ~username ~role ~groups ~created_at () : user =
-  { id; username; role; groups; created_at }
+let create_user ~id ~username ~role ~groups ~created_at ?last_seen_at () : user =
+  { id; username; role; groups; created_at; last_seen_at }
 
 let user_of_yojson (x : Yojson.Safe.t) : user =
   match x with
@@ -668,7 +669,12 @@ let user_of_yojson (x : Yojson.Safe.t) : user =
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "user" "created_at"
     in
-    { id; username; role; groups; created_at }
+    let last_seen_at =
+      match assoc "last_seen_at" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    { id; username; role; groups; created_at; last_seen_at }
   | _ -> Atdml_runtime.Yojson.bad_type "user" x
 
 let yojson_of_user (x : user) : Yojson.Safe.t =
@@ -678,6 +684,7 @@ let yojson_of_user (x : user) : Yojson.Safe.t =
     [("role", yojson_of_userRole x.role)];
     [("groups", yojson_of_userGroup x.groups)];
     [("created_at", Atdml_runtime.Yojson.yojson_of_string x.created_at)];
+    (match x.last_seen_at with None -> [] | Some v -> [("last_seen_at", Atdml_runtime.Yojson.yojson_of_string v)]);
   ])
 
 let user_of_json s =
