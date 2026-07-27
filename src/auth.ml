@@ -132,12 +132,12 @@ let postAuthRegister request =
             | [] ->
                 if attempt >= 5 then
                   let error =
-                    Openapi.create_authLoginPostResponse41
+                    Openapi.ErrorResponse.create
                       ~error:"Max retries exceeded" ()
                   in
                   Dream.json ~code:500
                     ~headers:[("Content-Type", "application/json")]
-                    (Openapi.json_of_authLoginPostResponse41 error)
+                    (Openapi.ErrorResponse.to_json error)
                 else
                   let base = 0.05 *. (2.0 *. float_of_int attempt) in
                   let diff = Random.float base in
@@ -157,12 +157,10 @@ let postAuthRegister request =
                   ~headers:[("Content-Type", "application/json")]
                   (Openapi.json_of_user user)
             | _ ->
-                let error =
-                  Openapi.create_authLoginPostResponse41 ~error:"Erro" ()
-                in
+                let error = Openapi.ErrorResponse.create ~error:"Erro" () in
                 Dream.json ~code:500
                   ~headers:[("Content-Type", "application/json")]
-                  (Openapi.json_of_authLoginPostResponse41 error)
+                  (Openapi.ErrorResponse.to_json error)
           in
           Lwt_pool.use Db.pool (fun conn ->
               Client.get conn "user:id"
@@ -178,20 +176,19 @@ let postAuthRegister request =
                         (Result.get_ok (hash_password user.password))
                   | _ ->
                       let error =
-                        Openapi.create_authLoginPostResponse41
+                        Openapi.ErrorResponse.create
                           ~error:"User already exists" ()
                       in
                       Dream.json ~code:400
                         ~headers:[("Content-Type", "application/json")]
-                        (Openapi.json_of_authLoginPostResponse41 error) ) ) ) )
+                        (Openapi.ErrorResponse.to_json error) ) ) ) )
     (fun exn ->
       let error =
-        Openapi.create_authLoginPostResponse41
-          ~error:(Printexc.to_string exn) ()
+        Openapi.ErrorResponse.create ~error:(Printexc.to_string exn) ()
       in
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
-        (Openapi.json_of_authLoginPostResponse41 error) )
+        (Openapi.ErrorResponse.to_json error) )
 
 (** [postAuthLogin request] Rota para efetuar o Login de um user.
   @return Caso bem sucedido devolve um [token] de sessão e o [user], caso contrário erro. *)
@@ -209,12 +206,12 @@ let postAuthLogin request =
       >>= function
       | [] ->
           let error =
-            Openapi.create_authLoginPostResponse41
+            Openapi.ErrorResponse.create
               ~error:"Invalid username or password" ()
           in
           Dream.json ~code:401
             ~headers:[("Content-Type", "application/json")]
-            (Openapi.json_of_authLoginPostResponse41 error)
+            (Openapi.ErrorResponse.to_json error)
       | lst -> (
         match List.assoc_opt "password" lst with
         | Some pass when verify pass user_req.password ->
@@ -243,17 +240,16 @@ let postAuthLogin request =
               (Openapi.json_of_authToken res)
         | _ ->
             let error =
-              Openapi.create_authLoginPostResponse41
+              Openapi.ErrorResponse.create
                 ~error:"Invalid username or password" ()
             in
             Dream.json ~code:401
               ~headers:[("Content-Type", "application/json")]
-              (Openapi.json_of_authLoginPostResponse41 error) ) )
+              (Openapi.ErrorResponse.to_json error) ) )
     (fun exn ->
       let error =
-        Openapi.create_authLoginPostResponse41
-          ~error:(Printexc.to_string exn) ()
+        Openapi.ErrorResponse.create ~error:(Printexc.to_string exn) ()
       in
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
-        (Openapi.json_of_authLoginPostResponse41 error) )
+        (Openapi.ErrorResponse.to_json error) )

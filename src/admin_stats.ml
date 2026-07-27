@@ -11,8 +11,7 @@ let getStats request =
               >>= fun (yodab, yodac) ->
               let payload =
                 `Assoc
-                  [ ( "api_version"
-                    , `String Build_info.api_version )
+                  [ ("api_version", `String Build_info.api_version)
                   ; ("yoda_version", `String Build_info.yoda_version)
                   ; ( "contributors"
                     , `List
@@ -42,8 +41,7 @@ let getStats request =
                 (Yojson.Safe.to_string payload) ) ) )
     (fun exn ->
       let err =
-        Openapi.create_authLoginPostResponse41
-          ~error:(Printexc.to_string exn) ()
+        Openapi.ErrorResponse.create ~error:(Printexc.to_string exn) ()
       in
       Dream.json ~code:500 ~headers:json_headers
-        (Openapi.json_of_authLoginPostResponse41 err) )
+        (Openapi.ErrorResponse.to_json err) )

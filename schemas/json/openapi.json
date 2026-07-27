@@ -3,7 +3,7 @@
   "info": {
     "title": "API specification for Yoda",
     "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
-    "version": "1.0"
+    "version": "1.1"
   },
   "paths": {
     "/admin/users": {
@@ -68,7 +68,14 @@
             }
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Unauthorized access"
@@ -202,7 +209,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthLoginPostResponse401"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 },
                 "example": {
                   "error": "Invalid username or password"
@@ -215,7 +222,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthLoginPostResponse401"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 },
                 "example": {
                   "error": "An unexpected error occurred. Please try again later."
@@ -1017,6 +1024,17 @@
   },
   "components": {
     "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
       "UserRole": {
         "type": "string",
         "enum": [
@@ -1528,17 +1546,6 @@
         "required": [
           "username",
           "password"
-        ]
-      },
-      "AuthLoginPostResponse401": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "error"
         ]
       },
       "AuthRegisterPostRequest": {
