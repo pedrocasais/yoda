@@ -228,6 +228,12 @@ let postAuthLogin request =
                 ~created_at:(Option.get (List.assoc_opt "created_at" lst))
                 ()
             in
+            (* set last_seen_at *)
+            let last_seen_at = Helpers.date () in
+            let key = "user:" ^ string_of_int user.id in
+            Lwt_pool.use Db.pool (fun conn ->
+                Client.hset conn key "last_seen_at" last_seen_at )
+            >>= fun _ ->
             sessions (string_of_int user.id) request
             >>= fun _ ->
             let res =

@@ -29,14 +29,22 @@ let getAllUsers conn max =
       let () = Dream.log "id --> %d" count in
       Client.hmget conn
         ("user:" ^ string_of_int count)
-        ["id"; "username"; "role"; "groups"; "created_at"]
+        ["id"; "username"; "role"; "groups"; "created_at"; "last_seen_at"]
       >>= function
-      | [Some id; Some username; Some role; Some groups_json; Some created_at] ->
+      | [ Some id
+        ; Some username
+        ; Some role
+        ; Some groups_json
+        ; Some created_at
+        ; last_seen_at ] ->
           let user =
             Openapi.create_user ~id:(int_of_string id) ~username
               ~role:(Openapi.userRole_of_json role)
               ~groups:(Openapi.userGroup_of_json groups_json)
-              ~created_at ()
+              ~created_at
+              ~last_seen_at:
+                (match last_seen_at with Some x -> x | None -> "Never seen")
+              ()
           in
           aux (count + 1) (List.rev_append [user] acc)
       | _ -> aux (count + 1) acc
@@ -138,7 +146,8 @@ let getUsersId request =
           Client.hmget conn ("user:" ^ id)
             ["id"; "username"; "role"; "groups"; "created_at"] )
       >>= function
-      | [Some id; Some username; Some role; Some groups_json; Some created_at] ->
+      | [Some id; Some username; Some role; Some groups_json; Some created_at]
+        ->
           let user =
             Openapi.create_user ~id:(int_of_string id) ~username
               ~role:(Openapi.userRole_of_json role)
