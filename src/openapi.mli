@@ -403,6 +403,25 @@ module Int64 : sig
   val to_json : t -> string
 end
 
+type errorResponse = {
+  error: string;
+}
+
+val create_errorResponse : error:string -> unit -> errorResponse
+val errorResponse_of_yojson : Yojson.Safe.t -> errorResponse
+val yojson_of_errorResponse : errorResponse -> Yojson.Safe.t
+val errorResponse_of_json : string -> errorResponse
+val json_of_errorResponse : errorResponse -> string
+
+module ErrorResponse : sig
+  type nonrec t = errorResponse
+  val create : error:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type contestsPostRequest = {
   title: string;
   description: string option;
@@ -603,25 +622,6 @@ val json_of_authRegisterPostRequest : authRegisterPostRequest -> string
 module AuthRegisterPostRequest : sig
   type nonrec t = authRegisterPostRequest
   val create : username:string -> password:string -> role:userRole -> unit -> t
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type authLoginPostResponse41 = {
-  error: string;
-}
-
-val create_authLoginPostResponse41 : error:string -> unit -> authLoginPostResponse41
-val authLoginPostResponse41_of_yojson : Yojson.Safe.t -> authLoginPostResponse41
-val yojson_of_authLoginPostResponse41 : authLoginPostResponse41 -> Yojson.Safe.t
-val authLoginPostResponse41_of_json : string -> authLoginPostResponse41
-val json_of_authLoginPostResponse41 : authLoginPostResponse41 -> string
-
-module AuthLoginPostResponse41 : sig
-  type nonrec t = authLoginPostResponse41
-  val create : error:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

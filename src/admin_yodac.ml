@@ -4,9 +4,8 @@ open Redis_lwt
 let json_headers = [("Content-Type", "application/json")]
 
 let error_json ~code msg =
-  let err = Openapi.create_authLoginPostResponse41 ~error:msg () in
-  Dream.json ~code ~headers:json_headers
-    (Openapi.json_of_authLoginPostResponse41 err)
+  let err = Openapi.ErrorResponse.create ~error:msg () in
+  Dream.json ~code ~headers:json_headers (Openapi.ErrorResponse.to_json err)
 
 let get_actor conn request =
   match Dream.session_field request "user" with

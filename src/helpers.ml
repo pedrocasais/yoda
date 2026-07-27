@@ -27,28 +27,24 @@ let checkPrems request next =
   aux id_session
   >>= function
   | Bad_Request ->
-      let error =
-        Openapi.create_authLoginPostResponse41 ~error:"Bad Request" ()
-      in
+      let error = Openapi.ErrorResponse.create ~error:"Bad Request" () in
       Dream.json ~code:400
         ~headers:[("Content-Type", "application/json")]
-        (Openapi.json_of_authLoginPostResponse41 error)
+        (Openapi.ErrorResponse.to_json error)
   | Unauthorized ->
       let error =
-        Openapi.create_authLoginPostResponse41 ~error:"Unauthorized access"
-          ()
+        Openapi.ErrorResponse.create ~error:"Unauthorized access" ()
       in
       Dream.json ~code:401
         ~headers:[("Content-Type", "application/json")]
-        (Openapi.json_of_authLoginPostResponse41 error)
+        (Openapi.ErrorResponse.to_json error)
   | Forbidden ->
       let error =
-        Openapi.create_authLoginPostResponse41
-          ~error:"Forbidden - admin only" ()
+        Openapi.ErrorResponse.create ~error:"Forbidden - admin only" ()
       in
       Dream.json ~code:403
         ~headers:[("Content-Type", "application/json")]
-        (Openapi.json_of_authLoginPostResponse41 error)
+        (Openapi.ErrorResponse.to_json error)
   | Ok -> next ()
 
 (** [date] obtém a data atual no formato year-month-day-hour-min-sec. *)

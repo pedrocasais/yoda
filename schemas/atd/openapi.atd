@@ -51,10 +51,6 @@ type authRegisterPostRequest = {
   role : userRole;
 } 
 
-type authLoginPostResponse41 = {
-  error : string;
-} 
-
 type authLoginPostRequest = {
   username : string;
   password : string;
@@ -201,3 +197,7 @@ type userRole = [
   | Judge <json name="judge">
   | Admin <json name="admin">
 ] 
+
+type errorResponse = {
+  error : string;
+} 
