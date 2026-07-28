@@ -1236,24 +1236,38 @@
       "Solution": {
         "type": "object",
         "properties": {
-          "user_id": {
-            "type": "integer"
-          },
           "problem_id": {
             "type": "integer"
           },
           "language": {
             "type": "string"
           },
-          "source_code": {
-            "type": "string"
+          "source_artifacts": {
+            "type": "array",
+            "minItems": 3,
+            "items": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string",
+                  "description": "The name of the source file"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "The content of the source file"
+                }
+              },
+              "required": [
+                "filename",
+                "content"
+              ]
+            }
           }
         },
         "required": [
-          "user_id",
           "problem_id",
           "language",
-          "source_code"
+          "source_artifacts"
         ]
       },
       "ScoreboardEntry": {

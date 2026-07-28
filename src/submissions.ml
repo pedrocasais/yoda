@@ -105,22 +105,28 @@ let postSubmissions request =
           ; "details"
           ; "[" ^ String.concat "," testcases ^ "]" ]
         >>= fun _ ->
+        (* get current user id *)
+        let user_id = Helpers.get_actor_id request in
         Client.send_custom_request conn
           [ "HSET"
           ; key2
           ; "user_id"
-          ; string_of_int solution.user_id
+          ; user_id
           ; "problem_id"
           ; string_of_int solution.problem_id
           ; "language"
           ; solution.language
           ; "source_code"
-          ; solution.source_code ]
+            (* [TODO] just grab the first artifact content; do the
+               remaining *)
+          ; ( if solution.source_artifacts = [] then
+                failwith
+                  "No source artifacts provided. Please ensure at least one \
+                   source artifact."
+              else (List.hd solution.source_artifacts).content ) ]
         >>= fun _ ->
         Client.send_custom_request conn
-          [ "LPUSH"
-          ; "user:" ^ string_of_int solution.user_id ^ ":submissions"
-          ; string_of_int next_id ]
+          ["LPUSH"; "user:" ^ user_id ^ ":submissions"; string_of_int next_id]
         >>= fun _ ->
         Client.send_custom_request conn
           [ "LPUSH"
@@ -145,8 +151,6 @@ let postSubmissions request =
               >>= fun () -> aux solution conn testcases (attempt + 1)
         | [`Status "OK"; `Int sub; `Int sol; `Int l1; `Int l2; `Int l3]
           when sub >= 1 && sol >= 1 && l1 >= 0 && l2 >= 0 && l3 >= 0 ->
-            Stats.record_submission_created ()
-            >>= fun () ->
             let sub =
               Openapi.create_submission ~id:next_id
                 ~problem_id:solution.problem_id ~status:"queued" ~score:0
