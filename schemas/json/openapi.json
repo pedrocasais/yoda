@@ -1118,6 +1118,9 @@
       "Problem": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer"
+          },
           "code": {
             "type": "string"
           },

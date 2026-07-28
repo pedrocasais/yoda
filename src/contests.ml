@@ -59,8 +59,9 @@ let makeProblemList lst =
   List.fold_left
     (fun acc x ->
       let problem =
-        Openapi.create_problem ~code:(List.assoc "code" x)
-          ~title:(List.assoc "title" x)
+        Openapi.create_problem
+          ~id:(int_of_string (List.assoc "id" x))
+          ~code:(List.assoc "code" x) ~title:(List.assoc "title" x)
           ~description:(List.assoc "description" x)
           ~time_limit_ms:(int_of_string (List.assoc "time_limit_ms" x))
           ~memory_limit_mb:(int_of_string (List.assoc "memory_limit_mb" x))

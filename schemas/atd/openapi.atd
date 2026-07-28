@@ -160,6 +160,7 @@ type testCase = {
 } 
 
 type problem = {
+  ?id : int option;
   code : string;
   title : string;
   time_limit_ms : int;
