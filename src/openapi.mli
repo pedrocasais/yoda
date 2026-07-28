@@ -303,14 +303,33 @@ module Submission : sig
   val to_json : t -> string
 end
 
-type solution = {
-  user_id: int;
-  problem_id: int;
-  language: string;
-  source_code: string;
+type solutionSource_artifacts = {
+  filename: string;  (** The name of the source file *)
+  content: string;  (** The content of the source file *)
 }
 
-val create_solution : user_id:int -> problem_id:int -> language:string -> source_code:string -> unit -> solution
+val create_solutionSource_artifacts : filename:string -> content:string -> unit -> solutionSource_artifacts
+val solutionSource_artifacts_of_yojson : Yojson.Safe.t -> solutionSource_artifacts
+val yojson_of_solutionSource_artifacts : solutionSource_artifacts -> Yojson.Safe.t
+val solutionSource_artifacts_of_json : string -> solutionSource_artifacts
+val json_of_solutionSource_artifacts : solutionSource_artifacts -> string
+
+module SolutionSource_artifacts : sig
+  type nonrec t = solutionSource_artifacts
+  val create : filename:string -> content:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type solution = {
+  problem_id: int;
+  language: string;
+  source_artifacts: solutionSource_artifacts list;
+}
+
+val create_solution : problem_id:int -> language:string -> source_artifacts:solutionSource_artifacts list -> unit -> solution
 val solution_of_yojson : Yojson.Safe.t -> solution
 val yojson_of_solution : solution -> Yojson.Safe.t
 val solution_of_json : string -> solution
@@ -318,7 +337,7 @@ val json_of_solution : solution -> string
 
 module Solution : sig
   type nonrec t = solution
-  val create : user_id:int -> problem_id:int -> language:string -> source_code:string -> unit -> t
+  val create : problem_id:int -> language:string -> source_artifacts:solutionSource_artifacts list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

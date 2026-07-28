@@ -91,3 +91,8 @@ let makeSubmissionDetailsList lst =
         ~status:(Yojson.Basic.Util.to_string (List.assoc "status" lst))
         ~time_ms:(Yojson.Basic.Util.to_int (List.assoc "time_ms" lst))
         () )
+
+let get_actor_id request =
+  match Dream.session_field request "user" with
+  | Some id -> id
+  | None -> failwith "No user id found in session"

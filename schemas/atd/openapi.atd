@@ -8,6 +8,11 @@ type submissionDetails = {
   time_ms : int;
 } 
 
+type solutionSource_artifacts = {
+  filename <doc text="The name of the source file">: string;
+  content <doc text="The content of the source file">: string;
+} 
+
 type contestStatus = [
   | Upcoming <json name="upcoming">
   | Running <json name="running">
@@ -135,10 +140,9 @@ type scoreboardEntry = {
 } 
 
 type solution = {
-  user_id : int;
   problem_id : int;
   language : string;
-  source_code : string;
+  source_artifacts : solutionSource_artifacts list;
 } 
 
 type submission = {
