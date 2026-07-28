@@ -363,6 +363,7 @@ module ProblemsIdTestcasesGetResponse2 : sig
 end
 
 type problem = {
+  id: int option;
   code: string;
   title: string;
   time_limit_ms: int;
@@ -372,7 +373,7 @@ type problem = {
   output_spec: string;
 }
 
-val create_problem : code:string -> title:string -> time_limit_ms:int -> memory_limit_mb:int -> description:string -> input_spec:string -> output_spec:string -> unit -> problem
+val create_problem : ?id:int -> code:string -> title:string -> time_limit_ms:int -> memory_limit_mb:int -> description:string -> input_spec:string -> output_spec:string -> unit -> problem
 val problem_of_yojson : Yojson.Safe.t -> problem
 val yojson_of_problem : problem -> Yojson.Safe.t
 val problem_of_json : string -> problem
@@ -380,7 +381,7 @@ val json_of_problem : problem -> string
 
 module Problem : sig
   type nonrec t = problem
-  val create : code:string -> title:string -> time_limit_ms:int -> memory_limit_mb:int -> description:string -> input_spec:string -> output_spec:string -> unit -> t
+  val create : ?id:int -> code:string -> title:string -> time_limit_ms:int -> memory_limit_mb:int -> description:string -> input_spec:string -> output_spec:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

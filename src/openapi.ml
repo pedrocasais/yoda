@@ -1091,6 +1091,7 @@ module ProblemsIdTestcasesGetResponse2 = struct
 end
 
 type problem = {
+  id: int option;
   code: string;
   title: string;
   time_limit_ms: int;
@@ -1100,8 +1101,8 @@ type problem = {
   output_spec: string;
 }
 
-let create_problem ~code ~title ~time_limit_ms ~memory_limit_mb ~description ~input_spec ~output_spec () : problem =
-  { code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
+let create_problem ?id ~code ~title ~time_limit_ms ~memory_limit_mb ~description ~input_spec ~output_spec () : problem =
+  { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
 
 let problem_of_yojson (x : Yojson.Safe.t) : problem =
   match x with
@@ -1115,6 +1116,11 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
         (fun key -> Hashtbl.find_opt tbl key)
       else (fun key -> List.assoc_opt key fields)
+    in
+    let id =
+      match assoc "id" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
     in
     let code =
       match assoc "code" with
@@ -1151,11 +1157,12 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "output_spec"
     in
-    { code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
+    { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
   | _ -> Atdml_runtime.Yojson.bad_type "problem" x
 
 let yojson_of_problem (x : problem) : Yojson.Safe.t =
   `Assoc (List.concat [
+    (match x.id with None -> [] | Some v -> [("id", Atdml_runtime.Yojson.yojson_of_int v)]);
     [("code", Atdml_runtime.Yojson.yojson_of_string x.code)];
     [("title", Atdml_runtime.Yojson.yojson_of_string x.title)];
     [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int x.time_limit_ms)];
