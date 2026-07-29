@@ -123,7 +123,9 @@ let postSubmissions request =
                 failwith
                   "No source artifacts provided. Please ensure at least one \
                    source artifact."
-              else (List.hd solution.source_artifacts).content ) ]
+              else
+                (List.hd solution.source_artifacts).content
+                |> Helpers.unscape_json_string ) ]
         >>= fun _ ->
         Client.send_custom_request conn
           ["LPUSH"; "user:" ^ user_id ^ ":submissions"; string_of_int next_id]
