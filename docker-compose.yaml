@@ -19,7 +19,7 @@ services:
 
   yoda-b:
     build:
-      dockerfile: Containerfile.yodab
+      dockerfile: Containerfile
     image: yodab-dev
     labels:
       - "traefik.enable=true"
@@ -33,8 +33,9 @@ services:
 
   yoda-c:
     build:
-      dockerfile: Containerfile.yodac
+      dockerfile: Containerfile
     image: yodac-dev
+    command: ["./yodac.exe"]
     user: "0:0"
     ports:
       - "8081:8080"

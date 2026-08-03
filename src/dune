@@ -40,8 +40,8 @@
   (pps lwt_ppx)))
 
 (library
- (name yoda_lib)
- (public_name yoda.lib)
+ (name yodab_lib)
+ (public_name yoda.yodab_lib)
  (wrapped false)
  (modules
   build_info
@@ -72,17 +72,17 @@
  (flags :standard -cclib -largon2))
 
 (executable
- (public_name yoda)
- (name router)
- (modules router)
- (libraries yoda_lib)
+ (public_name yodab)
+ (name yodab)
+ (modules yodab router)
+ (libraries yodab_lib)
  (preprocess
   (pps lwt_ppx))
  (flags :standard -cclib -largon2))
 
 (library
  (name yodac_lib)
- (public_name yoda.yodac)
+ (public_name yoda.yodac_lib)
  (wrapped false)
  (modules compiler docker_runner job worker common)
  (libraries
