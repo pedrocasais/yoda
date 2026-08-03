@@ -2,12 +2,6 @@
 type json <ocaml module="Yojson.Basic" t="t"> = abstract
 type int64 = int <ocaml repr="int64">
 
-type submissionDetails = {
-  testcase_id : int;
-  status : string;
-  time_ms : int;
-} 
-
 type solutionSource_artifacts = {
   filename <doc text="The name of the source file">: string;
   content <doc text="The content of the source file">: string;
@@ -26,8 +20,6 @@ type contestsIdPutRequestStatus = [
 ] 
 
 type contestsIdScoreboardGetResponse2 = scoreboardEntry list 
-
-type contestsContestidSubmissionsGetResponse2 = submission list 
 
 type problemsIdTestcasesGetResponse2 = testCase list 
 
@@ -145,6 +137,17 @@ type solution = {
   source_artifacts : solutionSource_artifacts list;
 } 
 
+type submissionDetail = {
+  testcase_id : int;
+  status : string;
+  time_ms : int;
+  ?output : string option;
+} 
+
+type submissionDetails = submissionDetail list 
+
+type submissions = submission list 
+
 type submission = {
   id : int;
   problem_id : int;
@@ -153,7 +156,7 @@ type submission = {
   score : int;
   time_ms : int;
   memory_kb : int;
-  details : submissionDetails list;
+  details : submissionDetails;
 } 
 
 type testCase = {

@@ -162,10 +162,7 @@ let hset_fields conn key fields =
     time_ms, memory_kb e details. *)
 let persist_submission conn (result : Job.result) =
   let key = Printf.sprintf "submission:%d" result.id in
-  let details =
-    `List (List.map Openapi.yojson_of_submissionDetails result.details)
-    |> Yojson.Safe.to_string
-  in
+  let details = Openapi.SubmissionDetails.to_json result.details in
   hset_fields conn key
     [ ("id", string_of_int result.id)
     ; ("status", result.status)
@@ -239,10 +236,7 @@ let write_result (result : Job.result) (job : Job.job) =
       >>= fun contest_id ->
       getScoreboard conn (Option.get contest_id)
       >>= fun lst ->
-      let details =
-        `List (List.map Openapi.yojson_of_submissionDetails result.details)
-        |> Yojson.Safe.to_string
-      in
+      let details = Openapi.SubmissionDetails.to_json result.details in
       aux conn contest_id (checkExists lst job result) details )
 
 (** Vai buscar a solução de uma submissão ao Valkey.
@@ -346,14 +340,10 @@ let process_job submission_id =
           Lwt_io.printf "Erro de compilação: %s\n%!" err
           >>= fun () ->
           write_result
-            { id= job.submission_id
-            ; problem_id= job.problem_id
-            ; language= Some job.lang
-            ; status= "compile_error"
-            ; score= 0
-            ; time_ms= 0
-            ; memory_kb= 0
-            ; details= [] }
+            (Openapi.create_submission ~id:job.submission_id
+               ~problem_id:job.problem_id ~language:job.lang
+               ~status:"compile_error" ~score:0 ~time_ms:0 ~memory_kb:0
+               ~details:[] () )
             job
       | Ok _ ->
           Lwt_preemptive.detach

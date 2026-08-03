@@ -3,7 +3,7 @@
   "info": {
     "title": "API specification for Yoda",
     "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
-    "version": "1.1"
+    "version": "1.2"
   },
   "paths": {
     "/admin/users": {
@@ -771,7 +771,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContestsContestidSubmissionsGetResponse200"
+                  "$ref": "#/components/schemas/Submissions"
                 }
               }
             }
@@ -1201,26 +1201,7 @@
             "type": "integer"
           },
           "details": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "testcase_id": {
-                  "type": "integer"
-                },
-                "status": {
-                  "type": "string"
-                },
-                "time_ms": {
-                  "type": "integer"
-                }
-              },
-              "required": [
-                "testcase_id",
-                "status",
-                "time_ms"
-              ]
-            }
+            "$ref": "#/components/schemas/SubmissionDetails"
           }
         },
         "required": [
@@ -1231,6 +1212,40 @@
           "time_ms",
           "memory_kb",
           "details"
+        ]
+      },
+      "Submissions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Submission"
+        }
+      },
+      "SubmissionDetails": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SubmissionDetail"
+        }
+      },
+      "SubmissionDetail": {
+        "type": "object",
+        "properties": {
+          "testcase_id": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "time_ms": {
+            "type": "integer"
+          },
+          "output": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "testcase_id",
+          "status",
+          "time_ms"
         ]
       },
       "Solution": {
@@ -1654,12 +1669,6 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/TestCase"
-        }
-      },
-      "ContestsContestidSubmissionsGetResponse200": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/Submission"
         }
       },
       "ContestsIdScoreboardGetResponse200": {

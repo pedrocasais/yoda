@@ -2,7 +2,7 @@ openapi: 3.0.4
 info:
   title: "API specification for Yoda"
   description: "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications."
-  version: "1.1"
+  version: "1.2"
 
 paths:
   /admin/users:
@@ -548,9 +548,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Submission"
+                $ref: "#/components/schemas/Submissions"
         "401":
           description: Unauthorized access
         "404":
@@ -831,18 +829,31 @@ components:
         memory_kb:
           type: integer
         details:
-          type: array
-          items:
-            type: object
-            properties:
-              testcase_id:
-                type: integer
-              status:
-                type: string
-              time_ms:
-                type: integer
-            required: ["testcase_id", "status", "time_ms"]
+          $ref: "#/components/schemas/SubmissionDetails"
       required: ["id", "problem_id", "status", "score", "time_ms", "memory_kb", "details"]
+
+    Submissions:
+      type: array
+      items:
+        $ref: "#/components/schemas/Submission"
+
+    SubmissionDetails:
+      type: array
+      items:
+        $ref: "#/components/schemas/SubmissionDetail"
+
+    SubmissionDetail:
+      type: object
+      properties:
+        testcase_id:
+          type: integer
+        status:
+          type: string
+        time_ms:
+          type: integer
+        output:
+          type: string
+      required: ["testcase_id", "status", "time_ms"]
 
     Solution:
       type: object

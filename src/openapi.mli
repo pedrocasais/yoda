@@ -256,13 +256,30 @@ module TestCase : sig
   val to_json : t -> string
 end
 
-type submissionDetails = {
+type submissionDetail = {
   testcase_id: int;
   status: string;
   time_ms: int;
+  output: string option;
 }
 
-val create_submissionDetails : testcase_id:int -> status:string -> time_ms:int -> unit -> submissionDetails
+val create_submissionDetail : testcase_id:int -> status:string -> time_ms:int -> ?output:string -> unit -> submissionDetail
+val submissionDetail_of_yojson : Yojson.Safe.t -> submissionDetail
+val yojson_of_submissionDetail : submissionDetail -> Yojson.Safe.t
+val submissionDetail_of_json : string -> submissionDetail
+val json_of_submissionDetail : submissionDetail -> string
+
+module SubmissionDetail : sig
+  type nonrec t = submissionDetail
+  val create : testcase_id:int -> status:string -> time_ms:int -> ?output:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type submissionDetails = submissionDetail list
+
 val submissionDetails_of_yojson : Yojson.Safe.t -> submissionDetails
 val yojson_of_submissionDetails : submissionDetails -> Yojson.Safe.t
 val submissionDetails_of_json : string -> submissionDetails
@@ -270,7 +287,6 @@ val json_of_submissionDetails : submissionDetails -> string
 
 module SubmissionDetails : sig
   type nonrec t = submissionDetails
-  val create : testcase_id:int -> status:string -> time_ms:int -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -285,10 +301,10 @@ type submission = {
   score: int;
   time_ms: int;
   memory_kb: int;
-  details: submissionDetails list;
+  details: submissionDetails;
 }
 
-val create_submission : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails list -> unit -> submission
+val create_submission : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> unit -> submission
 val submission_of_yojson : Yojson.Safe.t -> submission
 val yojson_of_submission : submission -> Yojson.Safe.t
 val submission_of_json : string -> submission
@@ -296,7 +312,22 @@ val json_of_submission : submission -> string
 
 module Submission : sig
   type nonrec t = submission
-  val create : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails list -> unit -> t
+  val create : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type submissions = submission list
+
+val submissions_of_yojson : Yojson.Safe.t -> submissions
+val yojson_of_submissions : submissions -> Yojson.Safe.t
+val submissions_of_json : string -> submissions
+val json_of_submissions : submissions -> string
+
+module Submissions : sig
+  type nonrec t = submissions
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -587,21 +618,6 @@ val json_of_contestsContestsidProblemsGetResponse2 : contestsContestsidProblemsG
 
 module ContestsContestsidProblemsGetResponse2 : sig
   type nonrec t = contestsContestsidProblemsGetResponse2
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type contestsContestidSubmissionsGetResponse2 = submission list
-
-val contestsContestidSubmissionsGetResponse2_of_yojson : Yojson.Safe.t -> contestsContestidSubmissionsGetResponse2
-val yojson_of_contestsContestidSubmissionsGetResponse2 : contestsContestidSubmissionsGetResponse2 -> Yojson.Safe.t
-val contestsContestidSubmissionsGetResponse2_of_json : string -> contestsContestidSubmissionsGetResponse2
-val json_of_contestsContestidSubmissionsGetResponse2 : contestsContestidSubmissionsGetResponse2 -> string
-
-module ContestsContestidSubmissionsGetResponse2 : sig
-  type nonrec t = contestsContestidSubmissionsGetResponse2
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

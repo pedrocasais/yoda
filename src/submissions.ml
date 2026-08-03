@@ -13,51 +13,44 @@ let makeTestCaseList lst =
   List.fold_left
     (fun acc x ->
       let subdetail =
-        Openapi.create_submissionDetails
+        Openapi.create_submissionDetail
           ~testcase_id:(int_of_string (List.assoc "id" x))
           ~status:"" ~time_ms:0 ()
       in
-      List.rev_append [Openapi.json_of_submissionDetails subdetail] acc )
+      List.rev_append [Openapi.SubmissionDetail.to_json subdetail] acc )
     [] lst
 
 (** [getSubmissionsId request] Obtém uma submissão com o [id], parâmetro da rota.
  @return 200 OK, devolve um submissão com tipo [Openapi.submission]; 404 Not Found, se a submissão não existir; 500 Internal Server Error    *)
 let getSubmissionsId request =
+  let user_id = Helpers.get_actor_id request in
+  let sid = Dream.param request "id" in
   Lwt.catch
     (fun () ->
-      let id = Dream.param request "id" in
       Lwt_pool.use Db.pool (fun conn ->
-          Client.hgetall conn ("submission:" ^ id)
+          Helpers.get_actor_role conn user_id
+          >>= fun user_role ->
+          Client.hgetall conn ("submission:" ^ sid)
           >>= function
           | [] ->
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]
                 "Submission not found"
           | lst -> (
-              Client.hmget conn
-                ("submission:" ^ id ^ ":solution")
-                ["problem_id"; "language"]
+              Client.hgetall conn ("submission:" ^ sid ^ ":solution")
               >>= function
-              | [Some _pid; Some _language] ->
-                  let sub =
-                    Openapi.create_submission ~id:(int_of_string id)
-                      ~problem_id:(int_of_string _pid) ~language:_language
-                      ~status:(List.assoc "status" lst)
-                      ~score:(int_of_string (List.assoc "score" lst))
-                      ~time_ms:(int_of_string (List.assoc "time_ms" lst))
-                      ~memory_kb:(int_of_string (List.assoc "memory_kb" lst))
-                      ~details:
-                        (Helpers.makeSubmissionDetailsList
-                           (List.assoc "details" lst) )
-                      ()
+              | h :: t as l ->
+                  (* Merge solution fields with submission fields *)
+                  let s =
+                    Helpers.makeSubmission user_id user_role (lst @ l)
                   in
                   Dream.json ~code:200
                     ~headers:[("Content-Type", "application/json")]
-                    (Openapi.json_of_submission sub)
-              | _ ->
-                  Dream.json ~code:200
+                    (Openapi.Submission.to_json s)
+              | [] ->
+                  Dream.json ~code:404
                     ~headers:[("Content-Type", "application/json")]
-                    "Not Found: problem_id language" ) ) )
+                    "Not Found: problem_id language user_id" ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
