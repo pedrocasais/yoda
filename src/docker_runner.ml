@@ -23,6 +23,42 @@ open Job
     @return detalhe com o veredicto e o tempo de execução *)
 module C = Docker.Container
 
+(** Decodifica a saída de um container Docker.
+    @param data dados brutos da saída
+    @return par com a saída padrão e a saída de erro *)
+let decode_docker_output (chunks : string list) : string * string =
+  let read_uint32_be data pos =
+    (Char.code data.[pos] lsl 24)
+    lor (Char.code data.[pos + 1] lsl 16)
+    lor (Char.code data.[pos + 2] lsl 8)
+    lor Char.code data.[pos + 3]
+  in
+  let decode_frame data stdout stderr =
+    let total = String.length data in
+    let rec loop pos =
+      if pos = total then ()
+      else if total - pos < 8 then
+        invalid_arg "Incomplete Docker frame header"
+      else
+        let stream = Char.code data.[pos] in
+        let len = read_uint32_be data (pos + 4) in
+        if total - pos < 8 + len then
+          invalid_arg "Incomplete Docker frame payload" ;
+        let payload = String.sub data (pos + 8) len in
+        begin match stream with
+        | 1 -> Buffer.add_string stdout payload
+        | 2 -> Buffer.add_string stderr payload
+        | _ -> ()
+        end ;
+        loop (pos + 8 + len)
+    in
+    loop 0
+  in
+  let stdout = Buffer.create 128 in
+  let stderr = Buffer.create 128 in
+  List.iter (fun chunk -> decode_frame chunk stdout stderr) chunks ;
+  (Buffer.contents stdout, Buffer.contents stderr)
+
 (** Executa um único caso de teste num container Docker isolado.
     O volume é montado como só de leitura. Garante remoção do container em caso de erro.
     @param job job com os limites e configuração da linguagem
@@ -57,12 +93,17 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
     let s = Compiler.read_all_timeout ~timeout st in
     let code = C.wait c in
     C.rm c ;
-    let identify (ty, s) =
-      match ty with
-      | Docker.Stream.Stdout -> "out> " ^ s
-      | Docker.Stream.Stderr -> "err> " ^ s
+    (* Example: [ "\001\000\000\000\000\000\000\0051021\n";
+       "\002\000\000\000\000\000\000\004oops";
+       "\001\000\000\000\000\000\000\006hello!" ]*)
+    let stdout, stderr =
+      decode_docker_output (List.map (fun (_, b) -> b) s)
     in
-    let output = String.concat "\n" (List.map identify s) in
+    let json =
+      `Assoc [("stdout", `String stdout); ("stderr", `String stderr)]
+    in
+    print_endline (Yojson.Safe.to_string json) ;
+    let output = stdout in
     let time_ms = int_of_float ((Unix.gettimeofday () -. start) *. 1000.) in
     let detail_status =
       match code with
@@ -75,7 +116,8 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
           "runtime_error"
     in
     Openapi.SubmissionDetail.create ~testcase_id:tc.id ~status:detail_status
-      ~time_ms () ~output
+      ~time_ms ()
+      ~output:(Yojson.Safe.to_string json)
   with exn ->
     (try C.stop c with _ -> ()) ;
     (try C.rm c with _ -> ()) ;
