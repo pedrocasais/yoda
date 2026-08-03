@@ -771,16 +771,17 @@ module TestCase = struct
   let to_json = json_of_testCase
 end
 
-type submissionDetails = {
+type submissionDetail = {
   testcase_id: int;
   status: string;
   time_ms: int;
+  output: string option;
 }
 
-let create_submissionDetails ~testcase_id ~status ~time_ms () : submissionDetails =
-  { testcase_id; status; time_ms }
+let create_submissionDetail ~testcase_id ~status ~time_ms ?output () : submissionDetail =
+  { testcase_id; status; time_ms; output }
 
-let submissionDetails_of_yojson (x : Yojson.Safe.t) : submissionDetails =
+let submissionDetail_of_yojson (x : Yojson.Safe.t) : submissionDetail =
   match x with
   | `Assoc fields ->
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
@@ -796,27 +797,56 @@ let submissionDetails_of_yojson (x : Yojson.Safe.t) : submissionDetails =
     let testcase_id =
       match assoc "testcase_id" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "submissionDetails" "testcase_id"
+      | None -> Atdml_runtime.Yojson.missing_field "submissionDetail" "testcase_id"
     in
     let status =
       match assoc "status" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "submissionDetails" "status"
+      | None -> Atdml_runtime.Yojson.missing_field "submissionDetail" "status"
     in
     let time_ms =
       match assoc "time_ms" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "submissionDetails" "time_ms"
+      | None -> Atdml_runtime.Yojson.missing_field "submissionDetail" "time_ms"
     in
-    { testcase_id; status; time_ms }
-  | _ -> Atdml_runtime.Yojson.bad_type "submissionDetails" x
+    let output =
+      match assoc "output" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    { testcase_id; status; time_ms; output }
+  | _ -> Atdml_runtime.Yojson.bad_type "submissionDetail" x
 
-let yojson_of_submissionDetails (x : submissionDetails) : Yojson.Safe.t =
+let yojson_of_submissionDetail (x : submissionDetail) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("testcase_id", Atdml_runtime.Yojson.yojson_of_int x.testcase_id)];
     [("status", Atdml_runtime.Yojson.yojson_of_string x.status)];
     [("time_ms", Atdml_runtime.Yojson.yojson_of_int x.time_ms)];
+    (match x.output with None -> [] | Some v -> [("output", Atdml_runtime.Yojson.yojson_of_string v)]);
   ])
+
+let submissionDetail_of_json s =
+  submissionDetail_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_submissionDetail x =
+  Yojson.Safe.to_string (yojson_of_submissionDetail x)
+
+module SubmissionDetail = struct
+  type nonrec t = submissionDetail
+  let create = create_submissionDetail
+  let of_yojson = submissionDetail_of_yojson
+  let to_yojson = yojson_of_submissionDetail
+  let of_json = submissionDetail_of_json
+  let to_json = json_of_submissionDetail
+end
+
+type submissionDetails = submissionDetail list
+
+let submissionDetails_of_yojson (x : Yojson.Safe.t) : submissionDetails =
+  (Atdml_runtime.Yojson.list_of_yojson submissionDetail_of_yojson) x
+
+let yojson_of_submissionDetails (x : submissionDetails) : Yojson.Safe.t =
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_submissionDetail) x
 
 let submissionDetails_of_json s =
   submissionDetails_of_yojson (Yojson.Safe.from_string s)
@@ -826,7 +856,6 @@ let json_of_submissionDetails x =
 
 module SubmissionDetails = struct
   type nonrec t = submissionDetails
-  let create = create_submissionDetails
   let of_yojson = submissionDetails_of_yojson
   let to_yojson = yojson_of_submissionDetails
   let of_json = submissionDetails_of_json
@@ -841,7 +870,7 @@ type submission = {
   score: int;
   time_ms: int;
   memory_kb: int;
-  details: submissionDetails list;
+  details: submissionDetails;
 }
 
 let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details () : submission =
@@ -897,7 +926,7 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
     in
     let details =
       match assoc "details" with
-      | Some v -> (Atdml_runtime.Yojson.list_of_yojson submissionDetails_of_yojson) v
+      | Some v -> submissionDetails_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "details"
     in
     { id; problem_id; language; status; score; time_ms; memory_kb; details }
@@ -912,7 +941,7 @@ let yojson_of_submission (x : submission) : Yojson.Safe.t =
     [("score", Atdml_runtime.Yojson.yojson_of_int x.score)];
     [("time_ms", Atdml_runtime.Yojson.yojson_of_int x.time_ms)];
     [("memory_kb", Atdml_runtime.Yojson.yojson_of_int x.memory_kb)];
-    [("details", (Atdml_runtime.Yojson.yojson_of_list yojson_of_submissionDetails) x.details)];
+    [("details", yojson_of_submissionDetails x.details)];
   ])
 
 let submission_of_json s =
@@ -928,6 +957,28 @@ module Submission = struct
   let to_yojson = yojson_of_submission
   let of_json = submission_of_json
   let to_json = json_of_submission
+end
+
+type submissions = submission list
+
+let submissions_of_yojson (x : Yojson.Safe.t) : submissions =
+  (Atdml_runtime.Yojson.list_of_yojson submission_of_yojson) x
+
+let yojson_of_submissions (x : submissions) : Yojson.Safe.t =
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_submission) x
+
+let submissions_of_json s =
+  submissions_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_submissions x =
+  Yojson.Safe.to_string (yojson_of_submissions x)
+
+module Submissions = struct
+  type nonrec t = submissions
+  let of_yojson = submissions_of_yojson
+  let to_yojson = yojson_of_submissions
+  let of_json = submissions_of_json
+  let to_json = json_of_submissions
 end
 
 type solutionSource_artifacts = {
@@ -1665,28 +1716,6 @@ module ContestsContestsidProblemsGetResponse2 = struct
   let to_yojson = yojson_of_contestsContestsidProblemsGetResponse2
   let of_json = contestsContestsidProblemsGetResponse2_of_json
   let to_json = json_of_contestsContestsidProblemsGetResponse2
-end
-
-type contestsContestidSubmissionsGetResponse2 = submission list
-
-let contestsContestidSubmissionsGetResponse2_of_yojson (x : Yojson.Safe.t) : contestsContestidSubmissionsGetResponse2 =
-  (Atdml_runtime.Yojson.list_of_yojson submission_of_yojson) x
-
-let yojson_of_contestsContestidSubmissionsGetResponse2 (x : contestsContestidSubmissionsGetResponse2) : Yojson.Safe.t =
-  (Atdml_runtime.Yojson.yojson_of_list yojson_of_submission) x
-
-let contestsContestidSubmissionsGetResponse2_of_json s =
-  contestsContestidSubmissionsGetResponse2_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_contestsContestidSubmissionsGetResponse2 x =
-  Yojson.Safe.to_string (yojson_of_contestsContestidSubmissionsGetResponse2 x)
-
-module ContestsContestidSubmissionsGetResponse2 = struct
-  type nonrec t = contestsContestidSubmissionsGetResponse2
-  let of_yojson = contestsContestidSubmissionsGetResponse2_of_yojson
-  let to_yojson = yojson_of_contestsContestidSubmissionsGetResponse2
-  let of_json = contestsContestidSubmissionsGetResponse2_of_json
-  let to_json = json_of_contestsContestidSubmissionsGetResponse2
 end
 
 type authToken = {

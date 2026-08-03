@@ -24,26 +24,7 @@
       "type": "integer"
     },
     "details": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "testcase_id": {
-            "type": "integer"
-          },
-          "status": {
-            "type": "string"
-          },
-          "time_ms": {
-            "type": "integer"
-          }
-        },
-        "required": [
-          "testcase_id",
-          "status",
-          "time_ms"
-        ]
-      }
+      "$ref": "#/components/schemas/SubmissionDetails"
     }
   },
   "required": [

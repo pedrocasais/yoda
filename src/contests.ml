@@ -77,52 +77,25 @@ let makeProblemList lst =
 @param problems [string list] com ids de problemas
 @return devolve um lista de listas de tuplos com submissões *)
 let getAllSubmissions conn problems =
-  (* [aux acc x] obtém todos *)
+  (* [aux acc x] obtém todas os ids das submissões de todos os problemas *)
   let rec aux acc = function
     | [] -> Lwt.return acc
     | hd :: tl ->
         Client.lrange conn ("problem:" ^ hd ^ ":submissions") 0 (-1)
         >>= fun r -> aux (List.rev_append r acc) tl
   in
+  (* [aux' acc x] obtém todas as submissões de todos os problemas *)
   let rec aux' acc = function
     | [] -> Lwt.return acc
     | hd :: tl -> (
         Client.hgetall conn ("submission:" ^ hd)
         >>= fun lst' ->
-        Client.hmget conn
-          ("submission:" ^ hd ^ ":solution")
-          ["problem_id"; "language"]
+        Client.hgetall conn ("submission:" ^ hd ^ ":solution")
         >>= function
-        | [Some _pid; Some _language] ->
-            aux'
-              (List.rev_append
-                 [lst' @ [("problem_id", _pid); ("language", _language)]]
-                 acc )
-              tl
-        | _ -> aux' acc tl )
+        | h :: t as l -> aux' (List.rev_append [lst' @ l] acc) tl
+        | [] -> aux' acc tl )
   in
   aux [] problems >>= fun lst -> aux' [] lst
-
-(** [makeSubmissionList lst] converte uma lista de listas de tuplos numa lista de submissões
- @param lst lista de listas de tuplos com submissões efetuadas
- @return devolve um lista de submissões de tipo [Openapi.submission list]*)
-let makeSubmissionList lst =
-  List.fold_left
-    (fun acc x ->
-      let submission =
-        Openapi.create_submission
-          ~id:(int_of_string (List.assoc "id" x))
-          ~problem_id:(int_of_string (List.assoc "problem_id" x))
-          ~language:(List.assoc "language" x) ~status:(List.assoc "status" x)
-          ~score:(int_of_string (List.assoc "score" x))
-          ~time_ms:(int_of_string (List.assoc "time_ms" x))
-          ~memory_kb:(int_of_string (List.assoc "memory_kb" x))
-          ~details:
-            (Helpers.makeSubmissionDetailsList (List.assoc "details" x))
-          ()
-      in
-      List.rev_append [submission] acc )
-    [] lst
 
 (** [getScoreboard conn id] obtém o scoreboard associado a um concurso
  @param conn conexão há base de dados
@@ -200,24 +173,33 @@ let getContestsIdScoreboard request =
 (** [getContestsContestIdSubmissions request] devolve as submissões associadas a um concurso com [id], parâmetro da rota.
  @return 200 OK, se for concluído com sucesso, devolve as submissões de tipo [Openapi.submission list]; 404 Not Found, se o concurso/problema não existir ; 500 Internal Server Error, erro. *)
 let getContestsContestIdSubmissions request =
+  let user_id = Helpers.get_actor_id request in
+  let cid = Dream.param request "contestId" in
   Lwt.catch
     (fun () ->
-      let id = Dream.param request "contestId" in
       Lwt_pool.use Db.pool (fun conn ->
-          Client.smembers conn ("contest:" ^ id ^ ":problems")
+          Helpers.get_actor_role conn user_id
+          >>= fun user_role ->
+          Client.smembers conn ("contest:" ^ cid ^ ":problems")
           >>= function
           | [] ->
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]
                 "No problems/submissions found for that contest."
-          | lst ->
+          | problems_lst ->
               (* make sub list *)
-              getAllSubmissions conn lst
-              >>= fun sublist ->
+              getAllSubmissions conn problems_lst
+              >>= fun lst ->
+              let submissions =
+                List.fold_left
+                  (fun acc l ->
+                    let s = Helpers.makeSubmission user_id user_role l in
+                    List.append [s] acc )
+                  [] lst
+              in
               Dream.json ~code:200
                 ~headers:[("Content-Type", "application/json")]
-                (Openapi.json_of_contestsContestidSubmissionsGetResponse2
-                   (makeSubmissionList sublist) ) ) )
+                (Openapi.Submissions.to_json submissions) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
@@ -228,11 +210,11 @@ let getContestsContestIdSubmissions request =
 let postContestsContestsIdProblems request =
   Lwt.catch
     (fun () ->
-      let id = Dream.param request "contestsId" in
+      let cid = Dream.param request "contestsId" in
       Dream.body request
       >>= fun data ->
       let problem = Openapi.problem_of_json data in
-      let rec aux conn (problem : Openapi.problem) id attempt =
+      let rec aux conn (problem : Openapi.problem) cid attempt =
         Client.unwatch conn
         >>= fun _ ->
         Client.watch conn ["problem:id"]
@@ -256,7 +238,7 @@ let postContestsContestsIdProblems request =
           ; "title"
           ; problem.title
           ; "contest_id"
-          ; id
+          ; cid
           ; "time_limit_ms"
           ; string_of_int problem.time_limit_ms
           ; "memory_limit_mb"
@@ -269,7 +251,7 @@ let postContestsContestsIdProblems request =
           ; problem.output_spec ]
         >>= fun _ ->
         Client.send_custom_request conn
-          ["SADD"; "contest:" ^ id ^ ":problems"; string_of_int next_id]
+          ["SADD"; "contest:" ^ cid ^ ":problems"; string_of_int next_id]
         >>= fun _ ->
         Client.exec conn
         >>= function
@@ -284,7 +266,7 @@ let postContestsContestsIdProblems request =
               Dream.log
                 "Error in postContestsContestsIdProblems! Retrying..." ;
               Lwt_unix.sleep (base +. diff)
-              >>= fun () -> aux conn problem id (attempt + 1)
+              >>= fun () -> aux conn problem cid (attempt + 1)
         | [`Status "OK"; `Int n; `Int x] when x > 0 && n >= 1 ->
             let problem_res =
               Openapi.create_problem ~code:problem.code ~title:problem.title
@@ -303,9 +285,9 @@ let postContestsContestsIdProblems request =
               "Erro"
       in
       Lwt_pool.use Db.pool (fun conn ->
-          Client.exists conn ("contest:" ^ id)
+          Client.exists conn ("contest:" ^ cid)
           >>= function
-          | true -> aux conn problem id 0
+          | true -> aux conn problem cid 0
           | false ->
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]

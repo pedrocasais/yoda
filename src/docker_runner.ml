@@ -64,18 +64,18 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
     in
     let output = String.concat "\n" (List.map identify s) in
     let time_ms = int_of_float ((Unix.gettimeofday () -. start) *. 1000.) in
-    let normalize s = String.trim s in
     let detail_status =
       match code with
       | 0 ->
-          if normalize output = normalize tc.output then "accepted"
+          if String.trim output = String.trim tc.output then "accepted"
           else "wrong_answer"
       | 124 -> "time_limit_exceeded"
       | _ ->
           Printf.eprintf "Runtime error (exit %d): %s\n%!" code output ;
           "runtime_error"
     in
-    ({testcase_id= tc.id; status= detail_status; time_ms} : detail)
+    Openapi.SubmissionDetail.create ~testcase_id:tc.id ~status:detail_status
+      ~time_ms () ~output
   with exn ->
     (try C.stop c with _ -> ()) ;
     (try C.rm c with _ -> ()) ;
@@ -96,23 +96,24 @@ let run_all (job : job) (workdir : string) =
   let total = List.length details in
   let accepted =
     List.length
-      (List.filter (fun (d : detail) -> d.status = "accepted") details)
+      (List.filter
+         (fun (d : Openapi.SubmissionDetail.t) -> d.status = "accepted")
+         details )
   in
   let score = if total = 0 then 0 else accepted * 100 / total in
   let time_ms =
-    List.fold_left (fun acc (d : detail) -> max acc d.time_ms) 0 details
+    List.fold_left
+      (fun acc (d : Openapi.SubmissionDetail.t) -> max acc d.time_ms)
+      0 details
   in
   let global_status =
     if accepted = total then "accepted"
     else
-      (List.find (fun (d : detail) -> d.status <> "accepted") details).status
+      (List.find
+         (fun (d : Openapi.SubmissionDetail.t) -> d.status <> "accepted")
+         details )
+        .status
   in
-  ( { id= job.submission_id
-    ; problem_id= job.problem_id
-    ; language= Some job.lang
-    ; status= global_status
-    ; score
-    ; time_ms
-    ; memory_kb= 0
-    ; details }
-    : result )
+  Openapi.Submission.create ~id:job.submission_id ~problem_id:job.problem_id
+    ~language:job.lang ~status:global_status ~score ~time_ms ~memory_kb:0
+    ~details ()

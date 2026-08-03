@@ -47,6 +47,14 @@ let checkPrems request next =
         (Openapi.ErrorResponse.to_json error)
   | Ok -> next ()
 
+let get_actor_id request =
+  match Dream.session_field request "user" with
+  | Some id -> id
+  | None -> failwith "No user id found in session! Dangerous operation."
+
+let get_actor_role conn actor_id =
+  Client.hget conn ("user:" ^ actor_id) "role"
+
 (** [date] obtém a data atual no formato year-month-day-hour-min-sec. *)
 let date () =
   let today : Unix.tm = Unix.localtime (Unix.time ()) in
@@ -78,24 +86,47 @@ let getAllTestCases conn lst =
   aux [] lst
 
 (** [makeSubmissionDetailsList lst] converte uma string numa lista yojson numa lista de detalhes de submissão, [Openapi.submissionDetails list]
+   @param user_id ID do utilizador
+   @param user_role Função do utilizador
    @param lst lista de detalhes de submissão
    @return devolve uma lista de tipo [Openapi.submissionDetails list] para ser usada na criação de [[Openapi.submission list]]
    *)
-let makeSubmissionDetailsList lst =
-  Yojson.Basic.Util.to_list (Yojson.Basic.from_string lst)
-  |> List.map (fun x ->
-      let lst = Yojson.Basic.Util.to_assoc x in
-      Openapi.create_submissionDetails
-        ~testcase_id:
-          (Yojson.Basic.Util.to_int (List.assoc "testcase_id" lst))
-        ~status:(Yojson.Basic.Util.to_string (List.assoc "status" lst))
-        ~time_ms:(Yojson.Basic.Util.to_int (List.assoc "time_ms" lst))
-        () )
+let makeSubmissionDetailsList user_id user_role l =
+  let user_role =
+    Option.value ~default:(Openapi.UserRole.to_json Openapi.User) user_role
+  in
+  Openapi.SubmissionDetails.of_json (List.assoc "details" l)
+  |> List.map (fun (sd : Openapi.SubmissionDetail.t) ->
+      if
+        Openapi.userRole_of_json user_role = Openapi.Admin
+        || Openapi.userRole_of_json user_role = Openapi.Judge
+        || Openapi.userRole_of_json user_role = Openapi.User
+           && user_id = List.assoc "user_id" l
+      then
+        Openapi.create_submissionDetail ~testcase_id:sd.testcase_id
+          ~status:sd.status ~time_ms:sd.time_ms
+          ~output:(Option.value ~default:"There is no output" sd.output)
+          ()
+      else
+        Openapi.create_submissionDetail ~testcase_id:sd.testcase_id
+          ~status:sd.status ~time_ms:sd.time_ms () )
 
-let get_actor_id request =
-  match Dream.session_field request "user" with
-  | Some id -> id
-  | None -> failwith "No user id found in session"
+(** [makeSubmission user_id user_role lst] cria uma submissão com os dados fornecidos.
+    @param user_id ID do utilizador
+    @param user_role Função do utilizador
+    @param lst Lista de dados da submissão
+    @return Devolve uma submissão de tipo [Openapi.submission] *)
+let makeSubmission user_id user_role lst =
+  Openapi.create_submission
+    ~id:(int_of_string (List.assoc "id" lst))
+    ~problem_id:(int_of_string (List.assoc "problem_id" lst))
+    ~language:(List.assoc "language" lst)
+    ~status:(List.assoc "status" lst)
+    ~score:(int_of_string (List.assoc "score" lst))
+    ~time_ms:(int_of_string (List.assoc "time_ms" lst))
+    ~memory_kb:(int_of_string (List.assoc "memory_kb" lst))
+    ~details:(makeSubmissionDetailsList user_id user_role lst)
+    ()
 
 let escape_json_string s =
   let b = Buffer.create (String.length s + 16) in

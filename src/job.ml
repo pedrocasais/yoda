@@ -13,9 +13,6 @@ type job =
   ; memory_limit_mb: int
   ; testcases: testcase list }
 
-(** Resultao de um único caso de teste. *)
-type detail = Openapi.submissionDetails
-
 (** Resultado final agregado de todos os casos de teste. *)
 type result = Openapi.submission
 
