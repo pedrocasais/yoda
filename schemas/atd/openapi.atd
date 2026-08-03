@@ -137,11 +137,17 @@ type solution = {
   source_artifacts : solutionSource_artifacts list;
 } 
 
+type submissionDetailOutput = {
+  stdout : string;
+  stderr : string;
+  return_code : int;
+} 
+
 type submissionDetail = {
   testcase_id : int;
   status : string;
   time_ms : int;
-  ?output : string option;
+  ?output : submissionDetailOutput option;
 } 
 
 type submissionDetails = submissionDetail list 

@@ -100,24 +100,28 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
       decode_docker_output (List.map (fun (_, b) -> b) s)
     in
     let json =
-      `Assoc [("stdout", `String stdout); ("stderr", `String stderr)]
+      Openapi.SubmissionDetailOutput.create ~stdout ~stderr ~return_code:code
+        ()
     in
-    print_endline (Yojson.Safe.to_string json) ;
-    let output = stdout in
     let time_ms = int_of_float ((Unix.gettimeofday () -. start) *. 1000.) in
     let detail_status =
       match code with
       | 0 ->
-          if String.trim output = String.trim tc.output then "accepted"
+          if String.trim stdout = String.trim tc.output then "accepted"
           else "wrong_answer"
       | 124 -> "time_limit_exceeded"
+      | 137 ->
+          (* SIGKILL: commonly OOM, but could also be docker kill *)
+          "memory_limit_exceeded"
+      | 139 -> "segmentation_fault"
       | _ ->
-          Printf.eprintf "Runtime error (exit %d): %s\n%!" code output ;
+          Printf.eprintf "Runtime error (exit %d)\n%!" code ;
+          Printf.eprintf "Stdout: %s\n%!" stdout ;
+          Printf.eprintf "Stderr: %s\n%!" stderr ;
           "runtime_error"
     in
     Openapi.SubmissionDetail.create ~testcase_id:tc.id ~status:detail_status
-      ~time_ms ()
-      ~output:(Yojson.Safe.to_string json)
+      ~time_ms () ~output:json
   with exn ->
     (try C.stop c with _ -> ()) ;
     (try C.rm c with _ -> ()) ;

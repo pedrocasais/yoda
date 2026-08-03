@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "stdout": {
+      "type": "string"
+    },
+    "stderr": {
+      "type": "string"
+    },
+    "return_code": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "stdout",
+    "stderr",
+    "return_code"
+  ]
+}
