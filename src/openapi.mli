@@ -256,14 +256,35 @@ module TestCase : sig
   val to_json : t -> string
 end
 
+type submissionDetailOutput = {
+  stdout: string;
+  stderr: string;
+  return_code: int;
+}
+
+val create_submissionDetailOutput : stdout:string -> stderr:string -> return_code:int -> unit -> submissionDetailOutput
+val submissionDetailOutput_of_yojson : Yojson.Safe.t -> submissionDetailOutput
+val yojson_of_submissionDetailOutput : submissionDetailOutput -> Yojson.Safe.t
+val submissionDetailOutput_of_json : string -> submissionDetailOutput
+val json_of_submissionDetailOutput : submissionDetailOutput -> string
+
+module SubmissionDetailOutput : sig
+  type nonrec t = submissionDetailOutput
+  val create : stdout:string -> stderr:string -> return_code:int -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type submissionDetail = {
   testcase_id: int;
   status: string;
   time_ms: int;
-  output: string option;
+  output: submissionDetailOutput option;
 }
 
-val create_submissionDetail : testcase_id:int -> status:string -> time_ms:int -> ?output:string -> unit -> submissionDetail
+val create_submissionDetail : testcase_id:int -> status:string -> time_ms:int -> ?output:submissionDetailOutput -> unit -> submissionDetail
 val submissionDetail_of_yojson : Yojson.Safe.t -> submissionDetail
 val yojson_of_submissionDetail : submissionDetail -> Yojson.Safe.t
 val submissionDetail_of_json : string -> submissionDetail
@@ -271,7 +292,7 @@ val json_of_submissionDetail : submissionDetail -> string
 
 module SubmissionDetail : sig
   type nonrec t = submissionDetail
-  val create : testcase_id:int -> status:string -> time_ms:int -> ?output:string -> unit -> t
+  val create : testcase_id:int -> status:string -> time_ms:int -> ?output:submissionDetailOutput -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

@@ -105,7 +105,12 @@ let makeSubmissionDetailsList user_id user_role l =
       then
         Openapi.create_submissionDetail ~testcase_id:sd.testcase_id
           ~status:sd.status ~time_ms:sd.time_ms
-          ~output:(Option.value ~default:"There is no output" sd.output)
+          ~output:
+            (Option.value
+               ~default:
+                 (Openapi.SubmissionDetailOutput.create ~stdout:"" ~stderr:""
+                    ~return_code:(-1) () )
+               sd.output )
           ()
       else
         Openapi.create_submissionDetail ~testcase_id:sd.testcase_id
