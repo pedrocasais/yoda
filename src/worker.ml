@@ -302,7 +302,7 @@ let testcases id =
 
 (** Processa uma submissão completa.
     Vai buscar a solução, o problema e os testcases ao Valkey,
-    compila com {!Compiler_v2} e executa com {!Docker_runner_v2}.
+    compila com {!Compiler} e executa com {!Docker_runner}.
     As operações bloqueantes correm em threads via [Lwt_preemptive].
     Em caso de erro de compilação escreve [compile_error] sem executar testcases. *)
 let process_job submission_id =

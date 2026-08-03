@@ -92,7 +92,7 @@ let getAllSubmissions conn problems =
         >>= fun lst' ->
         Client.hgetall conn ("submission:" ^ hd ^ ":solution")
         >>= function
-        | h :: t as l -> aux' (List.rev_append [lst' @ l] acc) tl
+        | _h :: _t as l -> aux' (List.rev_append [lst' @ l] acc) tl
         | [] -> aux' acc tl )
   in
   aux [] problems >>= fun lst -> aux' [] lst

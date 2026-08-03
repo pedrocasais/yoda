@@ -38,7 +38,7 @@ let login_handler_judge next request =
         ~headers:[("Content-Type", "application/json")]
         "Unauthorized access"
 
-let () =
+let run () =
   let app =
     Dream.router
       [ Dream.get "/" (fun _request -> Dream.html "/")

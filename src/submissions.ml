@@ -1,7 +1,7 @@
 (**  Submissão de soluções 
   
   Neste módulo estão presentes funções que permitem realizar a submissão de soluções para posteriormente serem avaliadas 
-  por {!yoda.yodac}*)
+  por `yoda.yodac_lib` *)
 
 open Lwt.Infix
 open Redis_lwt
@@ -39,7 +39,7 @@ let getSubmissionsId request =
           | lst -> (
               Client.hgetall conn ("submission:" ^ sid ^ ":solution")
               >>= function
-              | h :: t as l ->
+              | _h :: _t as l ->
                   (* Merge solution fields with submission fields *)
                   let s =
                     Helpers.makeSubmission user_id user_role (lst @ l)
