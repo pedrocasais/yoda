@@ -8,6 +8,14 @@ open Redis_lwt
 (** Tipo de acesso para verificar permissões de utilizador. *)
 type access = Bad_Request | Unauthorized | Forbidden | Ok
 
+let get_actor_id request =
+  match Dream.session_field request "user" with
+  | Some id -> id
+  | None -> failwith "No user id found in session! Dangerous operation."
+
+let get_actor_role conn actor_id =
+  Client.hget conn ("user:" ^ actor_id) "role"
+
 (** [checkPrems request next] verifica se o user tem autorização de Admin para aceder a [request]. *)
 let checkPrems request next =
   let id_session = Dream.session_field request "user" in
@@ -15,8 +23,7 @@ let checkPrems request next =
   let aux = function
     | None -> Lwt.return Unauthorized
     | Some id -> (
-        Lwt_pool.use Db.pool (fun conn ->
-            Client.hget conn ("user:" ^ id) "role" )
+        Lwt_pool.use Db.pool (fun conn -> get_actor_role conn id)
         >>= function
         | Some role ->
             if Openapi.userRole_of_json role = Openapi.Admin then
@@ -46,14 +53,6 @@ let checkPrems request next =
         ~headers:[("Content-Type", "application/json")]
         (Openapi.ErrorResponse.to_json error)
   | Ok -> next ()
-
-let get_actor_id request =
-  match Dream.session_field request "user" with
-  | Some id -> id
-  | None -> failwith "No user id found in session! Dangerous operation."
-
-let get_actor_role conn actor_id =
-  Client.hget conn ("user:" ^ actor_id) "role"
 
 (** [date] obtém a data atual no formato year-month-day-hour-min-sec. *)
 let date () =

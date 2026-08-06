@@ -129,6 +129,8 @@ let getProblemsIdTestcases request =
 (** [deleteProblemsId request] elimina o problema pelo [id], parâmetro na rota.
  @return 204 No Content, se for eliminado com sucesso; 404 Not Found, se não existir o problema com o [id] ou 500 Internal Server Error    *)
 let deleteProblemsId request =
+  (* no need to check for admin permission; it came from a protected route *)
+  (* [TODO] check if there are submissions for this problem otherwise they will be orphaned *)
   Lwt.catch
     (fun () ->
       let id = Dream.param request "id" in
@@ -148,6 +150,7 @@ let deleteProblemsId request =
 (** [putProblemsId request] atualiza os campos [code, title, time_limit_ms, memory_limit_mb, description, input_spec, output_spec] do problema identificado pelo parâmetro de rota [id].
  @return 200 OK, se for concluído com sucesso devolve o problema atualizado de tipo [Openapi.problem]; 404 Not Found, se não existir o problema com o [id]; 500 Internal Server Error, erro. *)
 let putProblemsId request =
+  (* no need to check for admin permission; it came from a protected route *)
   Lwt.catch
     (fun () ->
       let id = Dream.param request "id" in

@@ -3,7 +3,7 @@
   "info": {
     "title": "API specification for Yoda",
     "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
-    "version": "1.3"
+    "version": "1.4"
   },
   "paths": {
     "/admin/users": {
@@ -471,14 +471,14 @@
         }
       },
       "post": {
-        "summary": "Create problem.",
-        "description": "Creates a new problem.",
+        "summary": "Create a new problem.",
+        "description": "Admin only. Creates a fresh problem with all metadata and optional source files.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Problem"
+                "$ref": "#/components/schemas/ProblemCreateRequest"
               }
             }
           }
@@ -500,8 +500,8 @@
           "401": {
             "description": "Unauthorized access"
           },
-          "404": {
-            "description": "Contest not found"
+          "403": {
+            "description": "Forbidden - admin only"
           },
           "500": {
             "description": "Server error"
@@ -533,62 +533,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized access"
-          },
-          "404": {
-            "description": "Problem not found"
-          },
-          "500": {
-            "description": "Server error"
-          }
-        }
-      },
-      "put": {
-        "summary": "Update problem.",
-        "description": "Updates an existing problem.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Problem"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Updated problem object",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized access"
-          },
-          "404": {
-            "description": "Problem not found"
-          },
-          "500": {
-            "description": "Server error"
-          }
-        }
-      },
-      "delete": {
-        "summary": "Delete problem.",
-        "description": "Deletes an existing problem.",
-        "responses": {
-          "204": {
-            "description": "Problem deleted successfully"
           },
           "401": {
             "description": "Unauthorized access"
@@ -670,6 +614,93 @@
           },
           "404": {
             "description": "Problem not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/admin/problems/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Partially update a problem.",
+        "description": "Admin only. Updates only the fields provided in the request body.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProblemUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated problem object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized access"
+          },
+          "403": {
+            "description": "Forbidden - admin only"
+          },
+          "404": {
+            "description": "Problem not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a problem.",
+        "description": "Admin only. Prevents deletion if the problem already has submissions.",
+        "responses": {
+          "204": {
+            "description": "Problem deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized access"
+          },
+          "403": {
+            "description": "Forbidden - admin only"
+          },
+          "404": {
+            "description": "Problem not found"
+          },
+          "409": {
+            "description": "Conflict - problem has existing submissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Cannot delete problem with existing submissions"
+                }
+              }
+            }
           },
           "500": {
             "description": "Server error"
@@ -1079,6 +1110,19 @@
           "created_at"
         ]
       },
+      "Languages": {
+        "type": "array",
+        "uniqueItems": true,
+        "minItems": 1,
+        "items": {
+          "type": "string"
+        },
+        "example": [
+          "OCaml",
+          "Rust",
+          "TypeScript"
+        ]
+      },
       "UserCreateRequest": {
         "type": "object",
         "properties": {
@@ -1175,6 +1219,103 @@
           "output",
           "is_sample"
         ]
+      },
+      "SourceArtifact": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "The name of the source file"
+          },
+          "content": {
+            "type": "string",
+            "description": "The content of the source file"
+          }
+        },
+        "required": [
+          "filename",
+          "content"
+        ]
+      },
+      "ProblemCreateRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "input_spec": {
+            "type": "string"
+          },
+          "output_spec": {
+            "type": "string"
+          },
+          "languages": {
+            "$ref": "#/components/schemas/Languages"
+          },
+          "time_limit_ms": {
+            "type": "integer"
+          },
+          "memory_limit_mb": {
+            "type": "integer"
+          },
+          "source_artifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceArtifact"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "time_limit_ms",
+          "memory_limit_mb",
+          "description",
+          "input_spec",
+          "output_spec",
+          "languages"
+        ]
+      },
+      "ProblemUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "input_spec": {
+            "type": "string"
+          },
+          "output_spec": {
+            "type": "string"
+          },
+          "languages": {
+            "$ref": "#/components/schemas/Languages"
+          },
+          "time_limit_ms": {
+            "type": "integer"
+          },
+          "memory_limit_mb": {
+            "type": "integer"
+          },
+          "source_artifacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceArtifact"
+            }
+          }
+        }
       },
       "Submission": {
         "type": "object",
@@ -1280,21 +1421,7 @@
             "type": "array",
             "minItems": 1,
             "items": {
-              "type": "object",
-              "properties": {
-                "filename": {
-                  "type": "string",
-                  "description": "The name of the source file"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "The content of the source file"
-                }
-              },
-              "required": [
-                "filename",
-                "content"
-              ]
+              "$ref": "#/components/schemas/SourceArtifact"
             }
           }
         },

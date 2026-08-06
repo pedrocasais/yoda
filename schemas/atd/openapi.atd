@@ -2,11 +2,6 @@
 type json <ocaml module="Yojson.Basic" t="t"> = abstract
 type int64 = int <ocaml repr="int64">
 
-type solutionSource_artifacts = {
-  filename <doc text="The name of the source file">: string;
-  content <doc text="The content of the source file">: string;
-} 
-
 type contestStatus = [
   | Upcoming <json name="upcoming">
   | Running <json name="running">
@@ -134,7 +129,7 @@ type scoreboardEntry = {
 type solution = {
   problem_id : int;
   language : string;
-  source_artifacts : solutionSource_artifacts list;
+  source_artifacts : sourceArtifact list;
 } 
 
 type submissionDetailOutput = {
@@ -163,6 +158,35 @@ type submission = {
   time_ms : int;
   memory_kb : int;
   details : submissionDetails;
+} 
+
+type problemUpdateRequest = {
+  ?code : string option;
+  ?title : string option;
+  ?description : string option;
+  ?input_spec : string option;
+  ?output_spec : string option;
+  ?languages : languages option;
+  ?time_limit_ms : int option;
+  ?memory_limit_mb : int option;
+  ?source_artifacts : sourceArtifact list option;
+} 
+
+type problemCreateRequest = {
+  code : string;
+  title : string;
+  description : string;
+  input_spec : string;
+  output_spec : string;
+  languages : languages;
+  time_limit_ms : int;
+  memory_limit_mb : int;
+  ?source_artifacts : sourceArtifact list option;
+} 
+
+type sourceArtifact = {
+  filename <doc text="The name of the source file">: string;
+  content <doc text="The content of the source file">: string;
 } 
 
 type testCase = {
@@ -195,6 +219,8 @@ type userCreateRequest = {
   role : userRole;
   ?groups : userGroup option;
 } 
+
+type languages = string list 
 
 type user = {
   id : int;
