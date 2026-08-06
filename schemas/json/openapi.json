@@ -1051,6 +1051,49 @@
           }
         }
       }
+    },
+    "/admin/submissions/{id}/reevaluate": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Re-evaluate a submission",
+        "description": "Admin only. Re-evaluates a specific submission.",
+        "responses": {
+          "200": {
+            "description": "Submission re-evaluated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Submission"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized access"
+          },
+          "403": {
+            "description": "Forbidden - admin only"
+          },
+          "404": {
+            "description": "Submission not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
     }
   },
   "components": {
