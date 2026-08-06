@@ -177,3 +177,47 @@ let postSubmissions request =
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
+
+(** [postSubmissionsIdReEvaluate request] Reavalia uma submissão com o [id], parâmetro da rota.
+  @return 200 OK, devolve um submissão com tipo [Openapi.submission]; 404 Not Found, se a submissão não existir; 403 Forbidden, se o user não for admin; 500 Internal Server Error    *)
+let postSubmissionsIdReEvaluate request =
+  let user_id = Helpers.get_actor_id request in
+  let sid = Dream.param request "id" in
+  Lwt.catch
+    (fun () ->
+      Lwt_pool.use Db.pool (fun conn ->
+          Helpers.get_actor_role conn user_id
+          >>= fun user_role ->
+          if user_role <> Some (Openapi.UserRole.to_json Openapi.Admin) then
+            Dream.json ~code:403
+              ~headers:[("Content-Type", "application/json")]
+              "Forbidden - admin only"
+          else
+            Client.hgetall conn ("submission:" ^ sid)
+            >>= function
+            | [] ->
+                Dream.json ~code:404
+                  ~headers:[("Content-Type", "application/json")]
+                  "Submission not found"
+            | lst -> (
+                Client.hgetall conn ("submission:" ^ sid ^ ":solution")
+                >>= function
+                | _h :: _t as l ->
+                    (* Re-evaluate the submission by pushing it back to the
+                       job queue *)
+                    let sub =
+                      Helpers.makeSubmission user_id user_role (lst @ l)
+                    in
+                    Client.lpush conn "submission:job" [sid]
+                    >>= fun _ ->
+                    Dream.json ~code:200
+                      ~headers:[("Content-Type", "application/json")]
+                      (Openapi.Submission.to_json sub)
+                | [] ->
+                    Dream.json ~code:404
+                      ~headers:[("Content-Type", "application/json")]
+                      "Not Found: problem_id language user_id" ) ) )
+    (fun exn ->
+      Dream.json ~code:500
+        ~headers:[("Content-Type", "application/json")]
+        (Printexc.to_string exn) )

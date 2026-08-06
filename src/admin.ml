@@ -23,3 +23,6 @@ let deleteAdminUsersId = Admin_users.deleteUsersId
 let putAdminProblemsId = Problems.putProblemsId
 
 let deleteAdminProblemsId = Problems.deleteProblemsId
+
+(* Submissions *)
+let postAdminSubmissionsIdReevaluate = Submissions.postSubmissionsIdReEvaluate
