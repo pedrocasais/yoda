@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "uniqueItems": true,
+  "minItems": 1,
+  "items": {
+    "type": "string"
+  },
+  "example": [
+    "OCaml",
+    "Rust",
+    "TypeScript"
+  ]
+}

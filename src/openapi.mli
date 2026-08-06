@@ -355,19 +355,19 @@ module Submissions : sig
   val to_json : t -> string
 end
 
-type solutionSource_artifacts = {
+type sourceArtifact = {
   filename: string;  (** The name of the source file *)
   content: string;  (** The content of the source file *)
 }
 
-val create_solutionSource_artifacts : filename:string -> content:string -> unit -> solutionSource_artifacts
-val solutionSource_artifacts_of_yojson : Yojson.Safe.t -> solutionSource_artifacts
-val yojson_of_solutionSource_artifacts : solutionSource_artifacts -> Yojson.Safe.t
-val solutionSource_artifacts_of_json : string -> solutionSource_artifacts
-val json_of_solutionSource_artifacts : solutionSource_artifacts -> string
+val create_sourceArtifact : filename:string -> content:string -> unit -> sourceArtifact
+val sourceArtifact_of_yojson : Yojson.Safe.t -> sourceArtifact
+val yojson_of_sourceArtifact : sourceArtifact -> Yojson.Safe.t
+val sourceArtifact_of_json : string -> sourceArtifact
+val json_of_sourceArtifact : sourceArtifact -> string
 
-module SolutionSource_artifacts : sig
-  type nonrec t = solutionSource_artifacts
+module SourceArtifact : sig
+  type nonrec t = sourceArtifact
   val create : filename:string -> content:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
@@ -378,10 +378,10 @@ end
 type solution = {
   problem_id: int;
   language: string;
-  source_artifacts: solutionSource_artifacts list;
+  source_artifacts: sourceArtifact list;
 }
 
-val create_solution : problem_id:int -> language:string -> source_artifacts:solutionSource_artifacts list -> unit -> solution
+val create_solution : problem_id:int -> language:string -> source_artifacts:sourceArtifact list -> unit -> solution
 val solution_of_yojson : Yojson.Safe.t -> solution
 val yojson_of_solution : solution -> Yojson.Safe.t
 val solution_of_json : string -> solution
@@ -389,7 +389,7 @@ val json_of_solution : solution -> string
 
 module Solution : sig
   type nonrec t = solution
-  val create : problem_id:int -> language:string -> source_artifacts:solutionSource_artifacts list -> unit -> t
+  val create : problem_id:int -> language:string -> source_artifacts:sourceArtifact list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -427,6 +427,75 @@ val json_of_problemsIdTestcasesGetResponse2 : problemsIdTestcasesGetResponse2 ->
 
 module ProblemsIdTestcasesGetResponse2 : sig
   type nonrec t = problemsIdTestcasesGetResponse2
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type languages = string list
+
+val languages_of_yojson : Yojson.Safe.t -> languages
+val yojson_of_languages : languages -> Yojson.Safe.t
+val languages_of_json : string -> languages
+val json_of_languages : languages -> string
+
+module Languages : sig
+  type nonrec t = languages
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type problemUpdateRequest = {
+  code: string option;
+  title: string option;
+  description: string option;
+  input_spec: string option;
+  output_spec: string option;
+  languages: languages option;
+  time_limit_ms: int option;
+  memory_limit_mb: int option;
+  source_artifacts: sourceArtifact list option;
+}
+
+val create_problemUpdateRequest : ?code:string -> ?title:string -> ?description:string -> ?input_spec:string -> ?output_spec:string -> ?languages:languages -> ?time_limit_ms:int -> ?memory_limit_mb:int -> ?source_artifacts:sourceArtifact list -> unit -> problemUpdateRequest
+val problemUpdateRequest_of_yojson : Yojson.Safe.t -> problemUpdateRequest
+val yojson_of_problemUpdateRequest : problemUpdateRequest -> Yojson.Safe.t
+val problemUpdateRequest_of_json : string -> problemUpdateRequest
+val json_of_problemUpdateRequest : problemUpdateRequest -> string
+
+module ProblemUpdateRequest : sig
+  type nonrec t = problemUpdateRequest
+  val create : ?code:string -> ?title:string -> ?description:string -> ?input_spec:string -> ?output_spec:string -> ?languages:languages -> ?time_limit_ms:int -> ?memory_limit_mb:int -> ?source_artifacts:sourceArtifact list -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type problemCreateRequest = {
+  code: string;
+  title: string;
+  description: string;
+  input_spec: string;
+  output_spec: string;
+  languages: languages;
+  time_limit_ms: int;
+  memory_limit_mb: int;
+  source_artifacts: sourceArtifact list option;
+}
+
+val create_problemCreateRequest : code:string -> title:string -> description:string -> input_spec:string -> output_spec:string -> languages:languages -> time_limit_ms:int -> memory_limit_mb:int -> ?source_artifacts:sourceArtifact list -> unit -> problemCreateRequest
+val problemCreateRequest_of_yojson : Yojson.Safe.t -> problemCreateRequest
+val yojson_of_problemCreateRequest : problemCreateRequest -> Yojson.Safe.t
+val problemCreateRequest_of_json : string -> problemCreateRequest
+val json_of_problemCreateRequest : problemCreateRequest -> string
+
+module ProblemCreateRequest : sig
+  type nonrec t = problemCreateRequest
+  val create : code:string -> title:string -> description:string -> input_spec:string -> output_spec:string -> languages:languages -> time_limit_ms:int -> memory_limit_mb:int -> ?source_artifacts:sourceArtifact list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

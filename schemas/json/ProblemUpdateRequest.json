@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "input_spec": {
+      "type": "string"
+    },
+    "output_spec": {
+      "type": "string"
+    },
+    "languages": {
+      "$ref": "#/components/schemas/Languages"
+    },
+    "time_limit_ms": {
+      "type": "integer"
+    },
+    "memory_limit_mb": {
+      "type": "integer"
+    },
+    "source_artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/SourceArtifact"
+      }
+    }
+  }
+}

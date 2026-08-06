@@ -1043,15 +1043,15 @@ module Submissions = struct
   let to_json = json_of_submissions
 end
 
-type solutionSource_artifacts = {
+type sourceArtifact = {
   filename: string;  (** The name of the source file *)
   content: string;  (** The content of the source file *)
 }
 
-let create_solutionSource_artifacts ~filename ~content () : solutionSource_artifacts =
+let create_sourceArtifact ~filename ~content () : sourceArtifact =
   { filename; content }
 
-let solutionSource_artifacts_of_yojson (x : Yojson.Safe.t) : solutionSource_artifacts =
+let sourceArtifact_of_yojson (x : Yojson.Safe.t) : sourceArtifact =
   match x with
   | `Assoc fields ->
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
@@ -1067,41 +1067,41 @@ let solutionSource_artifacts_of_yojson (x : Yojson.Safe.t) : solutionSource_arti
     let filename =
       match assoc "filename" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "solutionSource_artifacts" "filename"
+      | None -> Atdml_runtime.Yojson.missing_field "sourceArtifact" "filename"
     in
     let content =
       match assoc "content" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "solutionSource_artifacts" "content"
+      | None -> Atdml_runtime.Yojson.missing_field "sourceArtifact" "content"
     in
     { filename; content }
-  | _ -> Atdml_runtime.Yojson.bad_type "solutionSource_artifacts" x
+  | _ -> Atdml_runtime.Yojson.bad_type "sourceArtifact" x
 
-let yojson_of_solutionSource_artifacts (x : solutionSource_artifacts) : Yojson.Safe.t =
+let yojson_of_sourceArtifact (x : sourceArtifact) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("filename", Atdml_runtime.Yojson.yojson_of_string x.filename)];
     [("content", Atdml_runtime.Yojson.yojson_of_string x.content)];
   ])
 
-let solutionSource_artifacts_of_json s =
-  solutionSource_artifacts_of_yojson (Yojson.Safe.from_string s)
+let sourceArtifact_of_json s =
+  sourceArtifact_of_yojson (Yojson.Safe.from_string s)
 
-let json_of_solutionSource_artifacts x =
-  Yojson.Safe.to_string (yojson_of_solutionSource_artifacts x)
+let json_of_sourceArtifact x =
+  Yojson.Safe.to_string (yojson_of_sourceArtifact x)
 
-module SolutionSource_artifacts = struct
-  type nonrec t = solutionSource_artifacts
-  let create = create_solutionSource_artifacts
-  let of_yojson = solutionSource_artifacts_of_yojson
-  let to_yojson = yojson_of_solutionSource_artifacts
-  let of_json = solutionSource_artifacts_of_json
-  let to_json = json_of_solutionSource_artifacts
+module SourceArtifact = struct
+  type nonrec t = sourceArtifact
+  let create = create_sourceArtifact
+  let of_yojson = sourceArtifact_of_yojson
+  let to_yojson = yojson_of_sourceArtifact
+  let of_json = sourceArtifact_of_json
+  let to_json = json_of_sourceArtifact
 end
 
 type solution = {
   problem_id: int;
   language: string;
-  source_artifacts: solutionSource_artifacts list;
+  source_artifacts: sourceArtifact list;
 }
 
 let create_solution ~problem_id ~language ~source_artifacts () : solution =
@@ -1132,7 +1132,7 @@ let solution_of_yojson (x : Yojson.Safe.t) : solution =
     in
     let source_artifacts =
       match assoc "source_artifacts" with
-      | Some v -> (Atdml_runtime.Yojson.list_of_yojson solutionSource_artifacts_of_yojson) v
+      | Some v -> (Atdml_runtime.Yojson.list_of_yojson sourceArtifact_of_yojson) v
       | None -> Atdml_runtime.Yojson.missing_field "solution" "source_artifacts"
     in
     { problem_id; language; source_artifacts }
@@ -1142,7 +1142,7 @@ let yojson_of_solution (x : solution) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("problem_id", Atdml_runtime.Yojson.yojson_of_int x.problem_id)];
     [("language", Atdml_runtime.Yojson.yojson_of_string x.language)];
-    [("source_artifacts", (Atdml_runtime.Yojson.yojson_of_list yojson_of_solutionSource_artifacts) x.source_artifacts)];
+    [("source_artifacts", (Atdml_runtime.Yojson.yojson_of_list yojson_of_sourceArtifact) x.source_artifacts)];
   ])
 
 let solution_of_json s =
@@ -1249,6 +1249,236 @@ module ProblemsIdTestcasesGetResponse2 = struct
   let to_yojson = yojson_of_problemsIdTestcasesGetResponse2
   let of_json = problemsIdTestcasesGetResponse2_of_json
   let to_json = json_of_problemsIdTestcasesGetResponse2
+end
+
+type languages = string list
+
+let languages_of_yojson (x : Yojson.Safe.t) : languages =
+  (Atdml_runtime.Yojson.list_of_yojson Atdml_runtime.Yojson.string_of_yojson) x
+
+let yojson_of_languages (x : languages) : Yojson.Safe.t =
+  (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string) x
+
+let languages_of_json s =
+  languages_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_languages x =
+  Yojson.Safe.to_string (yojson_of_languages x)
+
+module Languages = struct
+  type nonrec t = languages
+  let of_yojson = languages_of_yojson
+  let to_yojson = yojson_of_languages
+  let of_json = languages_of_json
+  let to_json = json_of_languages
+end
+
+type problemUpdateRequest = {
+  code: string option;
+  title: string option;
+  description: string option;
+  input_spec: string option;
+  output_spec: string option;
+  languages: languages option;
+  time_limit_ms: int option;
+  memory_limit_mb: int option;
+  source_artifacts: sourceArtifact list option;
+}
+
+let create_problemUpdateRequest ?code ?title ?description ?input_spec ?output_spec ?languages ?time_limit_ms ?memory_limit_mb ?source_artifacts () : problemUpdateRequest =
+  { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts }
+
+let problemUpdateRequest_of_yojson (x : Yojson.Safe.t) : problemUpdateRequest =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let code =
+      match assoc "code" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let title =
+      match assoc "title" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let description =
+      match assoc "description" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let input_spec =
+      match assoc "input_spec" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let output_spec =
+      match assoc "output_spec" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let languages =
+      match assoc "languages" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (languages_of_yojson v)
+    in
+    let time_limit_ms =
+      match assoc "time_limit_ms" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
+    in
+    let memory_limit_mb =
+      match assoc "memory_limit_mb" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
+    in
+    let source_artifacts =
+      match assoc "source_artifacts" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some ((Atdml_runtime.Yojson.list_of_yojson sourceArtifact_of_yojson) v)
+    in
+    { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts }
+  | _ -> Atdml_runtime.Yojson.bad_type "problemUpdateRequest" x
+
+let yojson_of_problemUpdateRequest (x : problemUpdateRequest) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    (match x.code with None -> [] | Some v -> [("code", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.title with None -> [] | Some v -> [("title", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.input_spec with None -> [] | Some v -> [("input_spec", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.output_spec with None -> [] | Some v -> [("output_spec", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.languages with None -> [] | Some v -> [("languages", yojson_of_languages v)]);
+    (match x.time_limit_ms with None -> [] | Some v -> [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int v)]);
+    (match x.memory_limit_mb with None -> [] | Some v -> [("memory_limit_mb", Atdml_runtime.Yojson.yojson_of_int v)]);
+    (match x.source_artifacts with None -> [] | Some v -> [("source_artifacts", (Atdml_runtime.Yojson.yojson_of_list yojson_of_sourceArtifact) v)]);
+  ])
+
+let problemUpdateRequest_of_json s =
+  problemUpdateRequest_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_problemUpdateRequest x =
+  Yojson.Safe.to_string (yojson_of_problemUpdateRequest x)
+
+module ProblemUpdateRequest = struct
+  type nonrec t = problemUpdateRequest
+  let create = create_problemUpdateRequest
+  let of_yojson = problemUpdateRequest_of_yojson
+  let to_yojson = yojson_of_problemUpdateRequest
+  let of_json = problemUpdateRequest_of_json
+  let to_json = json_of_problemUpdateRequest
+end
+
+type problemCreateRequest = {
+  code: string;
+  title: string;
+  description: string;
+  input_spec: string;
+  output_spec: string;
+  languages: languages;
+  time_limit_ms: int;
+  memory_limit_mb: int;
+  source_artifacts: sourceArtifact list option;
+}
+
+let create_problemCreateRequest ~code ~title ~description ~input_spec ~output_spec ~languages ~time_limit_ms ~memory_limit_mb ?source_artifacts () : problemCreateRequest =
+  { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts }
+
+let problemCreateRequest_of_yojson (x : Yojson.Safe.t) : problemCreateRequest =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let code =
+      match assoc "code" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problemCreateRequest" "code"
+    in
+    let title =
+      match assoc "title" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problemCreateRequest" "title"
+    in
+    let description =
+      match assoc "description" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problemCreateRequest" "description"
+    in
+    let input_spec =
+      match assoc "input_spec" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problemCreateRequest" "input_spec"
+    in
+    let output_spec =
+      match assoc "output_spec" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problemCreateRequest" "output_spec"
+    in
+    let languages =
+      match assoc "languages" with
+      | Some v -> languages_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problemCreateRequest" "languages"
+    in
+    let time_limit_ms =
+      match assoc "time_limit_ms" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problemCreateRequest" "time_limit_ms"
+    in
+    let memory_limit_mb =
+      match assoc "memory_limit_mb" with
+      | Some v -> Atdml_runtime.Yojson.int_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problemCreateRequest" "memory_limit_mb"
+    in
+    let source_artifacts =
+      match assoc "source_artifacts" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some ((Atdml_runtime.Yojson.list_of_yojson sourceArtifact_of_yojson) v)
+    in
+    { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts }
+  | _ -> Atdml_runtime.Yojson.bad_type "problemCreateRequest" x
+
+let yojson_of_problemCreateRequest (x : problemCreateRequest) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("code", Atdml_runtime.Yojson.yojson_of_string x.code)];
+    [("title", Atdml_runtime.Yojson.yojson_of_string x.title)];
+    [("description", Atdml_runtime.Yojson.yojson_of_string x.description)];
+    [("input_spec", Atdml_runtime.Yojson.yojson_of_string x.input_spec)];
+    [("output_spec", Atdml_runtime.Yojson.yojson_of_string x.output_spec)];
+    [("languages", yojson_of_languages x.languages)];
+    [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int x.time_limit_ms)];
+    [("memory_limit_mb", Atdml_runtime.Yojson.yojson_of_int x.memory_limit_mb)];
+    (match x.source_artifacts with None -> [] | Some v -> [("source_artifacts", (Atdml_runtime.Yojson.yojson_of_list yojson_of_sourceArtifact) v)]);
+  ])
+
+let problemCreateRequest_of_json s =
+  problemCreateRequest_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_problemCreateRequest x =
+  Yojson.Safe.to_string (yojson_of_problemCreateRequest x)
+
+module ProblemCreateRequest = struct
+  type nonrec t = problemCreateRequest
+  let create = create_problemCreateRequest
+  let of_yojson = problemCreateRequest_of_yojson
+  let to_yojson = yojson_of_problemCreateRequest
+  let of_json = problemCreateRequest_of_json
+  let to_json = json_of_problemCreateRequest
 end
 
 type problem = {

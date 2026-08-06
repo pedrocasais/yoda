@@ -18,3 +18,8 @@ let getAdminUsersId = Admin_users.getUsersId
 let putAdminUsersId = Admin_users.putUsersId
 
 let deleteAdminUsersId = Admin_users.deleteUsersId
+
+(* Problems *)
+let putAdminProblemsId = Problems.putProblemsId
+
+let deleteAdminProblemsId = Problems.deleteProblemsId

@@ -210,88 +210,96 @@ let getContestsContestIdSubmissions request =
 let postContestsContestsIdProblems request =
   Lwt.catch
     (fun () ->
-      let cid = Dream.param request "contestsId" in
-      Dream.body request
-      >>= fun data ->
-      let problem = Openapi.problem_of_json data in
-      let rec aux conn (problem : Openapi.problem) cid attempt =
-        Client.unwatch conn
-        >>= fun _ ->
-        Client.watch conn ["problem:id"]
-        >>= fun _ ->
-        Client.get conn "problem:id"
-        >>= fun current_id ->
-        let next_id =
-          match current_id with Some x -> int_of_string x + 1 | None -> 1
-        in
-        let key = "problem:" ^ string_of_int next_id in
-        Client.multi conn
-        >>= fun _ ->
-        Client.send_custom_request conn
-          ["SET"; "problem:id"; string_of_int next_id]
-        >>= fun _ ->
-        Client.send_custom_request conn
-          [ "HSET"
-          ; key
-          ; "code"
-          ; problem.code
-          ; "title"
-          ; problem.title
-          ; "contest_id"
-          ; cid
-          ; "time_limit_ms"
-          ; string_of_int problem.time_limit_ms
-          ; "memory_limit_mb"
-          ; string_of_int problem.memory_limit_mb
-          ; "description"
-          ; problem.description
-          ; "input_spec"
-          ; problem.input_spec
-          ; "output_spec"
-          ; problem.output_spec ]
-        >>= fun _ ->
-        Client.send_custom_request conn
-          ["SADD"; "contest:" ^ cid ^ ":problems"; string_of_int next_id]
-        >>= fun _ ->
-        Client.exec conn
-        >>= function
-        | [] ->
-            if attempt >= 5 then
-              Dream.json ~code:500
-                ~headers:[("Content-Type", "application/json")]
-                "Max retries exceeded"
-            else
-              let base = 0.05 *. (2.0 *. float_of_int attempt) in
-              let diff = Random.float base in
-              Dream.log
-                "Error in postContestsContestsIdProblems! Retrying..." ;
-              Lwt_unix.sleep (base +. diff)
-              >>= fun () -> aux conn problem cid (attempt + 1)
-        | [`Status "OK"; `Int n; `Int x] when x > 0 && n >= 1 ->
-            let problem_res =
-              Openapi.create_problem ~code:problem.code ~title:problem.title
-                ~time_limit_ms:problem.time_limit_ms
-                ~memory_limit_mb:problem.memory_limit_mb
-                ~description:problem.description
-                ~input_spec:problem.input_spec
-                ~output_spec:problem.output_spec ()
+      Helpers.checkPrems request (fun () ->
+          let cid = Dream.param request "contestsId" in
+          Dream.body request
+          >>= fun data ->
+          let problem = Openapi.ProblemCreateRequest.of_json data in
+          let rec aux conn (problem : Openapi.ProblemCreateRequest.t) cid
+              attempt =
+            Client.unwatch conn
+            >>= fun _ ->
+            Client.watch conn ["problem:id"]
+            >>= fun _ ->
+            Client.get conn "problem:id"
+            >>= fun current_id ->
+            let next_id =
+              match current_id with
+              | Some x -> int_of_string x + 1
+              | None -> 1
             in
-            Dream.json ~code:201
-              ~headers:[("Content-Type", "application/json")]
-              (Openapi.json_of_problem problem_res)
-        | _ ->
-            Dream.json ~code:500
-              ~headers:[("Content-Type", "application/json")]
-              "Erro"
-      in
-      Lwt_pool.use Db.pool (fun conn ->
-          Client.exists conn ("contest:" ^ cid)
-          >>= function
-          | true -> aux conn problem cid 0
-          | false ->
-              Dream.json ~code:404
-                ~headers:[("Content-Type", "application/json")]
-                "Contest not found" ) )
+            let key = "problem:" ^ string_of_int next_id in
+            Client.multi conn
+            >>= fun _ ->
+            Client.send_custom_request conn
+              ["SET"; "problem:id"; string_of_int next_id]
+            >>= fun _ ->
+            Client.send_custom_request conn
+              [ "HSET"
+              ; "id"
+              ; string_of_int next_id
+              ; key
+              ; "code"
+              ; problem.code
+              ; "title"
+              ; problem.title
+              ; "contest_id"
+              ; cid
+              ; "time_limit_ms"
+              ; string_of_int problem.time_limit_ms
+              ; "memory_limit_mb"
+              ; string_of_int problem.memory_limit_mb
+              ; "description"
+              ; problem.description
+              ; "input_spec"
+              ; problem.input_spec
+              ; "output_spec"
+              ; problem.output_spec
+              ; "languages"
+              ; Openapi.Languages.to_json problem.languages ]
+            >>= fun _ ->
+            Client.send_custom_request conn
+              ["SADD"; "contest:" ^ cid ^ ":problems"; string_of_int next_id]
+            >>= fun _ ->
+            Client.exec conn
+            >>= function
+            | [] ->
+                if attempt >= 5 then
+                  Dream.json ~code:500
+                    ~headers:[("Content-Type", "application/json")]
+                    "Max retries exceeded"
+                else
+                  let base = 0.05 *. (2.0 *. float_of_int attempt) in
+                  let diff = Random.float base in
+                  Dream.log
+                    "Error in postContestsContestsIdProblems! Retrying..." ;
+                  Lwt_unix.sleep (base +. diff)
+                  >>= fun () -> aux conn problem cid (attempt + 1)
+            | [`Status "OK"; `Int n; `Int x] when x > 0 && n >= 1 ->
+                let problem_res =
+                  Openapi.create_problem ~code:problem.code
+                    ~title:problem.title ~time_limit_ms:problem.time_limit_ms
+                    ~memory_limit_mb:problem.memory_limit_mb
+                    ~description:problem.description
+                    ~input_spec:problem.input_spec
+                    ~output_spec:problem.output_spec ()
+                in
+                Dream.json ~code:201
+                  ~headers:[("Content-Type", "application/json")]
+                  (Openapi.json_of_problem problem_res)
+            | _ ->
+                Dream.json ~code:500
+                  ~headers:[("Content-Type", "application/json")]
+                  "Erro"
+          in
+          Lwt_pool.use Db.pool (fun conn ->
+              Client.exists conn ("contest:" ^ cid)
+              >>= function
+              | true -> aux conn problem cid 0
+              | false ->
+                  Dream.json ~code:404
+                    ~headers:[("Content-Type", "application/json")]
+                    "Contest not found" ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]

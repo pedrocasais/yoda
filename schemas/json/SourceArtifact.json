@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "filename": {
+      "type": "string",
+      "description": "The name of the source file"
+    },
+    "content": {
+      "type": "string",
+      "description": "The content of the source file"
+    }
+  },
+  "required": [
+    "filename",
+    "content"
+  ]
+}
