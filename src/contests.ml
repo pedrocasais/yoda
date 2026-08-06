@@ -236,9 +236,9 @@ let postContestsContestsIdProblems request =
             >>= fun _ ->
             Client.send_custom_request conn
               [ "HSET"
+              ; key
               ; "id"
               ; string_of_int next_id
-              ; key
               ; "code"
               ; problem.code
               ; "title"
