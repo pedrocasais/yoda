@@ -130,18 +130,52 @@ let getProblemsIdTestcases request =
  @return 204 No Content, se for eliminado com sucesso; 404 Not Found, se não existir o problema com o [id] ou 500 Internal Server Error    *)
 let deleteProblemsId request =
   (* no need to check for admin permission; it came from a protected route *)
-  (* [TODO] check if there are submissions for this problem otherwise they will be orphaned *)
   Lwt.catch
     (fun () ->
       let id = Dream.param request "id" in
-      Lwt_pool.use Db.pool (fun conn -> Client.del conn ["problem:" ^ id])
-      >>= function
-      | x when x > 0 ->
-          Dream.respond ~code:204 "Problem deleted successfully"
-      | _ ->
-          Dream.json ~code:404
-            ~headers:[("Content-Type", "application/json")]
-            "Problem not found" )
+      Lwt_pool.use Db.pool (fun conn ->
+          Client.exists conn ("problem:" ^ id)
+          >>= function
+          | false ->
+              Dream.json ~code:404
+                ~headers:[("Content-Type", "application/json")]
+                "Problem not found"
+          | true -> (
+              (* Check if there are submissions for this problem *)
+              Client.llen conn ("problem:" ^ id ^ ":submissions")
+              >>= function
+              | 0 -> (
+                  (* No submissions, check if the problem is in any
+                     contests *)
+                  Client.keys conn "contest:*:problems"
+                  >>= fun contest_keys ->
+                  let rec remove_problem_from_contests = function
+                    | [] -> Lwt.return ()
+                    | key :: rest -> (
+                        Client.smembers conn key
+                        >>= function
+                        | problem_ids when List.mem id problem_ids ->
+                            (* Remove the problem from this contest *)
+                            Client.srem conn key id
+                            >>= fun _ -> remove_problem_from_contests rest
+                        | _ -> remove_problem_from_contests rest )
+                  in
+                  remove_problem_from_contests contest_keys
+                  >>= fun () ->
+                  (* Delete the problem *)
+                  Client.del conn ["problem:" ^ id]
+                  >>= function
+                  | x when x > 0 ->
+                      Dream.respond ~code:204 "Problem deleted successfully"
+                  | _ ->
+                      Dream.json ~code:500
+                        ~headers:[("Content-Type", "application/json")]
+                        "Failed to delete problem" )
+              | _ ->
+                  (* There are submissions, cannot delete the problem *)
+                  Dream.json ~code:400
+                    ~headers:[("Content-Type", "application/json")]
+                    "Cannot delete problem with existing submissions" ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
