@@ -27,10 +27,7 @@
       "type": "integer"
     },
     "source_artifacts": {
-      "type": "array",
-      "items": {
-        "$ref": "#/components/schemas/SourceArtifact"
-      }
+      "$ref": "#/components/schemas/SourceArtifacts"
     }
   }
 }

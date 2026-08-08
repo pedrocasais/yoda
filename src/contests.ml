@@ -59,7 +59,7 @@ let makeProblemList lst =
   List.fold_left
     (fun acc x ->
       let problem =
-        Openapi.create_problem
+        Openapi.Problem.create
           ~id:(int_of_string (List.assoc "id" x))
           ~code:(List.assoc "code" x) ~title:(List.assoc "title" x)
           ~description:(List.assoc "description" x)
@@ -67,6 +67,10 @@ let makeProblemList lst =
           ~memory_limit_mb:(int_of_string (List.assoc "memory_limit_mb" x))
           ~input_spec:(List.assoc "input_spec" x)
           ~output_spec:(List.assoc "output_spec" x)
+          ~languages:
+            ( match List.assoc_opt "languages" x with
+            | Some l -> Openapi.Languages.of_json l
+            | None -> [] )
           ()
       in
       List.rev_append [problem] acc )
@@ -256,7 +260,9 @@ let postContestsContestsIdProblems request =
               ; "output_spec"
               ; problem.output_spec
               ; "languages"
-              ; Openapi.Languages.to_json problem.languages ]
+              ; Openapi.Languages.to_json problem.languages
+              ; "source_artifacts"
+              ; Openapi.SourceArtifacts.to_json problem.source_artifacts ]
             >>= fun _ ->
             Client.send_custom_request conn
               ["SADD"; "contest:" ^ cid ^ ":problems"; string_of_int next_id]
@@ -277,12 +283,13 @@ let postContestsContestsIdProblems request =
                   >>= fun () -> aux conn problem cid (attempt + 1)
             | [`Status "OK"; `Int n; `Int x] when x > 0 && n >= 1 ->
                 let problem_res =
-                  Openapi.create_problem ~code:problem.code
+                  Openapi.Problem.create ~id:next_id ~code:problem.code
                     ~title:problem.title ~time_limit_ms:problem.time_limit_ms
                     ~memory_limit_mb:problem.memory_limit_mb
                     ~description:problem.description
                     ~input_spec:problem.input_spec
-                    ~output_spec:problem.output_spec ()
+                    ~output_spec:problem.output_spec
+                    ~languages:problem.languages ()
                 in
                 Dream.json ~code:201
                   ~headers:[("Content-Type", "application/json")]

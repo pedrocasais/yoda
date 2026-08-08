@@ -1098,10 +1098,32 @@ module SourceArtifact = struct
   let to_json = json_of_sourceArtifact
 end
 
+type sourceArtifacts = sourceArtifact list
+
+let sourceArtifacts_of_yojson (x : Yojson.Safe.t) : sourceArtifacts =
+  (Atdml_runtime.Yojson.list_of_yojson sourceArtifact_of_yojson) x
+
+let yojson_of_sourceArtifacts (x : sourceArtifacts) : Yojson.Safe.t =
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_sourceArtifact) x
+
+let sourceArtifacts_of_json s =
+  sourceArtifacts_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_sourceArtifacts x =
+  Yojson.Safe.to_string (yojson_of_sourceArtifacts x)
+
+module SourceArtifacts = struct
+  type nonrec t = sourceArtifacts
+  let of_yojson = sourceArtifacts_of_yojson
+  let to_yojson = yojson_of_sourceArtifacts
+  let of_json = sourceArtifacts_of_json
+  let to_json = json_of_sourceArtifacts
+end
+
 type solution = {
   problem_id: int;
   language: string;
-  source_artifacts: sourceArtifact list;
+  source_artifacts: sourceArtifacts;
 }
 
 let create_solution ~problem_id ~language ~source_artifacts () : solution =
@@ -1132,7 +1154,7 @@ let solution_of_yojson (x : Yojson.Safe.t) : solution =
     in
     let source_artifacts =
       match assoc "source_artifacts" with
-      | Some v -> (Atdml_runtime.Yojson.list_of_yojson sourceArtifact_of_yojson) v
+      | Some v -> sourceArtifacts_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "solution" "source_artifacts"
     in
     { problem_id; language; source_artifacts }
@@ -1142,7 +1164,7 @@ let yojson_of_solution (x : solution) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("problem_id", Atdml_runtime.Yojson.yojson_of_int x.problem_id)];
     [("language", Atdml_runtime.Yojson.yojson_of_string x.language)];
-    [("source_artifacts", (Atdml_runtime.Yojson.yojson_of_list yojson_of_sourceArtifact) x.source_artifacts)];
+    [("source_artifacts", yojson_of_sourceArtifacts x.source_artifacts)];
   ])
 
 let solution_of_json s =
@@ -1282,7 +1304,7 @@ type problemUpdateRequest = {
   languages: languages option;
   time_limit_ms: int option;
   memory_limit_mb: int option;
-  source_artifacts: sourceArtifact list option;
+  source_artifacts: sourceArtifacts option;
 }
 
 let create_problemUpdateRequest ?code ?title ?description ?input_spec ?output_spec ?languages ?time_limit_ms ?memory_limit_mb ?source_artifacts () : problemUpdateRequest =
@@ -1344,7 +1366,7 @@ let problemUpdateRequest_of_yojson (x : Yojson.Safe.t) : problemUpdateRequest =
     let source_artifacts =
       match assoc "source_artifacts" with
       | None | Some `Null -> Option.None
-      | Some v -> Option.Some ((Atdml_runtime.Yojson.list_of_yojson sourceArtifact_of_yojson) v)
+      | Some v -> Option.Some (sourceArtifacts_of_yojson v)
     in
     { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts }
   | _ -> Atdml_runtime.Yojson.bad_type "problemUpdateRequest" x
@@ -1359,7 +1381,7 @@ let yojson_of_problemUpdateRequest (x : problemUpdateRequest) : Yojson.Safe.t =
     (match x.languages with None -> [] | Some v -> [("languages", yojson_of_languages v)]);
     (match x.time_limit_ms with None -> [] | Some v -> [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int v)]);
     (match x.memory_limit_mb with None -> [] | Some v -> [("memory_limit_mb", Atdml_runtime.Yojson.yojson_of_int v)]);
-    (match x.source_artifacts with None -> [] | Some v -> [("source_artifacts", (Atdml_runtime.Yojson.yojson_of_list yojson_of_sourceArtifact) v)]);
+    (match x.source_artifacts with None -> [] | Some v -> [("source_artifacts", yojson_of_sourceArtifacts v)]);
   ])
 
 let problemUpdateRequest_of_json s =
@@ -1386,10 +1408,10 @@ type problemCreateRequest = {
   languages: languages;
   time_limit_ms: int;
   memory_limit_mb: int;
-  source_artifacts: sourceArtifact list option;
+  source_artifacts: sourceArtifacts;
 }
 
-let create_problemCreateRequest ~code ~title ~description ~input_spec ~output_spec ~languages ~time_limit_ms ~memory_limit_mb ?source_artifacts () : problemCreateRequest =
+let create_problemCreateRequest ~code ~title ~description ~input_spec ~output_spec ~languages ~time_limit_ms ~memory_limit_mb ~source_artifacts () : problemCreateRequest =
   { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts }
 
 let problemCreateRequest_of_yojson (x : Yojson.Safe.t) : problemCreateRequest =
@@ -1447,8 +1469,8 @@ let problemCreateRequest_of_yojson (x : Yojson.Safe.t) : problemCreateRequest =
     in
     let source_artifacts =
       match assoc "source_artifacts" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some ((Atdml_runtime.Yojson.list_of_yojson sourceArtifact_of_yojson) v)
+      | Some v -> sourceArtifacts_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problemCreateRequest" "source_artifacts"
     in
     { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts }
   | _ -> Atdml_runtime.Yojson.bad_type "problemCreateRequest" x
@@ -1463,7 +1485,7 @@ let yojson_of_problemCreateRequest (x : problemCreateRequest) : Yojson.Safe.t =
     [("languages", yojson_of_languages x.languages)];
     [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int x.time_limit_ms)];
     [("memory_limit_mb", Atdml_runtime.Yojson.yojson_of_int x.memory_limit_mb)];
-    (match x.source_artifacts with None -> [] | Some v -> [("source_artifacts", (Atdml_runtime.Yojson.yojson_of_list yojson_of_sourceArtifact) v)]);
+    [("source_artifacts", yojson_of_sourceArtifacts x.source_artifacts)];
   ])
 
 let problemCreateRequest_of_json s =
@@ -1490,10 +1512,12 @@ type problem = {
   description: string;
   input_spec: string;
   output_spec: string;
+  languages: languages;
+  source_artifacts: sourceArtifacts option;
 }
 
-let create_problem ?id ~code ~title ~time_limit_ms ~memory_limit_mb ~description ~input_spec ~output_spec () : problem =
-  { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
+let create_problem ?id ~code ~title ~time_limit_ms ~memory_limit_mb ~description ~input_spec ~output_spec ~languages ?source_artifacts () : problem =
+  { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec; languages; source_artifacts }
 
 let problem_of_yojson (x : Yojson.Safe.t) : problem =
   match x with
@@ -1548,7 +1572,17 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "output_spec"
     in
-    { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec }
+    let languages =
+      match assoc "languages" with
+      | Some v -> languages_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "problem" "languages"
+    in
+    let source_artifacts =
+      match assoc "source_artifacts" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (sourceArtifacts_of_yojson v)
+    in
+    { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec; languages; source_artifacts }
   | _ -> Atdml_runtime.Yojson.bad_type "problem" x
 
 let yojson_of_problem (x : problem) : Yojson.Safe.t =
@@ -1561,6 +1595,8 @@ let yojson_of_problem (x : problem) : Yojson.Safe.t =
     [("description", Atdml_runtime.Yojson.yojson_of_string x.description)];
     [("input_spec", Atdml_runtime.Yojson.yojson_of_string x.input_spec)];
     [("output_spec", Atdml_runtime.Yojson.yojson_of_string x.output_spec)];
+    [("languages", yojson_of_languages x.languages)];
+    (match x.source_artifacts with None -> [] | Some v -> [("source_artifacts", yojson_of_sourceArtifacts v)]);
   ])
 
 let problem_of_json s =
