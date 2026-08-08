@@ -846,6 +846,10 @@ components:
           type: string
         output_spec:
           type: string
+        languages:
+          $ref: "#/components/schemas/Languages"
+        source_artifacts:
+          $ref: "#/components/schemas/SourceArtifacts"
       required:
         [
           "code",
@@ -855,6 +859,7 @@ components:
           "description",
           "input_spec",
           "output_spec",
+          "languages",
         ]
 
     TestCase:
@@ -880,6 +885,12 @@ components:
           type: string
           description: The content of the source file
       required: ["filename", "content"]
+    
+    SourceArtifacts:
+      type: array
+      minItems: 1
+      items:
+        $ref: "#/components/schemas/SourceArtifact"
 
     ProblemCreateRequest:
       type: object
@@ -901,9 +912,7 @@ components:
         memory_limit_mb:
           type: integer
         source_artifacts:
-          type: array
-          items:
-            $ref: "#/components/schemas/SourceArtifact"
+          $ref: "#/components/schemas/SourceArtifacts"
       required:
         [
           "code",
@@ -913,7 +922,8 @@ components:
           "description",
           "input_spec",
           "output_spec",
-          "languages"
+          "languages",
+          "source_artifacts",
         ]
 
     ProblemUpdateRequest:
@@ -936,9 +946,7 @@ components:
         memory_limit_mb:
           type: integer
         source_artifacts:
-          type: array
-          items:
-            $ref: "#/components/schemas/SourceArtifact"
+          $ref: "#/components/schemas/SourceArtifacts"
 
     Submission:
       type: object
@@ -1003,10 +1011,7 @@ components:
         language:
           type: string
         source_artifacts:
-          type: array
-          minItems: 1
-          items:
-            $ref: "#/components/schemas/SourceArtifact"
+          $ref: "#/components/schemas/SourceArtifacts"
       required: ["problem_id", "language", "source_artifacts"]
 
     ScoreboardEntry:

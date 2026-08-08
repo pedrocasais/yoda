@@ -25,6 +25,12 @@
     },
     "output_spec": {
       "type": "string"
+    },
+    "languages": {
+      "$ref": "#/components/schemas/Languages"
+    },
+    "source_artifacts": {
+      "$ref": "#/components/schemas/SourceArtifacts"
     }
   },
   "required": [
@@ -34,6 +40,7 @@
     "memory_limit_mb",
     "description",
     "input_spec",
-    "output_spec"
+    "output_spec",
+    "languages"
   ]
 }

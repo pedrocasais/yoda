@@ -1228,6 +1228,12 @@
           },
           "output_spec": {
             "type": "string"
+          },
+          "languages": {
+            "$ref": "#/components/schemas/Languages"
+          },
+          "source_artifacts": {
+            "$ref": "#/components/schemas/SourceArtifacts"
           }
         },
         "required": [
@@ -1237,7 +1243,8 @@
           "memory_limit_mb",
           "description",
           "input_spec",
-          "output_spec"
+          "output_spec",
+          "languages"
         ]
       },
       "TestCase": {
@@ -1280,6 +1287,13 @@
           "content"
         ]
       },
+      "SourceArtifacts": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "$ref": "#/components/schemas/SourceArtifact"
+        }
+      },
       "ProblemCreateRequest": {
         "type": "object",
         "properties": {
@@ -1308,10 +1322,7 @@
             "type": "integer"
           },
           "source_artifacts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SourceArtifact"
-            }
+            "$ref": "#/components/schemas/SourceArtifacts"
           }
         },
         "required": [
@@ -1322,7 +1333,8 @@
           "description",
           "input_spec",
           "output_spec",
-          "languages"
+          "languages",
+          "source_artifacts"
         ]
       },
       "ProblemUpdateRequest": {
@@ -1353,10 +1365,7 @@
             "type": "integer"
           },
           "source_artifacts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SourceArtifact"
-            }
+            "$ref": "#/components/schemas/SourceArtifacts"
           }
         }
       },
@@ -1461,11 +1470,7 @@
             "type": "string"
           },
           "source_artifacts": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "$ref": "#/components/schemas/SourceArtifact"
-            }
+            "$ref": "#/components/schemas/SourceArtifacts"
           }
         },
         "required": [

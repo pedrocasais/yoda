@@ -129,7 +129,7 @@ type scoreboardEntry = {
 type solution = {
   problem_id : int;
   language : string;
-  source_artifacts : sourceArtifact list;
+  source_artifacts : sourceArtifacts;
 } 
 
 type submissionDetailOutput = {
@@ -169,7 +169,7 @@ type problemUpdateRequest = {
   ?languages : languages option;
   ?time_limit_ms : int option;
   ?memory_limit_mb : int option;
-  ?source_artifacts : sourceArtifact list option;
+  ?source_artifacts : sourceArtifacts option;
 } 
 
 type problemCreateRequest = {
@@ -181,8 +181,10 @@ type problemCreateRequest = {
   languages : languages;
   time_limit_ms : int;
   memory_limit_mb : int;
-  ?source_artifacts : sourceArtifact list option;
+  source_artifacts : sourceArtifacts;
 } 
+
+type sourceArtifacts = sourceArtifact list 
 
 type sourceArtifact = {
   filename <doc text="The name of the source file">: string;
@@ -205,6 +207,8 @@ type problem = {
   description : string;
   input_spec : string;
   output_spec : string;
+  languages : languages;
+  ?source_artifacts : sourceArtifacts option;
 } 
 
 type userUpdateRequest = {
