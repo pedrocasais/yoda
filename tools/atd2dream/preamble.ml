@@ -13,7 +13,7 @@ let login_handler next request =
 
 let login_handler_admin next request =
   match Dream.session_field request "user" with
-  | Some _ -> Helpers.checkPrems request (fun () -> next request)
+  | Some _ -> Helpers.check_admin_permissions request (fun () -> next request)
   | None ->
       Dream.json ~code:401
         ~headers:[("Content-Type", "application/json")]
@@ -23,7 +23,7 @@ let login_handler_judge next request =
   let open Redis_lwt in
   match Dream.session_field request "user" with
   | Some _ ->
-      Helpers.checkPrems request (fun () ->
+      Helpers.check_admin_permissions request (fun () ->
           Lwt_pool.use Db.pool (fun conn ->
               Client.hget conn ("user:" ^ Dream.session_id request) "role" )
           >>= function

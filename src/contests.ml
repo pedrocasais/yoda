@@ -212,105 +212,104 @@ let getContestsContestIdSubmissions request =
 (** [postContestsContestsIdProblems request] cria um problema associado a um concurso com [id], parâmetro da rota.
  @return 201 Created, se for concluído com sucesso, devolve o problema criado de tipo [Openapi.problem]; 404 Not Found, se o concurso não existir ; 500 Internal Server Error, erro. *)
 let postContestsContestsIdProblems request =
-  Lwt.catch
-    (fun () ->
-      Helpers.checkPrems request (fun () ->
-          let cid = Dream.param request "contestsId" in
-          Dream.body request
-          >>= fun data ->
-          let problem = Openapi.ProblemCreateRequest.of_json data in
-          let rec aux conn (problem : Openapi.ProblemCreateRequest.t) cid
-              attempt =
-            Client.unwatch conn
-            >>= fun _ ->
-            Client.watch conn ["problem:id"]
-            >>= fun _ ->
-            Client.get conn "problem:id"
-            >>= fun current_id ->
-            let next_id =
-              match current_id with
-              | Some x -> int_of_string x + 1
-              | None -> 1
-            in
-            let key = "problem:" ^ string_of_int next_id in
-            Client.multi conn
-            >>= fun _ ->
-            Client.send_custom_request conn
-              ["SET"; "problem:id"; string_of_int next_id]
-            >>= fun _ ->
-            Client.send_custom_request conn
-              [ "HSET"
-              ; key
-              ; "id"
-              ; string_of_int next_id
-              ; "code"
-              ; problem.code
-              ; "title"
-              ; problem.title
-              ; "contest_id"
-              ; cid
-              ; "time_limit_ms"
-              ; string_of_int problem.time_limit_ms
-              ; "memory_limit_mb"
-              ; string_of_int problem.memory_limit_mb
-              ; "description"
-              ; problem.description
-              ; "input_spec"
-              ; problem.input_spec
-              ; "output_spec"
-              ; problem.output_spec
-              ; "languages"
-              ; Openapi.Languages.to_json problem.languages
-              ; "source_artifacts"
-              ; Openapi.SourceArtifacts.to_json problem.source_artifacts ]
-            >>= fun _ ->
-            Client.send_custom_request conn
-              ["SADD"; "contest:" ^ cid ^ ":problems"; string_of_int next_id]
-            >>= fun _ ->
-            Client.exec conn
-            >>= function
-            | [] ->
-                if attempt >= 5 then
-                  Dream.json ~code:500
-                    ~headers:[("Content-Type", "application/json")]
-                    "Max retries exceeded"
-                else
-                  let base = 0.05 *. (2.0 *. float_of_int attempt) in
-                  let diff = Random.float base in
-                  Dream.log
-                    "Error in postContestsContestsIdProblems! Retrying..." ;
-                  Lwt_unix.sleep (base +. diff)
-                  >>= fun () -> aux conn problem cid (attempt + 1)
-            | [`Status "OK"; `Int n; `Int x] when x > 0 && n >= 1 ->
-                let problem_res =
-                  Openapi.Problem.create ~id:next_id ~code:problem.code
-                    ~title:problem.title ~time_limit_ms:problem.time_limit_ms
-                    ~memory_limit_mb:problem.memory_limit_mb
-                    ~description:problem.description
-                    ~input_spec:problem.input_spec
-                    ~output_spec:problem.output_spec
-                    ~languages:problem.languages ()
-                in
-                Dream.json ~code:201
-                  ~headers:[("Content-Type", "application/json")]
-                  (Openapi.json_of_problem problem_res)
-            | _ ->
+  (fun () ->
+    Lwt.catch
+      (fun () ->
+        let cid = Dream.param request "contestsId" in
+        Dream.body request
+        >>= fun data ->
+        let problem = Openapi.ProblemCreateRequest.of_json data in
+        let rec aux conn (problem : Openapi.ProblemCreateRequest.t) cid
+            attempt =
+          Client.unwatch conn
+          >>= fun _ ->
+          Client.watch conn ["problem:id"]
+          >>= fun _ ->
+          Client.get conn "problem:id"
+          >>= fun current_id ->
+          let next_id =
+            match current_id with Some x -> int_of_string x + 1 | None -> 1
+          in
+          let key = "problem:" ^ string_of_int next_id in
+          Client.multi conn
+          >>= fun _ ->
+          Client.send_custom_request conn
+            ["SET"; "problem:id"; string_of_int next_id]
+          >>= fun _ ->
+          Client.send_custom_request conn
+            [ "HSET"
+            ; key
+            ; "id"
+            ; string_of_int next_id
+            ; "code"
+            ; problem.code
+            ; "title"
+            ; problem.title
+            ; "contest_id"
+            ; cid
+            ; "time_limit_ms"
+            ; string_of_int problem.time_limit_ms
+            ; "memory_limit_mb"
+            ; string_of_int problem.memory_limit_mb
+            ; "description"
+            ; problem.description
+            ; "input_spec"
+            ; problem.input_spec
+            ; "output_spec"
+            ; problem.output_spec
+            ; "languages"
+            ; Openapi.Languages.to_json problem.languages
+            ; "source_artifacts"
+            ; Openapi.SourceArtifacts.to_json problem.source_artifacts ]
+          >>= fun _ ->
+          Client.send_custom_request conn
+            ["SADD"; "contest:" ^ cid ^ ":problems"; string_of_int next_id]
+          >>= fun _ ->
+          Client.exec conn
+          >>= function
+          | [] ->
+              if attempt >= 5 then
                 Dream.json ~code:500
                   ~headers:[("Content-Type", "application/json")]
-                  "Erro"
-          in
-          Lwt_pool.use Db.pool (fun conn ->
-              Client.exists conn ("contest:" ^ cid)
-              >>= function
-              | true -> aux conn problem cid 0
-              | false ->
-                  Dream.json ~code:404
-                    ~headers:[("Content-Type", "application/json")]
-                    "Contest not found" ) ) )
-    (fun exn ->
-      Dream.json ~code:500
-        ~headers:[("Content-Type", "application/json")]
-        (Printexc.to_string exn) )
+                  "Max retries exceeded"
+              else
+                let base = 0.05 *. (2.0 *. float_of_int attempt) in
+                let diff = Random.float base in
+                Dream.log
+                  "Error in postContestsContestsIdProblems! Retrying..." ;
+                Lwt_unix.sleep (base +. diff)
+                >>= fun () -> aux conn problem cid (attempt + 1)
+          | [`Status "OK"; `Int n; `Int x] when x > 0 && n >= 1 ->
+              let problem_res =
+                Openapi.Problem.create ~id:next_id ~code:problem.code
+                  ~title:problem.title ~time_limit_ms:problem.time_limit_ms
+                  ~memory_limit_mb:problem.memory_limit_mb
+                  ~description:problem.description
+                  ~input_spec:problem.input_spec
+                  ~output_spec:problem.output_spec
+                  ~languages:problem.languages ()
+              in
+              Dream.json ~code:201
+                ~headers:[("Content-Type", "application/json")]
+                (Openapi.json_of_problem problem_res)
+          | _ ->
+              Dream.json ~code:500
+                ~headers:[("Content-Type", "application/json")]
+                "Erro"
+        in
+        Lwt_pool.use Db.pool (fun conn ->
+            Client.exists conn ("contest:" ^ cid)
+            >>= function
+            | true -> aux conn problem cid 0
+            | false ->
+                Dream.json ~code:404
+                  ~headers:[("Content-Type", "application/json")]
+                  "Contest not found" ) )
+      (fun exn ->
+        Dream.json ~code:500
+          ~headers:[("Content-Type", "application/json")]
+          (Printexc.to_string exn) ) )
+  |> Helpers.check_admin_permissions request
 
 (** [getContestsContestsIdProblems request] devolve uma lista de problemas pertencentes a um concurso com [id] igual ao parâmetro da rota. 
  @return 200 OK, se for concluído com sucesso, devolve os problemas na forma de [Openapi.problems list]; 404 Not Found, se não existirem problemas no concurso com o [id]; 500 Internal Server Error, erro. *)
@@ -340,109 +339,109 @@ let getContestsContestsIdProblems request =
 (** [deleteContestsId request] elimina o concurso pelo [id], parâmetro na rota.
  @return 204 No Content, se for eliminado com sucesso; 404 Not Found, se não existir o concurso com o [id] ou 500 Internal Server Error    *)
 let deleteContestsId request =
-  Lwt.catch
-    (fun () ->
-      Helpers.checkPrems request (fun () ->
-          let id = Dream.param request "id" in
-          Lwt_pool.use Db.pool (fun conn ->
-              Client.del conn ["contest:" ^ id] )
-          >>= function
-          | 0 ->
-              Dream.json ~code:404
-                ~headers:[("Content-Type", "application/json")]
-                "Contest not found"
-          | _ ->
-              Dream.json ~code:204
-                ~headers:[("Content-Type", "application/json")]
-                "Contest deleted successfully" ) )
-    (fun exn ->
-      Dream.json ~code:500
-        ~headers:[("Content-Type", "application/json")]
-        (Printexc.to_string exn) )
+  (fun () ->
+    Lwt.catch
+      (fun () ->
+        let id = Dream.param request "id" in
+        Lwt_pool.use Db.pool (fun conn -> Client.del conn ["contest:" ^ id])
+        >>= function
+        | 0 ->
+            Dream.json ~code:404
+              ~headers:[("Content-Type", "application/json")]
+              "Contest not found"
+        | _ ->
+            Dream.json ~code:204
+              ~headers:[("Content-Type", "application/json")]
+              "Contest deleted successfully" )
+      (fun exn ->
+        Dream.json ~code:500
+          ~headers:[("Content-Type", "application/json")]
+          (Printexc.to_string exn) ) )
+  |> Helpers.check_admin_permissions request
 
 (** [putContestsId request] atualiza os campos [title, description, start_time, end_time, status] de um concurso identificado pelo parâmetro de rota [id].
  @return 200 OK, se for concluído com sucesso devolve o concurso atualizado de tipo [Openapi.Openapi.contestsIdPutRequest]; 404 Not Found, se não existir o concurso com o [id]; 500 Internal Server Error, erro. *)
 let putContestsId request =
-  Lwt.catch
-    (fun () ->
-      Helpers.checkPrems request (fun () ->
-          let contest_id = Dream.param request "id" in
-          Dream.body request
-          >>= fun data ->
-          let contest = Openapi.contestsIdPutRequest_of_json data in
-          Lwt_pool.use Db.pool (fun conn ->
-              let key = "contest:" ^ contest_id in
-              Client.hmget conn key
-                ["title"; "description"; "start_time"; "end_time"; "status"]
-              >>= function
-              | [None; None; None; None; None] ->
-                  Dream.json ~code:404
-                    ~headers:[("Content-Type", "application/json")]
-                    "Contest not found"
-              | _ as lst -> (
-                  Client.send_custom_request conn
-                    [ "HSET"
-                    ; key
-                    ; "title"
-                    ; ( match contest.title with
-                      | Some x -> x
-                      | None -> Option.get (List.nth lst 0) )
-                    ; "description"
-                    ; ( match contest.description with
-                      | Some x -> x
-                      | None -> Option.get (List.nth lst 1) )
-                    ; "start_time"
-                    ; ( match contest.start_time with
-                      | Some x -> x
-                      | None -> Option.get (List.nth lst 2) )
-                    ; "end_time"
-                    ; ( match contest.end_time with
-                      | Some x -> x
-                      | None -> Option.get (List.nth lst 3) )
-                    ; "status"
-                    ; ( match contest.status with
-                      | Some x ->
-                          Openapi.json_of_contestsIdPutRequestStatus x
-                      | None -> Option.get (List.nth lst 4) ) ]
-                  >>= function
-                  | `Int _ | `Status "OK" ->
-                      let contest_res =
-                        Openapi.create_contestsIdPutRequest
-                          ~title:
-                            ( match contest.title with
-                            | Some x -> x
-                            | None -> Option.get (List.nth lst 0) )
-                          ~description:
-                            ( match contest.description with
-                            | Some x -> x
-                            | None -> Option.get (List.nth lst 1) )
-                          ~start_time:
-                            ( match contest.start_time with
-                            | Some x -> x
-                            | None -> Option.get (List.nth lst 2) )
-                          ~end_time:
-                            ( match contest.end_time with
-                            | Some x -> x
-                            | None -> Option.get (List.nth lst 3) )
-                          ~status:
-                            ( match contest.status with
-                            | Some x -> x
-                            | None ->
-                                Openapi.contestsIdPutRequestStatus_of_json
-                                  (Option.get (List.nth lst 4)) )
-                          ()
-                      in
-                      Dream.json ~code:200
-                        ~headers:[("Content-Type", "application/json")]
-                        (Openapi.json_of_contestsIdPutRequest contest_res)
-                  | _ ->
-                      Dream.json ~code:500
-                        ~headers:[("Content-Type", "application/json")]
-                        "Erro" ) ) ) )
-    (fun exn ->
-      Dream.json ~code:500
-        ~headers:[("Content-Type", "application/json")]
-        (Printexc.to_string exn) )
+  (fun () ->
+    Lwt.catch
+      (fun () ->
+        let contest_id = Dream.param request "id" in
+        Dream.body request
+        >>= fun data ->
+        let contest = Openapi.contestsIdPutRequest_of_json data in
+        Lwt_pool.use Db.pool (fun conn ->
+            let key = "contest:" ^ contest_id in
+            Client.hmget conn key
+              ["title"; "description"; "start_time"; "end_time"; "status"]
+            >>= function
+            | [None; None; None; None; None] ->
+                Dream.json ~code:404
+                  ~headers:[("Content-Type", "application/json")]
+                  "Contest not found"
+            | _ as lst -> (
+                Client.send_custom_request conn
+                  [ "HSET"
+                  ; key
+                  ; "title"
+                  ; ( match contest.title with
+                    | Some x -> x
+                    | None -> Option.get (List.nth lst 0) )
+                  ; "description"
+                  ; ( match contest.description with
+                    | Some x -> x
+                    | None -> Option.get (List.nth lst 1) )
+                  ; "start_time"
+                  ; ( match contest.start_time with
+                    | Some x -> x
+                    | None -> Option.get (List.nth lst 2) )
+                  ; "end_time"
+                  ; ( match contest.end_time with
+                    | Some x -> x
+                    | None -> Option.get (List.nth lst 3) )
+                  ; "status"
+                  ; ( match contest.status with
+                    | Some x -> Openapi.json_of_contestsIdPutRequestStatus x
+                    | None -> Option.get (List.nth lst 4) ) ]
+                >>= function
+                | `Int _ | `Status "OK" ->
+                    let contest_res =
+                      Openapi.create_contestsIdPutRequest
+                        ~title:
+                          ( match contest.title with
+                          | Some x -> x
+                          | None -> Option.get (List.nth lst 0) )
+                        ~description:
+                          ( match contest.description with
+                          | Some x -> x
+                          | None -> Option.get (List.nth lst 1) )
+                        ~start_time:
+                          ( match contest.start_time with
+                          | Some x -> x
+                          | None -> Option.get (List.nth lst 2) )
+                        ~end_time:
+                          ( match contest.end_time with
+                          | Some x -> x
+                          | None -> Option.get (List.nth lst 3) )
+                        ~status:
+                          ( match contest.status with
+                          | Some x -> x
+                          | None ->
+                              Openapi.contestsIdPutRequestStatus_of_json
+                                (Option.get (List.nth lst 4)) )
+                        ()
+                    in
+                    Dream.json ~code:200
+                      ~headers:[("Content-Type", "application/json")]
+                      (Openapi.json_of_contestsIdPutRequest contest_res)
+                | _ ->
+                    Dream.json ~code:500
+                      ~headers:[("Content-Type", "application/json")]
+                      "Erro" ) ) )
+      (fun exn ->
+        Dream.json ~code:500
+          ~headers:[("Content-Type", "application/json")]
+          (Printexc.to_string exn) ) )
+  |> Helpers.check_admin_permissions request
 
 (** [getContestsId request] devolve o concurso com [id] igual ao parâmetro da rota. 
  @return 200 OK, se for concluído com sucesso, devolve o user [Openapi.contest]; 404 Not Found, se não existir o concurso com o [id]; 500 Internal Server Error, erro. *)
@@ -479,85 +478,86 @@ let getContestsId request =
 (** [postContests request] cria um concurso de tipo [Openapi.contest]. 
  @return 200 OK, se for concluído com sucesso, devolve o concurso criado [Openapi.contestsPostRequest]; 500 Internal Server Error, erro. *)
 let postContests request =
-  Lwt.catch
-    (fun () ->
-      Helpers.checkPrems request (fun () ->
-          Dream.body request
-          >>= fun data ->
-          let contest = Openapi.contest_of_json data in
-          let rec aux (contest : Openapi.contest) attempt =
-            Lwt_pool.use Db.pool (fun conn ->
-                Client.unwatch conn
-                >>= fun _ ->
-                Client.watch conn ["contest:id"]
-                >>= fun _ ->
-                Client.get conn "contest:id"
-                >>= fun current_id ->
-                let next_id =
-                  match current_id with
-                  | Some x -> int_of_string x + 1
-                  | None -> 1
-                in
-                let key = "contest:" ^ string_of_int next_id in
-                Client.multi conn
-                >>= fun _ ->
-                Client.send_custom_request conn
-                  ["SET"; "contest:id"; string_of_int next_id]
-                >>= fun _ ->
-                Client.send_custom_request conn
-                  [ "HSET"
-                  ; key
-                  ; "id"
-                  ; string_of_int contest.id
-                  ; "title"
-                  ; contest.title
-                  ; "description"
-                  ; ( match contest.description with
-                    | Some x -> x
-                    | None -> "Description." )
-                  ; "start_time"
-                  ; contest.start_time
-                  ; "end_time"
-                  ; contest.end_time
-                  ; "status"
-                  ; Openapi.json_of_contestStatus contest.status ]
-                >>= fun _ ->
-                Client.exec conn
-                >>= function
-                | [] ->
-                    if attempt >= 5 then
-                      Dream.json ~code:500
-                        ~headers:[("Content-Type", "application/json")]
-                        "Max retries exceeded"
-                    else
-                      let base = 0.05 *. (2.0 *. float_of_int attempt) in
-                      let diff = Random.float base in
-                      Dream.log "Error in postAuthRegister! Retrying..." ;
-                      Lwt_unix.sleep (base +. diff)
-                      >>= fun () -> aux contest (attempt + 1)
-                | [`Status "OK"; `Int n] when n >= 1 ->
-                    let contest_res =
-                      Openapi.create_contestsPostRequest ~title:contest.title
-                        ~description:
-                          ( match contest.description with
-                          | Some x -> x
-                          | None -> "Description." )
-                        ~start_time:contest.start_time
-                        ~end_time:contest.end_time ()
-                    in
-                    Dream.json ~code:200
-                      ~headers:[("Content-Type", "application/json")]
-                      (Openapi.json_of_contestsPostRequest contest_res)
-                | _ ->
+  (fun () ->
+    Lwt.catch
+      (fun () ->
+        Dream.body request
+        >>= fun data ->
+        let contest = Openapi.contest_of_json data in
+        let rec aux (contest : Openapi.contest) attempt =
+          Lwt_pool.use Db.pool (fun conn ->
+              Client.unwatch conn
+              >>= fun _ ->
+              Client.watch conn ["contest:id"]
+              >>= fun _ ->
+              Client.get conn "contest:id"
+              >>= fun current_id ->
+              let next_id =
+                match current_id with
+                | Some x -> int_of_string x + 1
+                | None -> 1
+              in
+              let key = "contest:" ^ string_of_int next_id in
+              Client.multi conn
+              >>= fun _ ->
+              Client.send_custom_request conn
+                ["SET"; "contest:id"; string_of_int next_id]
+              >>= fun _ ->
+              Client.send_custom_request conn
+                [ "HSET"
+                ; key
+                ; "id"
+                ; string_of_int contest.id
+                ; "title"
+                ; contest.title
+                ; "description"
+                ; ( match contest.description with
+                  | Some x -> x
+                  | None -> "Description." )
+                ; "start_time"
+                ; contest.start_time
+                ; "end_time"
+                ; contest.end_time
+                ; "status"
+                ; Openapi.json_of_contestStatus contest.status ]
+              >>= fun _ ->
+              Client.exec conn
+              >>= function
+              | [] ->
+                  if attempt >= 5 then
                     Dream.json ~code:500
                       ~headers:[("Content-Type", "application/json")]
-                      "Erro" )
-          in
-          aux contest 0 ) )
-    (fun exn ->
-      Dream.json ~code:500
-        ~headers:[("Content-Type", "application/json")]
-        (Printexc.to_string exn) )
+                      "Max retries exceeded"
+                  else
+                    let base = 0.05 *. (2.0 *. float_of_int attempt) in
+                    let diff = Random.float base in
+                    Dream.log "Error in postAuthRegister! Retrying..." ;
+                    Lwt_unix.sleep (base +. diff)
+                    >>= fun () -> aux contest (attempt + 1)
+              | [`Status "OK"; `Int n] when n >= 1 ->
+                  let contest_res =
+                    Openapi.create_contestsPostRequest ~title:contest.title
+                      ~description:
+                        ( match contest.description with
+                        | Some x -> x
+                        | None -> "Description." )
+                      ~start_time:contest.start_time
+                      ~end_time:contest.end_time ()
+                  in
+                  Dream.json ~code:200
+                    ~headers:[("Content-Type", "application/json")]
+                    (Openapi.json_of_contestsPostRequest contest_res)
+              | _ ->
+                  Dream.json ~code:500
+                    ~headers:[("Content-Type", "application/json")]
+                    "Erro" )
+        in
+        aux contest 0 )
+      (fun exn ->
+        Dream.json ~code:500
+          ~headers:[("Content-Type", "application/json")]
+          (Printexc.to_string exn) ) )
+  |> Helpers.check_admin_permissions request
 
 (** [getContests _request] devolve todos os concursos registados. 
  @return 200 OK, se for concluído com sucesso, devolve uma lista de concursos [Openapi.contest list]; 404 Not Found, se não existirem concursos ; 500 Internal Server Error, erro. *)

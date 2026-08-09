@@ -16,8 +16,8 @@ let get_actor_id request =
 let get_actor_role conn actor_id =
   Client.hget conn ("user:" ^ actor_id) "role"
 
-(** [checkPrems request next] verifica se o user tem autorização de Admin para aceder a [request]. *)
-let checkPrems request next =
+(** [check_admin_permissions request next] verifica se o user tem autorização de Admin para aceder a [request]. *)
+let check_admin_permissions request next =
   let id_session = Dream.session_field request "user" in
   (* obtém role de um dado user:id_session. *)
   let aux = function
@@ -174,3 +174,7 @@ let unscape_json_string s =
       aux (i + 1) )
   in
   aux 0 ; Buffer.contents b
+
+let error_msg msg =
+  let error = Openapi.ErrorResponse.create ~error:msg () in
+  Openapi.ErrorResponse.to_json error

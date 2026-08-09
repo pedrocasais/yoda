@@ -83,9 +83,9 @@ let sessions uid =
 let postAuthRegister request =
   Lwt.catch
     (fun () ->
-      (* [Helpers.checkPrems request] verifica se o utilizador tem permissões
+      (* [Helpers.check_admin_permissions request] verifica se o utilizador tem permissões
          de administrador *)
-      Helpers.checkPrems request (fun () ->
+      Helpers.check_admin_permissions request (fun () ->
           Dream.body request
           >>= fun data ->
           let user = Openapi.UserCreateRequest.of_json data in
