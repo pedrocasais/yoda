@@ -137,7 +137,7 @@ let postSubmissions request =
             if attempt >= 5 then
               Dream.json ~code:500
                 ~headers:[("Content-Type", "application/json")]
-                "Max retries exceeded"
+                (Helpers.error_msg "Max retries exceeded")
             else
               let base = 0.05 *. (2.0 *. float_of_int attempt) in
               let diff = Random.float base in
@@ -157,7 +157,7 @@ let postSubmissions request =
         | _ ->
             Dream.json ~code:400
               ~headers:[("Content-Type", "application/json")]
-              "Erro"
+              (Helpers.error_msg "Failed to create submission")
       in
       Lwt_pool.use Db.pool (fun conn ->
           Client.smembers conn
@@ -166,10 +166,11 @@ let postSubmissions request =
           | [] ->
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]
-                (Printf.sprintf
-                   "No tests found for problem:%d. Problem must have tests \
-                    for submissions."
-                   sub.problem_id )
+                (Helpers.error_msg
+                   (Printf.sprintf
+                      "No tests found for problem:%d. Problem must have \
+                       tests for submissions."
+                      sub.problem_id ) )
           | lst -> (
               Helpers.getAllTestCases conn lst
               >>= function lst' -> aux sub conn (makeTestCaseList lst') 0 ) ) )
