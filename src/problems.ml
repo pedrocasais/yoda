@@ -30,8 +30,8 @@ let postProblemsIdTestcases request =
         let id = Dream.param request "id" in
         Dream.body request
         >>= fun data ->
-        let testCase = Openapi.testCase_of_json data in
-        let rec aux (testCase : Openapi.testCase) id conn attempt =
+        let testCase = Openapi.testCaseCreateRequest_of_json data in
+        let rec aux (testCase : Openapi.testCaseCreateRequest) id conn attempt =
           Client.unwatch conn
           >>= fun _ ->
           Client.watch conn ["testcase:id"]
@@ -54,7 +54,7 @@ let postProblemsIdTestcases request =
             [ "HSET"
             ; key
             ; "id"
-            ; string_of_int testCase.id
+            ; string_of_int next_id
             ; "input"
             ; testCase.input
             ; "output"
@@ -79,7 +79,7 @@ let postProblemsIdTestcases request =
           | [`Status "OK"; `Int probtest; `Int test]
             when test > 0 && probtest > 0 ->
               let testcase =
-                Openapi.create_testCase ~id:testCase.id ~input:testCase.input
+                Openapi.create_testCase ~id:next_id ~input:testCase.input
                   ~output:testCase.output ~is_sample:testCase.is_sample ()
               in
               Dream.json ~code:200
