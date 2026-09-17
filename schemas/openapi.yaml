@@ -472,6 +472,53 @@ paths:
               example:
                 error: "Failed to create test case after multiple attempts."
 
+  /problems/{id}/testcases/{testcaseId}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: testcaseId
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      summary: Update a test case.
+      description: Updates an existing test case for a specific problem.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestCaseCreateRequest"
+      responses:
+        "200":
+          description: Test case updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestCase"
+        "401":
+          description: Unauthorized access
+        "404":
+          description: Test case not found
+        "500":
+          description: Server error
+    delete:
+      summary: Delete a test case.
+      description: Removes an existing test case from a specific problem.
+      responses:
+        "204":
+          description: Test case deleted successfully
+        "401":
+          description: Unauthorized access
+        "404":
+          description: Test case not found
+        "500":
+          description: Server error
+
   /admin/problems/{id}:
     parameters:
       - name: id
