@@ -472,7 +472,7 @@ paths:
               example:
                 error: "Failed to create test case after multiple attempts."
 
-  /problems/{id}/testcases/{testcaseId}:
+  /testcases/{testcaseId}:
     parameters:
       - name: id
         in: path
@@ -492,7 +492,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TestCaseCreateRequest"
+              $ref: "#/components/schemas/TestCase"
       responses:
         "200":
           description: Test case updated successfully
