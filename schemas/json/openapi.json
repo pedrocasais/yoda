@@ -600,7 +600,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TestCase"
+                "$ref": "#/components/schemas/TestCaseCreateRequest"
               }
             }
           }
@@ -1315,6 +1315,28 @@
         },
         "required": [
           "id",
+          "input",
+          "output",
+          "is_sample"
+        ]
+      },
+      "TestCaseCreateRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "input": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string"
+          },
+          "is_sample": {
+            "type": "boolean"
+          }
+        },
+        "required": [
           "input",
           "output",
           "is_sample"

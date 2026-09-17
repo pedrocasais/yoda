@@ -191,6 +191,13 @@ type sourceArtifact = {
   content <doc text="The content of the source file">: string;
 } 
 
+type testCaseCreateRequest = {
+  ?id : int option;
+  input : string;
+  output : string;
+  is_sample : bool;
+} 
+
 type testCase = {
   id : int;
   input : string;

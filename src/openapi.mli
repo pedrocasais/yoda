@@ -234,6 +234,28 @@ module User : sig
   val to_json : t -> string
 end
 
+type testCaseCreateRequest = {
+  id: int option;
+  input: string;
+  output: string;
+  is_sample: bool;
+}
+
+val create_testCaseCreateRequest : ?id:int -> input:string -> output:string -> is_sample:bool -> unit -> testCaseCreateRequest
+val testCaseCreateRequest_of_yojson : Yojson.Safe.t -> testCaseCreateRequest
+val yojson_of_testCaseCreateRequest : testCaseCreateRequest -> Yojson.Safe.t
+val testCaseCreateRequest_of_json : string -> testCaseCreateRequest
+val json_of_testCaseCreateRequest : testCaseCreateRequest -> string
+
+module TestCaseCreateRequest : sig
+  type nonrec t = testCaseCreateRequest
+  val create : ?id:int -> input:string -> output:string -> is_sample:bool -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type testCase = {
   id: int;
   input: string;

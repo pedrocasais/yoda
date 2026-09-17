@@ -702,6 +702,75 @@ module User = struct
   let to_json = json_of_user
 end
 
+type testCaseCreateRequest = {
+  id: int option;
+  input: string;
+  output: string;
+  is_sample: bool;
+}
+
+let create_testCaseCreateRequest ?id ~input ~output ~is_sample () : testCaseCreateRequest =
+  { id; input; output; is_sample }
+
+let testCaseCreateRequest_of_yojson (x : Yojson.Safe.t) : testCaseCreateRequest =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let id =
+      match assoc "id" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
+    in
+    let input =
+      match assoc "input" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "testCaseCreateRequest" "input"
+    in
+    let output =
+      match assoc "output" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "testCaseCreateRequest" "output"
+    in
+    let is_sample =
+      match assoc "is_sample" with
+      | Some v -> Atdml_runtime.Yojson.bool_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "testCaseCreateRequest" "is_sample"
+    in
+    { id; input; output; is_sample }
+  | _ -> Atdml_runtime.Yojson.bad_type "testCaseCreateRequest" x
+
+let yojson_of_testCaseCreateRequest (x : testCaseCreateRequest) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    (match x.id with None -> [] | Some v -> [("id", Atdml_runtime.Yojson.yojson_of_int v)]);
+    [("input", Atdml_runtime.Yojson.yojson_of_string x.input)];
+    [("output", Atdml_runtime.Yojson.yojson_of_string x.output)];
+    [("is_sample", Atdml_runtime.Yojson.yojson_of_bool x.is_sample)];
+  ])
+
+let testCaseCreateRequest_of_json s =
+  testCaseCreateRequest_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_testCaseCreateRequest x =
+  Yojson.Safe.to_string (yojson_of_testCaseCreateRequest x)
+
+module TestCaseCreateRequest = struct
+  type nonrec t = testCaseCreateRequest
+  let create = create_testCaseCreateRequest
+  let of_yojson = testCaseCreateRequest_of_yojson
+  let to_yojson = yojson_of_testCaseCreateRequest
+  let of_json = testCaseCreateRequest_of_json
+  let to_json = json_of_testCaseCreateRequest
+end
+
 type testCase = {
   id: int;
   input: string;

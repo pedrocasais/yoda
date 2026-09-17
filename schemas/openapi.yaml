@@ -437,7 +437,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TestCase"
+              $ref: "#/components/schemas/TestCaseCreateRequest"
       responses:
         "200":
           description: Test case created successfully
@@ -904,6 +904,19 @@ components:
         is_sample:
           type: boolean
       required: ["id", "input", "output", "is_sample"]
+
+    TestCaseCreateRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        input:
+          type: string
+        output:
+          type: string
+        is_sample:
+          type: boolean
+      required: ["input", "output", "is_sample"]
 
     SourceArtifact:
       type: object
