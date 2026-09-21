@@ -184,26 +184,28 @@ let getContestsContestIdSubmissions request =
       Lwt_pool.use Db.pool (fun conn ->
           Helpers.get_actor_role conn user_id
           >>= fun user_role ->
-          Client.smembers conn ("contest:" ^ cid ^ ":problems")
-          >>= function
-          | [] ->
-              Dream.json ~code:404
-                ~headers:[("Content-Type", "application/json")]
-                "No problems/submissions found for that contest."
-          | problems_lst ->
-              (* make sub list *)
-              getAllSubmissions conn problems_lst
-              >>= fun lst ->
-              let submissions =
-                List.fold_left
-                  (fun acc l ->
-                    let s = Helpers.makeSubmission user_id user_role l in
-                    List.append [s] acc )
-                  [] lst
-              in
-              Dream.json ~code:200
-                ~headers:[("Content-Type", "application/json")]
-                (Openapi.Submissions.to_json submissions) ) )
+          Client.exists conn ("contest:" ^ cid)
+          >>= fun exists ->
+          if not exists then
+            Dream.json ~code:404
+              ~headers:[("Content-Type", "application/json")]
+              (Helpers.error_msg "Contest not found")
+          else
+            Client.smembers conn ("contest:" ^ cid ^ ":problems")
+            >>= fun problems_lst ->
+            (* make sub list *)
+            getAllSubmissions conn problems_lst
+            >>= fun lst ->
+            let submissions =
+              List.fold_left
+                (fun acc l ->
+                  let s = Helpers.makeSubmission user_id user_role l in
+                  List.append [s] acc )
+                [] lst
+            in
+            Dream.json ~code:200
+              ~headers:[("Content-Type", "application/json")]
+              (Openapi.Submissions.to_json submissions) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
@@ -316,21 +318,26 @@ let postContestsContestsIdProblems request =
 let getContestsContestsIdProblems request =
   Lwt.catch
     (fun () ->
-      let id = Dream.param request "contestsId" in
+      let cid = Dream.param request "contestsId" in
+      (* need to check if the contest exists *)
       Lwt_pool.use Db.pool (fun conn ->
-          Client.smembers conn ("contest:" ^ id ^ ":problems")
-          >>= function
-          | [] ->
-              Dream.json ~code:404
-                ~headers:[("Content-Type", "application/json")]
-                "No Problems"
-          | lst ->
-              getAllProblems conn lst
-              >>= fun lst' ->
-              Dream.json ~code:200
-                ~headers:[("Content-Type", "application/json")]
-                (Openapi.json_of_contestsContestsidProblemsGetResponse2
-                   (makeProblemList lst') ) ) )
+          Client.exists conn ("contest:" ^ cid)
+          >>= fun exists ->
+          if not exists then
+            Dream.json ~code:404
+              ~headers:[("Content-Type", "application/json")]
+              (Helpers.error_msg "Contest not found")
+          else
+            Client.smembers conn ("contest:" ^ cid ^ ":problems")
+            >>= fun lst ->
+            (* getAllProblems returns an empty list if no problems are
+               found *)
+            getAllProblems conn lst
+            >>= fun lst' ->
+            Dream.json ~code:200
+              ~headers:[("Content-Type", "application/json")]
+              (Openapi.json_of_contestsContestsidProblemsGetResponse2
+                 (makeProblemList lst') ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]

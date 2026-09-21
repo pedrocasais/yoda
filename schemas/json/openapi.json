@@ -3,7 +3,7 @@
   "info": {
     "title": "API specification for Yoda",
     "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
-    "version": "1.4"
+    "version": "1.4.1"
   },
   "paths": {
     "/admin/users": {
@@ -463,7 +463,17 @@
             "description": "Unauthorized access"
           },
           "404": {
-            "description": "Contest not found"
+            "description": "Contest not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Contest not found"
+                }
+              }
+            }
           },
           "500": {
             "description": "Server error"
@@ -502,6 +512,53 @@
           },
           "403": {
             "description": "Forbidden - admin only"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/contests/{contestId}/submissions": {
+      "parameters": [
+        {
+          "name": "contestId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "summary": "List contest submissions (filtered by user/problem/status)",
+        "description": "Returns a list of submissions for a specific contest, filtered by user, problem, or status.",
+        "responses": {
+          "200": {
+            "description": "A JSON array of submission objects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Submissions"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access"
+          },
+          "404": {
+            "description": "Contest not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Contest not found"
+                }
+              }
+            }
           },
           "500": {
             "description": "Server error"
@@ -898,43 +955,6 @@
           },
           "404": {
             "description": "Submission not found"
-          },
-          "500": {
-            "description": "Server error"
-          }
-        }
-      }
-    },
-    "/contests/{contestId}/submissions": {
-      "parameters": [
-        {
-          "name": "contestId",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "integer"
-          }
-        }
-      ],
-      "get": {
-        "summary": "List contest submissions (filtered by user/problem/status)",
-        "description": "Returns a list of submissions for a specific contest, filtered by user, problem, or status.",
-        "responses": {
-          "200": {
-            "description": "A JSON array of submission objects",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Submissions"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized access"
-          },
-          "404": {
-            "description": "Contest not found"
           },
           "500": {
             "description": "Server error"
