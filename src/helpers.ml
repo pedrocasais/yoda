@@ -130,6 +130,7 @@ let makeSubmission user_id user_role lst =
     ~time_ms:(int_of_string (List.assoc "time_ms" lst))
     ~memory_kb:(int_of_string (List.assoc "memory_kb" lst))
     ~details:(makeSubmissionDetailsList user_id user_role lst)
+    ~owner:(user_id = List.assoc "user_id" lst)
     ()
 
 let escape_json_string s =

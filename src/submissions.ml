@@ -222,3 +222,66 @@ let postSubmissionsIdReEvaluate request =
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
+
+(** [getSubmissionsIdDetails request] Returns detailed information about a specific submission, including test-case results and source artifacts.
+  @return 200 OK, devolve um objeto com detalhes da submissão; 404 Not Found, se a submissão não existir; 403 Forbidden, se o user não for admin; 500 Internal Server Error    *)
+let getSubmissionsIdDetails request =
+  let user_id = Helpers.get_actor_id request in
+  let sid = Dream.param request "id" in
+  Lwt.catch
+    (fun () ->
+      Lwt_pool.use Db.pool (fun conn ->
+          Helpers.get_actor_role conn user_id
+          >>= fun user_role ->
+          Client.hgetall conn ("submission:" ^ sid)
+          >>= function
+          | [] ->
+              Dream.json ~code:404
+                ~headers:[("Content-Type", "application/json")]
+                (Helpers.error_msg "Submission not found")
+          | lst -> (
+              Client.hgetall conn ("submission:" ^ sid ^ ":solution")
+              >>= function
+              | [] ->
+                  Dream.json ~code:404
+                    ~headers:[("Content-Type", "application/json")]
+                    (Helpers.error_msg "Submission not found")
+              | l ->
+                  (* Apenas o dono da submissão ou um utilizador com
+                     permissões de Admin/Judge pode aceder ao código fonte *)
+                  let privileged =
+                    user_role = Some (Openapi.UserRole.to_json Openapi.Admin)
+                    || user_role
+                       = Some (Openapi.UserRole.to_json Openapi.Judge)
+                  in
+                  if not (privileged || user_id = List.assoc "user_id" l)
+                  then
+                    Dream.json ~code:403
+                      ~headers:[("Content-Type", "application/json")]
+                      (Helpers.error_msg
+                         "Forbidden - not allowed to access this submission" )
+                  else
+                    (* [TODO] apenas guardámos o primeiro artefacto da
+                       solução; reconstruímos o nome de ficheiro com a
+                       extensão '.none' *)
+                    let sub =
+                      Helpers.makeSubmission user_id user_role (lst @ l)
+                    in
+                    let content = List.assoc "source_code" l in
+                    (*let lang = List.assoc "language" l in*)
+                    let ext = ".none" in
+                    let filename = Printf.sprintf "main.%s" ext in
+                    let artifacts =
+                      [Openapi.create_sourceArtifact ~filename ~content ()]
+                    in
+                    let full =
+                      Openapi.create_submissionFullDetails ~submission:sub
+                        ~source_artifacts:artifacts ()
+                    in
+                    Dream.json ~code:200
+                      ~headers:[("Content-Type", "application/json")]
+                      (Openapi.SubmissionFullDetails.to_json full) ) ) )
+    (fun exn ->
+      Dream.json ~code:500
+        ~headers:[("Content-Type", "application/json")]
+        (Printexc.to_string exn) )

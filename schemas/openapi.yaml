@@ -2,7 +2,7 @@ openapi: 3.0.4
 info:
   title: "API specification for Yoda"
   description: "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications."
-  version: "1.4.1"
+  version: "1.5"
 
 paths:
   /admin/users:
@@ -665,55 +665,48 @@ paths:
         "500":
           description: Server error
 
-  /judge/next:
-    post:
-      summary: Judge worker fetches next submission
-      description: Fetches the next pending submission for evaluation.
-      responses:
-        "200":
-          description: Next pending submission to judge
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Submission"
-        "204":
-          description: No pending submissions
-        "401":
-          description: Unauthorized access
-        "500":
-          description: Server error
-
-  /judge/{submissionId}/result:
+  /submissions/{id}/details:
     parameters:
-      - name: submissionId
+      - name: id
         in: path
         required: true
         schema:
           type: integer
-    post:
-      summary: Judge posts result
-      description: Posts the result of a judged submission.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Submission"
+    get:
+      summary: Get full submission details
+      description: Returns detailed information about a specific submission, including
+        test-case results and source artifacts.
       responses:
         "200":
-          description: Submission result updated
+          description: Full submission details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Submission"
-        "400":
-          description: Bad request
+                $ref: "#/components/schemas/SubmissionFullDetails"
         "401":
-          description: Unauthorized access
+          description: Authentication is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The authenticated user is not allowed to access this submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Submission not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
-          description: Server error
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /contests/{id}/scoreboard:
     parameters:
@@ -1069,6 +1062,8 @@ components:
           type: integer
         details:
           $ref: "#/components/schemas/SubmissionDetails"
+        owner:
+          type: boolean
       required: ["id", "problem_id", "status", "score", "time_ms", "memory_kb", "details"]
 
     Submissions:
@@ -1104,6 +1099,15 @@ components:
         return_code:
           type: integer
       required: ["stdout", "stderr", "return_code"]
+
+    SubmissionFullDetails:
+      type: object
+      properties:
+        submission:
+          $ref: "#/components/schemas/Submission"
+        source_artifacts:
+          $ref: "#/components/schemas/SourceArtifacts"
+      required: ["submission", "source_artifacts"]
 
     Solution:
       type: object

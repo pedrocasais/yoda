@@ -1002,10 +1002,11 @@ type submission = {
   time_ms: int;
   memory_kb: int;
   details: submissionDetails;
+  owner: bool option;
 }
 
-let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details () : submission =
-  { id; problem_id; language; status; score; time_ms; memory_kb; details }
+let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details ?owner () : submission =
+  { id; problem_id; language; status; score; time_ms; memory_kb; details; owner }
 
 let submission_of_yojson (x : Yojson.Safe.t) : submission =
   match x with
@@ -1060,7 +1061,12 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       | Some v -> submissionDetails_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submission" "details"
     in
-    { id; problem_id; language; status; score; time_ms; memory_kb; details }
+    let owner =
+      match assoc "owner" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.bool_of_yojson v)
+    in
+    { id; problem_id; language; status; score; time_ms; memory_kb; details; owner }
   | _ -> Atdml_runtime.Yojson.bad_type "submission" x
 
 let yojson_of_submission (x : submission) : Yojson.Safe.t =
@@ -1073,6 +1079,7 @@ let yojson_of_submission (x : submission) : Yojson.Safe.t =
     [("time_ms", Atdml_runtime.Yojson.yojson_of_int x.time_ms)];
     [("memory_kb", Atdml_runtime.Yojson.yojson_of_int x.memory_kb)];
     [("details", yojson_of_submissionDetails x.details)];
+    (match x.owner with None -> [] | Some v -> [("owner", Atdml_runtime.Yojson.yojson_of_bool v)]);
   ])
 
 let submission_of_json s =
@@ -1187,6 +1194,61 @@ module SourceArtifacts = struct
   let to_yojson = yojson_of_sourceArtifacts
   let of_json = sourceArtifacts_of_json
   let to_json = json_of_sourceArtifacts
+end
+
+type submissionFullDetails = {
+  submission: submission;
+  source_artifacts: sourceArtifacts;
+}
+
+let create_submissionFullDetails ~submission ~source_artifacts () : submissionFullDetails =
+  { submission; source_artifacts }
+
+let submissionFullDetails_of_yojson (x : Yojson.Safe.t) : submissionFullDetails =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let submission =
+      match assoc "submission" with
+      | Some v -> submission_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submissionFullDetails" "submission"
+    in
+    let source_artifacts =
+      match assoc "source_artifacts" with
+      | Some v -> sourceArtifacts_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "submissionFullDetails" "source_artifacts"
+    in
+    { submission; source_artifacts }
+  | _ -> Atdml_runtime.Yojson.bad_type "submissionFullDetails" x
+
+let yojson_of_submissionFullDetails (x : submissionFullDetails) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("submission", yojson_of_submission x.submission)];
+    [("source_artifacts", yojson_of_sourceArtifacts x.source_artifacts)];
+  ])
+
+let submissionFullDetails_of_json s =
+  submissionFullDetails_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_submissionFullDetails x =
+  Yojson.Safe.to_string (yojson_of_submissionFullDetails x)
+
+module SubmissionFullDetails = struct
+  type nonrec t = submissionFullDetails
+  let create = create_submissionFullDetails
+  let of_yojson = submissionFullDetails_of_yojson
+  let to_yojson = yojson_of_submissionFullDetails
+  let of_json = submissionFullDetails_of_json
+  let to_json = json_of_submissionFullDetails
 end
 
 type solution = {

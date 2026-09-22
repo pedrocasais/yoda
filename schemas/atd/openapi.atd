@@ -132,6 +132,11 @@ type solution = {
   source_artifacts : sourceArtifacts;
 } 
 
+type submissionFullDetails = {
+  submission : submission;
+  source_artifacts : sourceArtifacts;
+} 
+
 type submissionDetailOutput = {
   stdout : string;
   stderr : string;
@@ -158,6 +163,7 @@ type submission = {
   time_ms : int;
   memory_kb : int;
   details : submissionDetails;
+  ?owner : bool option;
 } 
 
 type problemUpdateRequest = {

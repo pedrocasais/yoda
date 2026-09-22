@@ -25,6 +25,9 @@
     },
     "details": {
       "$ref": "#/components/schemas/SubmissionDetails"
+    },
+    "owner": {
+      "type": "boolean"
     }
   },
   "required": [
