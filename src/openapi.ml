@@ -2294,6 +2294,61 @@ module AuthRegisterPostRequest = struct
   let to_json = json_of_authRegisterPostRequest
 end
 
+type authPasswordPostRequest = {
+  current_password: string;
+  new_password: string;
+}
+
+let create_authPasswordPostRequest ~current_password ~new_password () : authPasswordPostRequest =
+  { current_password; new_password }
+
+let authPasswordPostRequest_of_yojson (x : Yojson.Safe.t) : authPasswordPostRequest =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let current_password =
+      match assoc "current_password" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "authPasswordPostRequest" "current_password"
+    in
+    let new_password =
+      match assoc "new_password" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "authPasswordPostRequest" "new_password"
+    in
+    { current_password; new_password }
+  | _ -> Atdml_runtime.Yojson.bad_type "authPasswordPostRequest" x
+
+let yojson_of_authPasswordPostRequest (x : authPasswordPostRequest) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("current_password", Atdml_runtime.Yojson.yojson_of_string x.current_password)];
+    [("new_password", Atdml_runtime.Yojson.yojson_of_string x.new_password)];
+  ])
+
+let authPasswordPostRequest_of_json s =
+  authPasswordPostRequest_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_authPasswordPostRequest x =
+  Yojson.Safe.to_string (yojson_of_authPasswordPostRequest x)
+
+module AuthPasswordPostRequest = struct
+  type nonrec t = authPasswordPostRequest
+  let create = create_authPasswordPostRequest
+  let of_yojson = authPasswordPostRequest_of_yojson
+  let to_yojson = yojson_of_authPasswordPostRequest
+  let of_json = authPasswordPostRequest_of_json
+  let to_json = json_of_authPasswordPostRequest
+end
+
 type authLoginPostRequest = {
   username: string;
   password: string;

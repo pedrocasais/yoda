@@ -259,3 +259,63 @@ let postAuthLogin request =
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
         (Openapi.ErrorResponse.to_json error) )
+
+(** [postAuthPassword request] Rota para alterar a password do utilizador autenticado.
+    Verifica a password atual antes de permitir a alteração.
+    @return Caso bem sucedido devolve 200, caso contrário erro. *)
+let postAuthPassword request =
+  Lwt.catch
+    (fun () ->
+      (* [Dream.session_field request "user"] devolve o id do utilizador autenticado *)
+      match Dream.session_field request "user" with
+      | None ->
+          let error =
+            Openapi.ErrorResponse.create ~error:"Unauthorized access" ()
+          in
+          Dream.json ~code:401
+            ~headers:[("Content-Type", "application/json")]
+            (Openapi.ErrorResponse.to_json error)
+      | Some uid ->
+          Dream.body request
+          >>= fun data ->
+          let req = Openapi.authPasswordPostRequest_of_json data in
+          let key = "user:" ^ uid in
+          Lwt_pool.use Db.pool (fun conn -> Client.hget conn key "password")
+          >>= fun stored -> (
+            match stored with
+            | None ->
+                let error =
+                  Openapi.ErrorResponse.create
+                    ~error:"Invalid current password" ()
+                in
+                Dream.json ~code:401
+                  ~headers:[("Content-Type", "application/json")]
+                  (Openapi.ErrorResponse.to_json error)
+            | Some hash when verify hash req.current_password -> (
+                (* atualiza a password *)
+                let new_hash = Result.get_ok (hash_password req.new_password) in
+                Lwt_pool.use Db.pool (fun conn ->
+                    Client.hset conn key "password" new_hash )
+                >>= fun _ ->
+                let body =
+                  Yojson.Safe.to_string
+                    (`Assoc [("message", `String "Password changed successfully")])
+                in
+                Dream.json ~code:200
+                  ~headers:[("Content-Type", "application/json")]
+                  body )
+            | Some _ ->
+                let error =
+                  Openapi.ErrorResponse.create
+                    ~error:"Invalid current password" ()
+                in
+                Dream.json ~code:401
+                  ~headers:[("Content-Type", "application/json")]
+                  (Openapi.ErrorResponse.to_json error) ) )
+    (fun exn ->
+      let error =
+        Openapi.ErrorResponse.create ~error:(Printexc.to_string exn) ()
+      in
+      Dream.json ~code:500
+        ~headers:[("Content-Type", "application/json")]
+        (Openapi.ErrorResponse.to_json error) )

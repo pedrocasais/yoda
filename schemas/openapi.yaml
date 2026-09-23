@@ -2,7 +2,7 @@ openapi: 3.0.4
 info:
   title: "API specification for Yoda"
   description: "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications."
-  version: "1.5"
+  version: "1.6"
 
 paths:
   /admin/users:
@@ -149,6 +149,42 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: "Invalid username or password"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "An unexpected error occurred. Please try again later."
+
+  /auth/password:
+    post:
+      summary: Change the current user's password.
+      description: Change the password of the currently authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_password:
+                  type: string
+                new_password:
+                  type: string
+              required: ["current_password", "new_password"]
+      responses:
+        "200":
+          description: Password changed successfully
+        "401":
+          description: Not authenticated or invalid current password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Invalid current password"
         "500":
           description: Server error
           content:

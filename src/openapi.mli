@@ -815,6 +815,26 @@ module AuthRegisterPostRequest : sig
   val to_json : t -> string
 end
 
+type authPasswordPostRequest = {
+  current_password: string;
+  new_password: string;
+}
+
+val create_authPasswordPostRequest : current_password:string -> new_password:string -> unit -> authPasswordPostRequest
+val authPasswordPostRequest_of_yojson : Yojson.Safe.t -> authPasswordPostRequest
+val yojson_of_authPasswordPostRequest : authPasswordPostRequest -> Yojson.Safe.t
+val authPasswordPostRequest_of_json : string -> authPasswordPostRequest
+val json_of_authPasswordPostRequest : authPasswordPostRequest -> string
+
+module AuthPasswordPostRequest : sig
+  type nonrec t = authPasswordPostRequest
+  val create : current_password:string -> new_password:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type authLoginPostRequest = {
   username: string;
   password: string;

@@ -43,6 +43,11 @@ type authRegisterPostRequest = {
   role : userRole;
 } 
 
+type authPasswordPostRequest = {
+  current_password : string;
+  new_password : string;
+} 
+
 type authLoginPostRequest = {
   username : string;
   password : string;
