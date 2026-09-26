@@ -16,6 +16,11 @@ let get_actor_id request =
 let get_actor_role conn actor_id =
   Client.hget conn ("user:" ^ actor_id) "role"
 
+let get_actor_groups conn actor_id =
+  Client.hget conn ("user:" ^ actor_id) "groups"
+  >>= fun user ->
+  Lwt.return (Option.value ~default:"[]" user |> Openapi.UserGroups.of_json)
+
 (** [check_admin_permissions request next] verifica se o user tem autorização de Admin para aceder a [request]. *)
 let check_admin_permissions request next =
   let id_session = Dream.session_field request "user" in

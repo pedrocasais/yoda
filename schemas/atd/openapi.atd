@@ -232,14 +232,14 @@ type problem = {
 type userUpdateRequest = {
   ?username : string option;
   ?role : userRole option;
-  ?groups : userGroup option;
+  ?groups : userGroups option;
 } 
 
 type userCreateRequest = {
   username : string;
   password : string;
   role : userRole;
-  ?groups : userGroup option;
+  ?groups : userGroups option;
 } 
 
 type languages = string list 
@@ -248,12 +248,12 @@ type user = {
   id : int;
   username : string;
   role : userRole;
-  groups : userGroup;
+  groups : userGroups;
   created_at : string;
   ?last_seen_at : string option;
 } 
 
-type userGroup = string list 
+type userGroups = string list 
 
 type userRole = [
   | User <json name="user">

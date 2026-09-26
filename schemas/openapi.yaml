@@ -889,7 +889,7 @@ components:
       type: string
       enum: ["user", "judge", "admin"]
     
-    UserGroup:
+    UserGroups:
       type: array
       items:
         type: string
@@ -904,7 +904,7 @@ components:
         role:
           $ref: "#/components/schemas/UserRole"
         groups:
-          $ref: "#/components/schemas/UserGroup"
+          $ref: "#/components/schemas/UserGroups"
         created_at:
           type: string
         last_seen_at:
@@ -932,7 +932,7 @@ components:
         role:
           $ref: "#/components/schemas/UserRole"
         groups:
-          $ref: "#/components/schemas/UserGroup"
+          $ref: "#/components/schemas/UserGroups"
       required: ["username", "password", "role"]
 
     UserUpdateRequest:
@@ -943,7 +943,7 @@ components:
         role:
           $ref: "#/components/schemas/UserRole"
         groups:
-          $ref: "#/components/schemas/UserGroup"
+          $ref: "#/components/schemas/UserGroups"
 
     Problem:
       type: object

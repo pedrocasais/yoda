@@ -83,8 +83,8 @@ let sessions uid =
 let postAuthRegister request =
   Lwt.catch
     (fun () ->
-      (* [Helpers.check_admin_permissions request] verifica se o utilizador tem permissões
-         de administrador *)
+      (* [Helpers.check_admin_permissions request] verifica se o utilizador
+         tem permissões de administrador *)
       Helpers.check_admin_permissions request (fun () ->
           Dream.body request
           >>= fun data ->
@@ -122,8 +122,8 @@ let postAuthRegister request =
               ; Openapi.UserRole.to_json user.role
               ; "groups"
               ; ( match user.groups with
-                | Some g -> Openapi.UserGroup.to_json g
-                | None -> Openapi.UserGroup.to_json [] )
+                | Some g -> Openapi.UserGroups.to_json g
+                | None -> Openapi.UserGroups.to_json [] )
               ; "created_at"
               ; created_at ]
             >>= fun _ ->
@@ -148,7 +148,7 @@ let postAuthRegister request =
                 let user =
                   Openapi.create_user ~id:next_id ~username:user.username
                     ~role:
-                      (Openapi.userRole_of_json
+                      (Openapi.UserRole.of_json
                          (Openapi.UserRole.to_json user.role) )
                     ~groups:(Option.value user.groups ~default:[])
                     ~created_at ()
@@ -223,7 +223,7 @@ let postAuthLogin request =
                   (Openapi.userRole_of_json
                      (Option.get (List.assoc_opt "role" lst)) )
                 ~groups:
-                  (Openapi.userGroup_of_json
+                  (Openapi.UserGroups.of_json
                      (Option.get (List.assoc_opt "groups" lst)) )
                 ~created_at:(Option.get (List.assoc_opt "created_at" lst))
                 ()
@@ -266,7 +266,8 @@ let postAuthLogin request =
 let postAuthPassword request =
   Lwt.catch
     (fun () ->
-      (* [Dream.session_field request "user"] devolve o id do utilizador autenticado *)
+      (* [Dream.session_field request "user"] devolve o id do utilizador
+         autenticado *)
       match Dream.session_field request "user" with
       | None ->
           let error =
@@ -275,43 +276,47 @@ let postAuthPassword request =
           Dream.json ~code:401
             ~headers:[("Content-Type", "application/json")]
             (Openapi.ErrorResponse.to_json error)
-      | Some uid ->
+      | Some uid -> (
           Dream.body request
           >>= fun data ->
           let req = Openapi.authPasswordPostRequest_of_json data in
           let key = "user:" ^ uid in
           Lwt_pool.use Db.pool (fun conn -> Client.hget conn key "password")
-          >>= fun stored -> (
-            match stored with
-            | None ->
-                let error =
-                  Openapi.ErrorResponse.create
-                    ~error:"Invalid current password" ()
-                in
-                Dream.json ~code:401
-                  ~headers:[("Content-Type", "application/json")]
-                  (Openapi.ErrorResponse.to_json error)
-            | Some hash when verify hash req.current_password -> (
-                (* atualiza a password *)
-                let new_hash = Result.get_ok (hash_password req.new_password) in
-                Lwt_pool.use Db.pool (fun conn ->
-                    Client.hset conn key "password" new_hash )
-                >>= fun _ ->
-                let body =
-                  Yojson.Safe.to_string
-                    (`Assoc [("message", `String "Password changed successfully")])
-                in
-                Dream.json ~code:200
-                  ~headers:[("Content-Type", "application/json")]
-                  body )
-            | Some _ ->
-                let error =
-                  Openapi.ErrorResponse.create
-                    ~error:"Invalid current password" ()
-                in
-                Dream.json ~code:401
-                  ~headers:[("Content-Type", "application/json")]
-                  (Openapi.ErrorResponse.to_json error) ) )
+          >>= fun stored ->
+          match stored with
+          | None ->
+              let error =
+                Openapi.ErrorResponse.create
+                  ~error:"Invalid current password" ()
+              in
+              Dream.json ~code:401
+                ~headers:[("Content-Type", "application/json")]
+                (Openapi.ErrorResponse.to_json error)
+          | Some hash when verify hash req.current_password ->
+              (* atualiza a password *)
+              let new_hash =
+                Result.get_ok (hash_password req.new_password)
+              in
+              Lwt_pool.use Db.pool (fun conn ->
+                  Client.hset conn key "password" new_hash )
+              >>= fun _ ->
+              let body =
+                Yojson.Safe.to_string
+                  (`Assoc
+                     [("message", `String "Password changed successfully")]
+                  )
+              in
+              Dream.json ~code:200
+                ~headers:[("Content-Type", "application/json")]
+                body
+          | Some _ ->
+              let error =
+                Openapi.ErrorResponse.create
+                  ~error:"Invalid current password" ()
+              in
+              Dream.json ~code:401
+                ~headers:[("Content-Type", "application/json")]
+                (Openapi.ErrorResponse.to_json error) ) )
     (fun exn ->
       let error =
         Openapi.ErrorResponse.create ~error:(Printexc.to_string exn) ()

@@ -39,8 +39,8 @@ let getAllUsers conn max =
         ; last_seen_at ] ->
           let user =
             Openapi.create_user ~id:(int_of_string id) ~username
-              ~role:(Openapi.userRole_of_json role)
-              ~groups:(Openapi.userGroup_of_json groups_json)
+              ~role:(Openapi.UserRole.of_json role)
+              ~groups:(Openapi.UserGroups.of_json groups_json)
               ~created_at
               ~last_seen_at:
                 (match last_seen_at with Some x -> x | None -> "Never seen")
@@ -107,7 +107,7 @@ let putUsersId request =
                       | None -> Option.get (List.nth lst 2) )
                     ; "groups"
                     ; ( match data.groups with
-                      | Some x -> Openapi.UserGroup.to_json x
+                      | Some x -> Openapi.UserGroups.to_json x
                       | None -> Option.get (List.nth lst 3) ) ]
                   >>= function
                   | `Status "OK" | `Int _ ->
@@ -119,7 +119,7 @@ let putUsersId request =
                             (Openapi.userRole_of_json
                                (Option.get (List.nth lst 2)) )
                           ~groups:
-                            (Openapi.userGroup_of_json
+                            (Openapi.UserGroups.of_json
                                (Option.get (List.nth lst 3)) )
                           ~created_at:(Option.get (List.nth lst 4))
                           ()
@@ -151,7 +151,7 @@ let getUsersId request =
           let user =
             Openapi.create_user ~id:(int_of_string id) ~username
               ~role:(Openapi.userRole_of_json role)
-              ~groups:(Openapi.userGroup_of_json groups_json)
+              ~groups:(Openapi.UserGroups.of_json groups_json)
               ~created_at ()
           in
           Dream.json ~code:200

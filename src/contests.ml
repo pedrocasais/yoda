@@ -1,8 +1,8 @@
-(**  Concuros e Problemas 
+(** 
+  Concuros 
 
-  Neste módulo estão presentes as funções para criar e gerir concursos, assim como ´
-  criar problemas ligados a um concurso, 
-  o Scroboard e ainda obter submissões de um dado concurso. *)
+  Neste módulo estão presentes as funções para criar e gerir concursos, assim como criar problemas ligados a um concurso, o Scoreboard, e ainda obter submissões de um dado concurso.
+ *)
 
 open Lwt.Infix
 open Redis_lwt
@@ -35,8 +35,9 @@ let getAllProblems conn problems =
 
 (** [makeContestList lst] converte uma lista de listas de tuplos numa contest list, [Openapi.contest list], 
 @param lst [(string*string) list list] com concursos, [Openapi.contest]
+@param groups [Openapi.UserGroup.t list] com os grupos do utilizador
 @return devolve uma lista de concursos [Openapi.contest list] *)
-let makeContestList lst =
+let makeContestList user_groups lst =
   List.fold_left
     (fun acc x ->
       let contest =
@@ -49,7 +50,15 @@ let makeContestList lst =
           ~status:(Openapi.contestStatus_of_json (List.assoc "status" x))
           ()
       in
-      List.rev_append [contest] acc )
+      (* allows_groups returns a json array of group IDs *)
+      let allowed_groups =
+        List.assoc "allowed_groups" x |> Openapi.UserGroups.of_json
+      in
+      (* check if user groups are in the allowed groups *)
+      (* check if there is a match between elements of both lists *)
+      if List.exists (fun g -> List.mem g user_groups) allowed_groups then
+        List.rev_append [contest] acc
+      else acc )
     [] lst
 
 (** [makeProblemList lst] converte uma lista de listas de tuplos numa problem list, [Openapi.problem list], 
@@ -568,19 +577,23 @@ let postContests request =
 
 (** [getContests _request] devolve todos os concursos registados. 
  @return 200 OK, se for concluído com sucesso, devolve uma lista de concursos [Openapi.contest list]; 404 Not Found, se não existirem concursos ; 500 Internal Server Error, erro. *)
-let getContests _request =
+let getContests request =
+  let user_id = Helpers.get_actor_id request in
   Lwt.catch
     (fun () ->
       Lwt_pool.use Db.pool (fun conn ->
+          Helpers.get_actor_groups conn user_id
+          >>= fun user ->
           Client.get conn "contest:id"
           >>= function
-          | Some id -> getAllContests conn id
-          | None -> Lwt.fail Not_found )
-      >>= function
-      | x ->
-          Dream.json ~code:200
-            ~headers:[("Content-Type", "application/json")]
-            (Openapi.json_of_contestsGetResponse2 (makeContestList x)) )
+          | Some id ->
+              getAllContests conn id
+              >>= fun lst ->
+              Dream.json ~code:200
+                ~headers:[("Content-Type", "application/json")]
+                (Openapi.json_of_contestsGetResponse2
+                   (makeContestList user lst) )
+          | None -> Lwt.fail Not_found ) )
     (fun exn ->
       match exn with
       | Not_found ->

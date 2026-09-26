@@ -152,15 +152,15 @@ module UserRole : sig
   val to_json : t -> string
 end
 
-type userGroup = string list
+type userGroups = string list
 
-val userGroup_of_yojson : Yojson.Safe.t -> userGroup
-val yojson_of_userGroup : userGroup -> Yojson.Safe.t
-val userGroup_of_json : string -> userGroup
-val json_of_userGroup : userGroup -> string
+val userGroups_of_yojson : Yojson.Safe.t -> userGroups
+val yojson_of_userGroups : userGroups -> Yojson.Safe.t
+val userGroups_of_json : string -> userGroups
+val json_of_userGroups : userGroups -> string
 
-module UserGroup : sig
-  type nonrec t = userGroup
+module UserGroups : sig
+  type nonrec t = userGroups
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -170,10 +170,10 @@ end
 type userUpdateRequest = {
   username: string option;
   role: userRole option;
-  groups: userGroup option;
+  groups: userGroups option;
 }
 
-val create_userUpdateRequest : ?username:string -> ?role:userRole -> ?groups:userGroup -> unit -> userUpdateRequest
+val create_userUpdateRequest : ?username:string -> ?role:userRole -> ?groups:userGroups -> unit -> userUpdateRequest
 val userUpdateRequest_of_yojson : Yojson.Safe.t -> userUpdateRequest
 val yojson_of_userUpdateRequest : userUpdateRequest -> Yojson.Safe.t
 val userUpdateRequest_of_json : string -> userUpdateRequest
@@ -181,7 +181,7 @@ val json_of_userUpdateRequest : userUpdateRequest -> string
 
 module UserUpdateRequest : sig
   type nonrec t = userUpdateRequest
-  val create : ?username:string -> ?role:userRole -> ?groups:userGroup -> unit -> t
+  val create : ?username:string -> ?role:userRole -> ?groups:userGroups -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -192,10 +192,10 @@ type userCreateRequest = {
   username: string;
   password: string;
   role: userRole;
-  groups: userGroup option;
+  groups: userGroups option;
 }
 
-val create_userCreateRequest : username:string -> password:string -> role:userRole -> ?groups:userGroup -> unit -> userCreateRequest
+val create_userCreateRequest : username:string -> password:string -> role:userRole -> ?groups:userGroups -> unit -> userCreateRequest
 val userCreateRequest_of_yojson : Yojson.Safe.t -> userCreateRequest
 val yojson_of_userCreateRequest : userCreateRequest -> Yojson.Safe.t
 val userCreateRequest_of_json : string -> userCreateRequest
@@ -203,7 +203,7 @@ val json_of_userCreateRequest : userCreateRequest -> string
 
 module UserCreateRequest : sig
   type nonrec t = userCreateRequest
-  val create : username:string -> password:string -> role:userRole -> ?groups:userGroup -> unit -> t
+  val create : username:string -> password:string -> role:userRole -> ?groups:userGroups -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -214,12 +214,12 @@ type user = {
   id: int;
   username: string;
   role: userRole;
-  groups: userGroup;
+  groups: userGroups;
   created_at: string;
   last_seen_at: string option;
 }
 
-val create_user : id:int -> username:string -> role:userRole -> groups:userGroup -> created_at:string -> ?last_seen_at:string -> unit -> user
+val create_user : id:int -> username:string -> role:userRole -> groups:userGroups -> created_at:string -> ?last_seen_at:string -> unit -> user
 val user_of_yojson : Yojson.Safe.t -> user
 val yojson_of_user : user -> Yojson.Safe.t
 val user_of_json : string -> user
@@ -227,7 +227,7 @@ val json_of_user : user -> string
 
 module User : sig
   type nonrec t = user
-  val create : id:int -> username:string -> role:userRole -> groups:userGroup -> created_at:string -> ?last_seen_at:string -> unit -> t
+  val create : id:int -> username:string -> role:userRole -> groups:userGroups -> created_at:string -> ?last_seen_at:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

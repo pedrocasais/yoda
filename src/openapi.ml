@@ -466,32 +466,32 @@ module UserRole = struct
   let to_json = json_of_userRole
 end
 
-type userGroup = string list
+type userGroups = string list
 
-let userGroup_of_yojson (x : Yojson.Safe.t) : userGroup =
+let userGroups_of_yojson (x : Yojson.Safe.t) : userGroups =
   (Atdml_runtime.Yojson.list_of_yojson Atdml_runtime.Yojson.string_of_yojson) x
 
-let yojson_of_userGroup (x : userGroup) : Yojson.Safe.t =
+let yojson_of_userGroups (x : userGroups) : Yojson.Safe.t =
   (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string) x
 
-let userGroup_of_json s =
-  userGroup_of_yojson (Yojson.Safe.from_string s)
+let userGroups_of_json s =
+  userGroups_of_yojson (Yojson.Safe.from_string s)
 
-let json_of_userGroup x =
-  Yojson.Safe.to_string (yojson_of_userGroup x)
+let json_of_userGroups x =
+  Yojson.Safe.to_string (yojson_of_userGroups x)
 
-module UserGroup = struct
-  type nonrec t = userGroup
-  let of_yojson = userGroup_of_yojson
-  let to_yojson = yojson_of_userGroup
-  let of_json = userGroup_of_json
-  let to_json = json_of_userGroup
+module UserGroups = struct
+  type nonrec t = userGroups
+  let of_yojson = userGroups_of_yojson
+  let to_yojson = yojson_of_userGroups
+  let of_json = userGroups_of_json
+  let to_json = json_of_userGroups
 end
 
 type userUpdateRequest = {
   username: string option;
   role: userRole option;
-  groups: userGroup option;
+  groups: userGroups option;
 }
 
 let create_userUpdateRequest ?username ?role ?groups () : userUpdateRequest =
@@ -523,7 +523,7 @@ let userUpdateRequest_of_yojson (x : Yojson.Safe.t) : userUpdateRequest =
     let groups =
       match assoc "groups" with
       | None | Some `Null -> Option.None
-      | Some v -> Option.Some (userGroup_of_yojson v)
+      | Some v -> Option.Some (userGroups_of_yojson v)
     in
     { username; role; groups }
   | _ -> Atdml_runtime.Yojson.bad_type "userUpdateRequest" x
@@ -532,7 +532,7 @@ let yojson_of_userUpdateRequest (x : userUpdateRequest) : Yojson.Safe.t =
   `Assoc (List.concat [
     (match x.username with None -> [] | Some v -> [("username", Atdml_runtime.Yojson.yojson_of_string v)]);
     (match x.role with None -> [] | Some v -> [("role", yojson_of_userRole v)]);
-    (match x.groups with None -> [] | Some v -> [("groups", yojson_of_userGroup v)]);
+    (match x.groups with None -> [] | Some v -> [("groups", yojson_of_userGroups v)]);
   ])
 
 let userUpdateRequest_of_json s =
@@ -554,7 +554,7 @@ type userCreateRequest = {
   username: string;
   password: string;
   role: userRole;
-  groups: userGroup option;
+  groups: userGroups option;
 }
 
 let create_userCreateRequest ~username ~password ~role ?groups () : userCreateRequest =
@@ -591,7 +591,7 @@ let userCreateRequest_of_yojson (x : Yojson.Safe.t) : userCreateRequest =
     let groups =
       match assoc "groups" with
       | None | Some `Null -> Option.None
-      | Some v -> Option.Some (userGroup_of_yojson v)
+      | Some v -> Option.Some (userGroups_of_yojson v)
     in
     { username; password; role; groups }
   | _ -> Atdml_runtime.Yojson.bad_type "userCreateRequest" x
@@ -601,7 +601,7 @@ let yojson_of_userCreateRequest (x : userCreateRequest) : Yojson.Safe.t =
     [("username", Atdml_runtime.Yojson.yojson_of_string x.username)];
     [("password", Atdml_runtime.Yojson.yojson_of_string x.password)];
     [("role", yojson_of_userRole x.role)];
-    (match x.groups with None -> [] | Some v -> [("groups", yojson_of_userGroup v)]);
+    (match x.groups with None -> [] | Some v -> [("groups", yojson_of_userGroups v)]);
   ])
 
 let userCreateRequest_of_json s =
@@ -623,7 +623,7 @@ type user = {
   id: int;
   username: string;
   role: userRole;
-  groups: userGroup;
+  groups: userGroups;
   created_at: string;
   last_seen_at: string option;
 }
@@ -661,7 +661,7 @@ let user_of_yojson (x : Yojson.Safe.t) : user =
     in
     let groups =
       match assoc "groups" with
-      | Some v -> userGroup_of_yojson v
+      | Some v -> userGroups_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "user" "groups"
     in
     let created_at =
@@ -682,7 +682,7 @@ let yojson_of_user (x : user) : Yojson.Safe.t =
     [("id", Atdml_runtime.Yojson.yojson_of_int x.id)];
     [("username", Atdml_runtime.Yojson.yojson_of_string x.username)];
     [("role", yojson_of_userRole x.role)];
-    [("groups", yojson_of_userGroup x.groups)];
+    [("groups", yojson_of_userGroups x.groups)];
     [("created_at", Atdml_runtime.Yojson.yojson_of_string x.created_at)];
     (match x.last_seen_at with None -> [] | Some v -> [("last_seen_at", Atdml_runtime.Yojson.yojson_of_string v)]);
   ])

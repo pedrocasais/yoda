@@ -1298,7 +1298,7 @@
           "admin"
         ]
       },
-      "UserGroup": {
+      "UserGroups": {
         "type": "array",
         "items": {
           "type": "string"
@@ -1317,7 +1317,7 @@
             "$ref": "#/components/schemas/UserRole"
           },
           "groups": {
-            "$ref": "#/components/schemas/UserGroup"
+            "$ref": "#/components/schemas/UserGroups"
           },
           "created_at": {
             "type": "string"
@@ -1360,7 +1360,7 @@
             "$ref": "#/components/schemas/UserRole"
           },
           "groups": {
-            "$ref": "#/components/schemas/UserGroup"
+            "$ref": "#/components/schemas/UserGroups"
           }
         },
         "required": [
@@ -1379,7 +1379,7 @@
             "$ref": "#/components/schemas/UserRole"
           },
           "groups": {
-            "$ref": "#/components/schemas/UserGroup"
+            "$ref": "#/components/schemas/UserGroups"
           }
         }
       },
