@@ -59,27 +59,36 @@ let prepare_workdir job =
   close_out oc ;
   (dir, src)
 
+exception Read_timeout
+
 (** Lê o output de um stream Docker com limite de tempo.
     Devolve lista vazia se o timeout for atingido ou houver um erro interno.
     @param timeout limite em segundos *)
 let read_all_timeout ~timeout st =
+  let mutex = Mutex.create () in
   let result = ref None in
-  let _t =
-    Thread.create
-      (fun () ->
-        let s = try Docker.Stream.read_all st with _ -> [] in
-        result := Some s )
-      ()
+  let worker () =
+    let value = try Ok (Docker.Stream.read_all st) with exn -> Error exn in
+    Mutex.lock mutex ;
+    result := Some value ;
+    Mutex.unlock mutex
   in
+  ignore (Thread.create worker ()) ;
   let deadline = Unix.gettimeofday () +. timeout in
-  let rec poll () =
+  let rec wait_for_result () =
+    Mutex.lock mutex ;
     match !result with
-    | Some s -> s
+    | Some (Ok value) -> Mutex.unlock mutex ; value
+    | Some (Error exn) -> Mutex.unlock mutex ; raise exn
     | None ->
-        if Unix.gettimeofday () > deadline then []
-        else (Thread.delay 1.0 ; poll ())
+        let remaining = deadline -. Unix.gettimeofday () in
+        if remaining <= 0.0 then (Mutex.unlock mutex ; raise Read_timeout) ;
+        Mutex.unlock mutex ;
+        (* Poll frequently enough to avoid a one-second delay. *)
+        Thread.delay (min remaining 0.5) ;
+        wait_for_result ()
   in
-  poll ()
+  wait_for_result ()
 
 (** Executa um comando de compilação num container Docker isolado.
     Monta [dir] em [/work] com escrita permitida.

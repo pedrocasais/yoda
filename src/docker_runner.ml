@@ -90,11 +90,15 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
   let st = C.attach ~stdout:true ~stderr:true c `Stream in
   try
     C.start c ;
-    let s = Compiler.read_all_timeout ~timeout st in
-    (* If no data is received i.e., s = [], it means the process timed out or
-       had an internal error. *)
-    let code = if s = [] then 124 else C.wait c in
-    C.rm c ;
+    let s, code =
+      try
+        let s = Compiler.read_all_timeout ~timeout st in
+        let c = C.wait c in
+        (s, c)
+      with Compiler.Read_timeout ->
+        (try C.rm ~force:true c with _ -> ()) ;
+        ([], 124)
+    in
     (* Example: [ "\001\000\000\000\000\000\000\0051021\n";
        "\002\000\000\000\000\000\000\004oops";
        "\001\000\000\000\000\000\000\006hello!" ]*)
