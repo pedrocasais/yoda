@@ -8,7 +8,7 @@ type contestStatus = [
   | Finished <json name="finished">
 ] 
 
-type contestsIdPutRequestStatus = [
+type judgeContestsIdPutRequestStatus = [
   | Upcoming <json name="upcoming">
   | Running <json name="running">
   | Finished <json name="finished">
@@ -20,15 +20,15 @@ type problemsIdTestcasesGetResponse2 = testCase list
 
 type contestsContestsidProblemsGetResponse2 = problem list 
 
-type contestsIdPutRequest = {
+type judgeContestsIdPutRequest = {
   ?title : string option;
   ?description : string option;
   ?start_time : string option;
   ?end_time : string option;
-  ?status : contestsIdPutRequestStatus option;
+  ?status : judgeContestsIdPutRequestStatus option;
 } 
 
-type contestsPostRequest = {
+type judgeContestsPostRequest = {
   title : string;
   ?description : string option;
   start_time : string;

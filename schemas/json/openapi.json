@@ -3,7 +3,7 @@
   "info": {
     "title": "API specification for Yoda",
     "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
-    "version": "1.6"
+    "version": "1.7"
   },
   "paths": {
     "/admin/users": {
@@ -342,7 +342,9 @@
             "description": "Server error"
           }
         }
-      },
+      }
+    },
+    "/judge/contests": {
       "post": {
         "summary": "Create a contest.",
         "description": "Admin only",
@@ -351,7 +353,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ContestsPostRequest"
+                "$ref": "#/components/schemas/JudgeContestsPostRequest"
               }
             }
           }
@@ -382,7 +384,7 @@
         }
       }
     },
-    "/contests/{id}": {
+    "/judge/contests/{id}": {
       "parameters": [
         {
           "name": "id",
@@ -393,31 +395,6 @@
           }
         }
       ],
-      "get": {
-        "summary": "Returns a contest detail.",
-        "description": "Returns a contest detail.",
-        "responses": {
-          "200": {
-            "description": "A contest object",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Contest"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized access"
-          },
-          "404": {
-            "description": "Contest not found"
-          },
-          "500": {
-            "description": "Server error"
-          }
-        }
-      },
       "put": {
         "summary": "Update a contest.",
         "description": "Admin only",
@@ -426,7 +403,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ContestsIdPutRequest"
+                "$ref": "#/components/schemas/JudgeContestsIdPutRequest"
               }
             }
           }
@@ -471,6 +448,43 @@
           },
           "403": {
             "description": "Forbidden - admin only"
+          },
+          "404": {
+            "description": "Contest not found"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/contests/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Returns a contest detail.",
+        "description": "Returns a contest detail.",
+        "responses": {
+          "200": {
+            "description": "A contest object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Contest"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access"
           },
           "404": {
             "description": "Contest not found"
@@ -2038,7 +2052,7 @@
           "$ref": "#/components/schemas/Contest"
         }
       },
-      "ContestsPostRequest": {
+      "JudgeContestsPostRequest": {
         "type": "object",
         "properties": {
           "title": {
@@ -2062,7 +2076,7 @@
           "end_time"
         ]
       },
-      "ContestsIdPutRequest": {
+      "JudgeContestsIdPutRequest": {
         "type": "object",
         "properties": {
           "title": {

@@ -1745,6 +1745,183 @@ module Problem = struct
   let to_json = json_of_problem
 end
 
+type judgeContestsPostRequest = {
+  title: string;
+  description: string option;
+  start_time: string;
+  end_time: string;
+}
+
+let create_judgeContestsPostRequest ~title ?description ~start_time ~end_time () : judgeContestsPostRequest =
+  { title; description; start_time; end_time }
+
+let judgeContestsPostRequest_of_yojson (x : Yojson.Safe.t) : judgeContestsPostRequest =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let title =
+      match assoc "title" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "judgeContestsPostRequest" "title"
+    in
+    let description =
+      match assoc "description" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let start_time =
+      match assoc "start_time" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "judgeContestsPostRequest" "start_time"
+    in
+    let end_time =
+      match assoc "end_time" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "judgeContestsPostRequest" "end_time"
+    in
+    { title; description; start_time; end_time }
+  | _ -> Atdml_runtime.Yojson.bad_type "judgeContestsPostRequest" x
+
+let yojson_of_judgeContestsPostRequest (x : judgeContestsPostRequest) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("title", Atdml_runtime.Yojson.yojson_of_string x.title)];
+    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
+    [("start_time", Atdml_runtime.Yojson.yojson_of_string x.start_time)];
+    [("end_time", Atdml_runtime.Yojson.yojson_of_string x.end_time)];
+  ])
+
+let judgeContestsPostRequest_of_json s =
+  judgeContestsPostRequest_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_judgeContestsPostRequest x =
+  Yojson.Safe.to_string (yojson_of_judgeContestsPostRequest x)
+
+module JudgeContestsPostRequest = struct
+  type nonrec t = judgeContestsPostRequest
+  let create = create_judgeContestsPostRequest
+  let of_yojson = judgeContestsPostRequest_of_yojson
+  let to_yojson = yojson_of_judgeContestsPostRequest
+  let of_json = judgeContestsPostRequest_of_json
+  let to_json = json_of_judgeContestsPostRequest
+end
+
+type judgeContestsIdPutRequestStatus =
+  | Upcoming
+  | Running
+  | Finished
+
+let judgeContestsIdPutRequestStatus_of_yojson (x : Yojson.Safe.t) : judgeContestsIdPutRequestStatus =
+  match x with
+  | `String "upcoming" -> Upcoming
+  | `String "running" -> Running
+  | `String "finished" -> Finished
+  | _ -> Atdml_runtime.Yojson.bad_sum "judgeContestsIdPutRequestStatus" x
+
+let yojson_of_judgeContestsIdPutRequestStatus (x : judgeContestsIdPutRequestStatus) : Yojson.Safe.t =
+  match x with
+  | Upcoming -> `String "upcoming"
+  | Running -> `String "running"
+  | Finished -> `String "finished"
+
+let judgeContestsIdPutRequestStatus_of_json s =
+  judgeContestsIdPutRequestStatus_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_judgeContestsIdPutRequestStatus x =
+  Yojson.Safe.to_string (yojson_of_judgeContestsIdPutRequestStatus x)
+
+module JudgeContestsIdPutRequestStatus = struct
+  type nonrec t = judgeContestsIdPutRequestStatus
+  let of_yojson = judgeContestsIdPutRequestStatus_of_yojson
+  let to_yojson = yojson_of_judgeContestsIdPutRequestStatus
+  let of_json = judgeContestsIdPutRequestStatus_of_json
+  let to_json = json_of_judgeContestsIdPutRequestStatus
+end
+
+type judgeContestsIdPutRequest = {
+  title: string option;
+  description: string option;
+  start_time: string option;
+  end_time: string option;
+  status: judgeContestsIdPutRequestStatus option;
+}
+
+let create_judgeContestsIdPutRequest ?title ?description ?start_time ?end_time ?status () : judgeContestsIdPutRequest =
+  { title; description; start_time; end_time; status }
+
+let judgeContestsIdPutRequest_of_yojson (x : Yojson.Safe.t) : judgeContestsIdPutRequest =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let title =
+      match assoc "title" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let description =
+      match assoc "description" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let start_time =
+      match assoc "start_time" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let end_time =
+      match assoc "end_time" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let status =
+      match assoc "status" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (judgeContestsIdPutRequestStatus_of_yojson v)
+    in
+    { title; description; start_time; end_time; status }
+  | _ -> Atdml_runtime.Yojson.bad_type "judgeContestsIdPutRequest" x
+
+let yojson_of_judgeContestsIdPutRequest (x : judgeContestsIdPutRequest) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    (match x.title with None -> [] | Some v -> [("title", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.start_time with None -> [] | Some v -> [("start_time", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.end_time with None -> [] | Some v -> [("end_time", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.status with None -> [] | Some v -> [("status", yojson_of_judgeContestsIdPutRequestStatus v)]);
+  ])
+
+let judgeContestsIdPutRequest_of_json s =
+  judgeContestsIdPutRequest_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_judgeContestsIdPutRequest x =
+  Yojson.Safe.to_string (yojson_of_judgeContestsIdPutRequest x)
+
+module JudgeContestsIdPutRequest = struct
+  type nonrec t = judgeContestsIdPutRequest
+  let create = create_judgeContestsIdPutRequest
+  let of_yojson = judgeContestsIdPutRequest_of_yojson
+  let to_yojson = yojson_of_judgeContestsIdPutRequest
+  let of_json = judgeContestsIdPutRequest_of_json
+  let to_json = json_of_judgeContestsIdPutRequest
+end
+
 type int64 = int
 
 let create_int64 (x : int) : int64 = x
@@ -1819,75 +1996,6 @@ module ErrorResponse = struct
   let to_json = json_of_errorResponse
 end
 
-type contestsPostRequest = {
-  title: string;
-  description: string option;
-  start_time: string;
-  end_time: string;
-}
-
-let create_contestsPostRequest ~title ?description ~start_time ~end_time () : contestsPostRequest =
-  { title; description; start_time; end_time }
-
-let contestsPostRequest_of_yojson (x : Yojson.Safe.t) : contestsPostRequest =
-  match x with
-  | `Assoc fields ->
-    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
-       be unique). Below the threshold, List.assoc_opt returns the first binding;
-       above it, the hashtable returns the last. *)
-    let assoc =
-      if Atdml_runtime.list_length_gt 5 fields then
-        let tbl = Hashtbl.create 16 in
-        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
-        (fun key -> Hashtbl.find_opt tbl key)
-      else (fun key -> List.assoc_opt key fields)
-    in
-    let title =
-      match assoc "title" with
-      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "contestsPostRequest" "title"
-    in
-    let description =
-      match assoc "description" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
-    in
-    let start_time =
-      match assoc "start_time" with
-      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "contestsPostRequest" "start_time"
-    in
-    let end_time =
-      match assoc "end_time" with
-      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "contestsPostRequest" "end_time"
-    in
-    { title; description; start_time; end_time }
-  | _ -> Atdml_runtime.Yojson.bad_type "contestsPostRequest" x
-
-let yojson_of_contestsPostRequest (x : contestsPostRequest) : Yojson.Safe.t =
-  `Assoc (List.concat [
-    [("title", Atdml_runtime.Yojson.yojson_of_string x.title)];
-    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
-    [("start_time", Atdml_runtime.Yojson.yojson_of_string x.start_time)];
-    [("end_time", Atdml_runtime.Yojson.yojson_of_string x.end_time)];
-  ])
-
-let contestsPostRequest_of_json s =
-  contestsPostRequest_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_contestsPostRequest x =
-  Yojson.Safe.to_string (yojson_of_contestsPostRequest x)
-
-module ContestsPostRequest = struct
-  type nonrec t = contestsPostRequest
-  let create = create_contestsPostRequest
-  let of_yojson = contestsPostRequest_of_yojson
-  let to_yojson = yojson_of_contestsPostRequest
-  let of_json = contestsPostRequest_of_json
-  let to_json = json_of_contestsPostRequest
-end
-
 type contestsIdScoreboardGetResponse2 = scoreboardEntry list
 
 let contestsIdScoreboardGetResponse2_of_yojson (x : Yojson.Safe.t) : contestsIdScoreboardGetResponse2 =
@@ -1908,114 +2016,6 @@ module ContestsIdScoreboardGetResponse2 = struct
   let to_yojson = yojson_of_contestsIdScoreboardGetResponse2
   let of_json = contestsIdScoreboardGetResponse2_of_json
   let to_json = json_of_contestsIdScoreboardGetResponse2
-end
-
-type contestsIdPutRequestStatus =
-  | Upcoming
-  | Running
-  | Finished
-
-let contestsIdPutRequestStatus_of_yojson (x : Yojson.Safe.t) : contestsIdPutRequestStatus =
-  match x with
-  | `String "upcoming" -> Upcoming
-  | `String "running" -> Running
-  | `String "finished" -> Finished
-  | _ -> Atdml_runtime.Yojson.bad_sum "contestsIdPutRequestStatus" x
-
-let yojson_of_contestsIdPutRequestStatus (x : contestsIdPutRequestStatus) : Yojson.Safe.t =
-  match x with
-  | Upcoming -> `String "upcoming"
-  | Running -> `String "running"
-  | Finished -> `String "finished"
-
-let contestsIdPutRequestStatus_of_json s =
-  contestsIdPutRequestStatus_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_contestsIdPutRequestStatus x =
-  Yojson.Safe.to_string (yojson_of_contestsIdPutRequestStatus x)
-
-module ContestsIdPutRequestStatus = struct
-  type nonrec t = contestsIdPutRequestStatus
-  let of_yojson = contestsIdPutRequestStatus_of_yojson
-  let to_yojson = yojson_of_contestsIdPutRequestStatus
-  let of_json = contestsIdPutRequestStatus_of_json
-  let to_json = json_of_contestsIdPutRequestStatus
-end
-
-type contestsIdPutRequest = {
-  title: string option;
-  description: string option;
-  start_time: string option;
-  end_time: string option;
-  status: contestsIdPutRequestStatus option;
-}
-
-let create_contestsIdPutRequest ?title ?description ?start_time ?end_time ?status () : contestsIdPutRequest =
-  { title; description; start_time; end_time; status }
-
-let contestsIdPutRequest_of_yojson (x : Yojson.Safe.t) : contestsIdPutRequest =
-  match x with
-  | `Assoc fields ->
-    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
-       be unique). Below the threshold, List.assoc_opt returns the first binding;
-       above it, the hashtable returns the last. *)
-    let assoc =
-      if Atdml_runtime.list_length_gt 5 fields then
-        let tbl = Hashtbl.create 16 in
-        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
-        (fun key -> Hashtbl.find_opt tbl key)
-      else (fun key -> List.assoc_opt key fields)
-    in
-    let title =
-      match assoc "title" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
-    in
-    let description =
-      match assoc "description" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
-    in
-    let start_time =
-      match assoc "start_time" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
-    in
-    let end_time =
-      match assoc "end_time" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
-    in
-    let status =
-      match assoc "status" with
-      | None | Some `Null -> Option.None
-      | Some v -> Option.Some (contestsIdPutRequestStatus_of_yojson v)
-    in
-    { title; description; start_time; end_time; status }
-  | _ -> Atdml_runtime.Yojson.bad_type "contestsIdPutRequest" x
-
-let yojson_of_contestsIdPutRequest (x : contestsIdPutRequest) : Yojson.Safe.t =
-  `Assoc (List.concat [
-    (match x.title with None -> [] | Some v -> [("title", Atdml_runtime.Yojson.yojson_of_string v)]);
-    (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
-    (match x.start_time with None -> [] | Some v -> [("start_time", Atdml_runtime.Yojson.yojson_of_string v)]);
-    (match x.end_time with None -> [] | Some v -> [("end_time", Atdml_runtime.Yojson.yojson_of_string v)]);
-    (match x.status with None -> [] | Some v -> [("status", yojson_of_contestsIdPutRequestStatus v)]);
-  ])
-
-let contestsIdPutRequest_of_json s =
-  contestsIdPutRequest_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_contestsIdPutRequest x =
-  Yojson.Safe.to_string (yojson_of_contestsIdPutRequest x)
-
-module ContestsIdPutRequest = struct
-  type nonrec t = contestsIdPutRequest
-  let create = create_contestsIdPutRequest
-  let of_yojson = contestsIdPutRequest_of_yojson
-  let to_yojson = yojson_of_contestsIdPutRequest
-  let of_json = contestsIdPutRequest_of_json
-  let to_json = json_of_contestsIdPutRequest
 end
 
 type contestStatus =

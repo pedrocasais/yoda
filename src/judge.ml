@@ -1,4 +1,5 @@
-let postJudgeSubmissionIdResult _request =
-  failwith "postJudgeSubmissionIdResult"
+let postJudgeContests = Contests.postContests
 
-let postJudgeNext _request = failwith "postJudgeNext"
+let putJudgeContestsId = Contests.putContestsId
+
+let deleteJudgeContestsId = Contests.deleteContestsId

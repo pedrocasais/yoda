@@ -588,6 +588,69 @@ module Problem : sig
   val to_json : t -> string
 end
 
+type judgeContestsPostRequest = {
+  title: string;
+  description: string option;
+  start_time: string;
+  end_time: string;
+}
+
+val create_judgeContestsPostRequest : title:string -> ?description:string -> start_time:string -> end_time:string -> unit -> judgeContestsPostRequest
+val judgeContestsPostRequest_of_yojson : Yojson.Safe.t -> judgeContestsPostRequest
+val yojson_of_judgeContestsPostRequest : judgeContestsPostRequest -> Yojson.Safe.t
+val judgeContestsPostRequest_of_json : string -> judgeContestsPostRequest
+val json_of_judgeContestsPostRequest : judgeContestsPostRequest -> string
+
+module JudgeContestsPostRequest : sig
+  type nonrec t = judgeContestsPostRequest
+  val create : title:string -> ?description:string -> start_time:string -> end_time:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type judgeContestsIdPutRequestStatus =
+  | Upcoming
+  | Running
+  | Finished
+
+val judgeContestsIdPutRequestStatus_of_yojson : Yojson.Safe.t -> judgeContestsIdPutRequestStatus
+val yojson_of_judgeContestsIdPutRequestStatus : judgeContestsIdPutRequestStatus -> Yojson.Safe.t
+val judgeContestsIdPutRequestStatus_of_json : string -> judgeContestsIdPutRequestStatus
+val json_of_judgeContestsIdPutRequestStatus : judgeContestsIdPutRequestStatus -> string
+
+module JudgeContestsIdPutRequestStatus : sig
+  type nonrec t = judgeContestsIdPutRequestStatus
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type judgeContestsIdPutRequest = {
+  title: string option;
+  description: string option;
+  start_time: string option;
+  end_time: string option;
+  status: judgeContestsIdPutRequestStatus option;
+}
+
+val create_judgeContestsIdPutRequest : ?title:string -> ?description:string -> ?start_time:string -> ?end_time:string -> ?status:judgeContestsIdPutRequestStatus -> unit -> judgeContestsIdPutRequest
+val judgeContestsIdPutRequest_of_yojson : Yojson.Safe.t -> judgeContestsIdPutRequest
+val yojson_of_judgeContestsIdPutRequest : judgeContestsIdPutRequest -> Yojson.Safe.t
+val judgeContestsIdPutRequest_of_json : string -> judgeContestsIdPutRequest
+val json_of_judgeContestsIdPutRequest : judgeContestsIdPutRequest -> string
+
+module JudgeContestsIdPutRequest : sig
+  type nonrec t = judgeContestsIdPutRequest
+  val create : ?title:string -> ?description:string -> ?start_time:string -> ?end_time:string -> ?status:judgeContestsIdPutRequestStatus -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type int64 = private int
 
 val create_int64 : int -> int64
@@ -624,28 +687,6 @@ module ErrorResponse : sig
   val to_json : t -> string
 end
 
-type contestsPostRequest = {
-  title: string;
-  description: string option;
-  start_time: string;
-  end_time: string;
-}
-
-val create_contestsPostRequest : title:string -> ?description:string -> start_time:string -> end_time:string -> unit -> contestsPostRequest
-val contestsPostRequest_of_yojson : Yojson.Safe.t -> contestsPostRequest
-val yojson_of_contestsPostRequest : contestsPostRequest -> Yojson.Safe.t
-val contestsPostRequest_of_json : string -> contestsPostRequest
-val json_of_contestsPostRequest : contestsPostRequest -> string
-
-module ContestsPostRequest : sig
-  type nonrec t = contestsPostRequest
-  val create : title:string -> ?description:string -> start_time:string -> end_time:string -> unit -> t
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
 type contestsIdScoreboardGetResponse2 = scoreboardEntry list
 
 val contestsIdScoreboardGetResponse2_of_yojson : Yojson.Safe.t -> contestsIdScoreboardGetResponse2
@@ -655,47 +696,6 @@ val json_of_contestsIdScoreboardGetResponse2 : contestsIdScoreboardGetResponse2 
 
 module ContestsIdScoreboardGetResponse2 : sig
   type nonrec t = contestsIdScoreboardGetResponse2
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type contestsIdPutRequestStatus =
-  | Upcoming
-  | Running
-  | Finished
-
-val contestsIdPutRequestStatus_of_yojson : Yojson.Safe.t -> contestsIdPutRequestStatus
-val yojson_of_contestsIdPutRequestStatus : contestsIdPutRequestStatus -> Yojson.Safe.t
-val contestsIdPutRequestStatus_of_json : string -> contestsIdPutRequestStatus
-val json_of_contestsIdPutRequestStatus : contestsIdPutRequestStatus -> string
-
-module ContestsIdPutRequestStatus : sig
-  type nonrec t = contestsIdPutRequestStatus
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type contestsIdPutRequest = {
-  title: string option;
-  description: string option;
-  start_time: string option;
-  end_time: string option;
-  status: contestsIdPutRequestStatus option;
-}
-
-val create_contestsIdPutRequest : ?title:string -> ?description:string -> ?start_time:string -> ?end_time:string -> ?status:contestsIdPutRequestStatus -> unit -> contestsIdPutRequest
-val contestsIdPutRequest_of_yojson : Yojson.Safe.t -> contestsIdPutRequest
-val yojson_of_contestsIdPutRequest : contestsIdPutRequest -> Yojson.Safe.t
-val contestsIdPutRequest_of_json : string -> contestsIdPutRequest
-val json_of_contestsIdPutRequest : contestsIdPutRequest -> string
-
-module ContestsIdPutRequest : sig
-  type nonrec t = contestsIdPutRequest
-  val create : ?title:string -> ?description:string -> ?start_time:string -> ?end_time:string -> ?status:contestsIdPutRequestStatus -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
