@@ -91,7 +91,9 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
   try
     C.start c ;
     let s = Compiler.read_all_timeout ~timeout st in
-    let code = C.wait c in
+    (* If no data is received i.e., s = [], it means the process timed out or
+       had an internal error. *)
+    let code = if s = [] then 124 else C.wait c in
     C.rm c ;
     (* Example: [ "\001\000\000\000\000\000\000\0051021\n";
        "\002\000\000\000\000\000\000\004oops";

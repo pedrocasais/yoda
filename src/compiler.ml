@@ -60,7 +60,7 @@ let prepare_workdir job =
   (dir, src)
 
 (** Lê o output de um stream Docker com limite de tempo.
-    Devolve lista vazia se o timeout for atingido.
+    Devolve lista vazia se o timeout for atingido ou houver um erro interno.
     @param timeout limite em segundos *)
 let read_all_timeout ~timeout st =
   let result = ref None in
@@ -77,7 +77,7 @@ let read_all_timeout ~timeout st =
     | Some s -> s
     | None ->
         if Unix.gettimeofday () > deadline then []
-        else (Thread.delay 0.05 ; poll ())
+        else (Thread.delay 1.0 ; poll ())
   in
   poll ()
 
