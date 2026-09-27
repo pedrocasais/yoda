@@ -1,4 +1,4 @@
-(** Execução segura de código dentro de containers Docker isolados utilizando docker-api.
+(** Execução segura de código dentro de um container.
 
     Este módulo corre o código compilado para cada caso de teste
     e compara o output produzido com o output esperado. *)
@@ -22,42 +22,6 @@ open Job
     @param tc caso de teste a executar
     @return detalhe com o veredicto e o tempo de execução *)
 module C = Docker.Container
-
-(** Decodifica a saída de um container Docker.
-    @param data dados brutos da saída
-    @return par com a saída padrão e a saída de erro *)
-let decode_docker_output (chunks : string list) : string * string =
-  let read_uint32_be data pos =
-    (Char.code data.[pos] lsl 24)
-    lor (Char.code data.[pos + 1] lsl 16)
-    lor (Char.code data.[pos + 2] lsl 8)
-    lor Char.code data.[pos + 3]
-  in
-  let decode_frame data stdout stderr =
-    let total = String.length data in
-    let rec loop pos =
-      if pos = total then ()
-      else if total - pos < 8 then
-        invalid_arg "Incomplete Docker frame header"
-      else
-        let stream = Char.code data.[pos] in
-        let len = read_uint32_be data (pos + 4) in
-        if total - pos < 8 + len then
-          invalid_arg "Incomplete Docker frame payload" ;
-        let payload = String.sub data (pos + 8) len in
-        begin match stream with
-        | 1 -> Buffer.add_string stdout payload
-        | 2 -> Buffer.add_string stderr payload
-        | _ -> ()
-        end ;
-        loop (pos + 8 + len)
-    in
-    loop 0
-  in
-  let stdout = Buffer.create 128 in
-  let stderr = Buffer.create 128 in
-  List.iter (fun chunk -> decode_frame chunk stdout stderr) chunks ;
-  (Buffer.contents stdout, Buffer.contents stderr)
 
 (** Executa um único caso de teste num container Docker isolado.
     O volume é montado como só de leitura. Garante remoção do container em caso de erro.
@@ -92,18 +56,19 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
     C.start c ;
     let s, code =
       try
-        let s = Compiler.read_all_timeout ~timeout st in
-        let c = C.wait c in
-        (s, c)
-      with Compiler.Read_timeout ->
+        let s = Container.read_all_timeout ~timeout st in
+        let code = C.wait c in
+        C.rm c ; (s, code)
+      with Container.Read_timeout ->
         (try C.rm ~force:true c with _ -> ()) ;
+        (* Return a time-limit-exceeded result. *)
         ([], 124)
     in
     (* Example: [ "\001\000\000\000\000\000\000\0051021\n";
        "\002\000\000\000\000\000\000\004oops";
        "\001\000\000\000\000\000\000\006hello!" ]*)
     let stdout, stderr =
-      decode_docker_output (List.map (fun (_, b) -> b) s)
+      Container.decode_docker_output (List.map (fun (_, b) -> b) s)
     in
     let json =
       Openapi.SubmissionDetailOutput.create ~stdout ~stderr ~return_code:code
@@ -158,6 +123,8 @@ let run_all (job : job) (workdir : string) =
       (fun acc (d : Openapi.SubmissionDetail.t) -> max acc d.time_ms)
       0 details
   in
+  (* if the problem is not accepted, get the status of the first failed
+     testcase *)
   let global_status =
     if accepted = total then "accepted"
     else

@@ -1,4 +1,4 @@
-(** Compilação de código submetido pelo utilizador utilizando docker-api.
+(** Compilação de código submetido pelo utilizador utilizando um container.
 
     Este módulo é responsável por preparar o ambiente de trabalho,
     ler a configuração de linguagens do ficheiro {i languagesv2.yaml}
@@ -59,37 +59,6 @@ let prepare_workdir job =
   close_out oc ;
   (dir, src)
 
-exception Read_timeout
-
-(** Lê o output de um stream Docker com limite de tempo.
-    Devolve lista vazia se o timeout for atingido ou houver um erro interno.
-    @param timeout limite em segundos *)
-let read_all_timeout ~timeout st =
-  let mutex = Mutex.create () in
-  let result = ref None in
-  let worker () =
-    let value = try Ok (Docker.Stream.read_all st) with exn -> Error exn in
-    Mutex.lock mutex ;
-    result := Some value ;
-    Mutex.unlock mutex
-  in
-  ignore (Thread.create worker ()) ;
-  let deadline = Unix.gettimeofday () +. timeout in
-  let rec wait_for_result () =
-    Mutex.lock mutex ;
-    match !result with
-    | Some (Ok value) -> Mutex.unlock mutex ; value
-    | Some (Error exn) -> Mutex.unlock mutex ; raise exn
-    | None ->
-        let remaining = deadline -. Unix.gettimeofday () in
-        if remaining <= 0.0 then (Mutex.unlock mutex ; raise Read_timeout) ;
-        Mutex.unlock mutex ;
-        (* Poll frequently enough to avoid a one-second delay. *)
-        Thread.delay (min remaining 0.5) ;
-        wait_for_result ()
-  in
-  wait_for_result ()
-
 (** Executa um comando de compilação num container Docker isolado.
     Monta [dir] em [/work] com escrita permitida.
     Garante que o container é removido mesmo em caso de erro. *)
@@ -107,16 +76,23 @@ let run_in_sandbox ~dir ~lang cmd =
   let st = C.attach ~stdout:true ~stderr:true c `Stream in
   try
     C.start c ;
-    let s = read_all_timeout ~timeout:5.0 st in
-    let code = C.wait c in
-    C.rm c ;
-    let identify (ty, s) =
-      match ty with
-      | Docker.Stream.Stdout -> "out> " ^ s
-      | Docker.Stream.Stderr -> "err> " ^ s
+    let s, code =
+      try
+        let s = Container.read_all_timeout ~timeout:60.0 st in
+        let code = C.wait c in
+        C.rm c ; (s, code)
+      with Container.Read_timeout ->
+        (try C.rm ~force:true c with _ -> ()) ;
+        (* Return a time-limit-exceeded result. *)
+        ([], 124)
     in
-    let output = String.concat "\n" (List.map identify s) in
-    (code, output)
+    (* Example: [ "\001\000\000\000\000\000\000\0051021\n";
+       "\002\000\000\000\000\000\000\004oops";
+       "\001\000\000\000\000\000\000\006hello!" ]*)
+    let stdout, stderr =
+      Container.decode_docker_output (List.map (fun (_, b) -> b) s)
+    in
+    (code, stdout, stderr)
   with exn ->
     (try C.stop c with _ -> ()) ;
     (try C.rm c with _ -> ()) ;
@@ -131,5 +107,5 @@ let compile job dir _src =
   | None -> Ok dir
   | Some cmd -> (
     match run_in_sandbox ~dir ~lang:job.lang cmd with
-    | 0, _ -> Ok (dir ^ "/main")
-    | _, err -> Error err )
+    | 0, _, _ -> Ok (dir ^ "/main")
+    | c, stdout, stderr -> Error (c, stdout, stderr) )

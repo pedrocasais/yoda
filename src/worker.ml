@@ -336,19 +336,30 @@ let process_job submission_id =
       >>= fun (workdir, src) ->
       Lwt_preemptive.detach (fun () -> Compiler.compile job workdir src) ()
       >>= function
-      | Error err ->
-          Lwt_io.printf "Erro de compilação: %s\n%!" err
+      | Error (c, stdout, stderr) ->
+          (* print stdout and stderr *)
+          Lwt_io.printf "stdout: %s\n%!" stdout
+          >>= fun () ->
+          Lwt_io.printf "stderr: %s\n%!" stderr
+          >>= fun () ->
+          (* print return code *)
+          Lwt_io.printf "return code: %d\n%!" c
           >>= fun () ->
           write_result
             (Openapi.create_submission ~id:job.submission_id
                ~problem_id:job.problem_id ~language:job.lang
                ~status:"compile_error" ~score:0 ~time_ms:0 ~memory_kb:0
-               ~details:[] () )
+               ~details:
+                 [ Openapi.SubmissionDetail.create ~testcase_id:(-1)
+                     ~status:"compile_error" ~time_ms:(-1)
+                     ~output:
+                       (Openapi.SubmissionDetailOutput.create ~stdout ~stderr
+                          ~return_code:c () )
+                     () ]
+               () )
             job
       | Ok _ ->
-          Lwt_preemptive.detach
-            (fun () -> Docker_runner.run_all job workdir)
-            ()
+          Lwt_preemptive.detach (fun () -> Runner.run_all job workdir) ()
           >>= fun result -> write_result result job )
 
 (** Loop principal do worker.
