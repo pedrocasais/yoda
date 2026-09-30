@@ -55,7 +55,9 @@ let prepare_workdir job =
   ensure_dir dir ;
   (* job.source_code contains several source artifacts in json format:
      SourceArtifacts *)
-  let sources = Openapi.SourceArtifacts.of_json job.source_code in
+  let sources =
+    try Openapi.SourceArtifacts.of_json job.source_code with _ -> []
+  in
   (* if there is just one source artifact, we need to match if the extension
      matches the chosen language and use common naming conventions. *)
   if List.length sources = 1 then
@@ -85,7 +87,7 @@ let prepare_workdir job =
         sources
     in
     Ok dir
-  else Error "No source files have been provided"
+  else Error "No source files have been provided or are invalid"
 
 (** Executa um comando de compilação num container Docker isolado.
     Monta [dir] em [/work] com escrita permitida.
