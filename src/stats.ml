@@ -35,14 +35,21 @@ let current_minute () = int_of_float (Unix.gettimeofday () /. 60.)
 
 let minute_key prefix = Printf.sprintf "%s:%d" prefix (current_minute ())
 
-let incr_keys conn keys =
+let incr_persistent conn keys =
   let script =
     "for i, key in ipairs(KEYS) do " ^ "redis.call('INCR', key) "
-    ^ "redis.call('EXPIRE', key, 120) " ^ "end return 1"
+    ^ "end return 1"
   in
   Client.send_custom_request conn
     (["EVAL"; script; string_of_int (List.length keys)] @ keys)
   >|= fun _ -> ()
+
+let incr_minute conn key =
+  let script =
+    "redis.call('INCR', KEYS[1]) " ^ "redis.call('EXPIRE', KEYS[1], 120) "
+    ^ "return 1"
+  in
+  Client.send_custom_request conn ["EVAL"; script; "1"; key] >|= fun _ -> ()
 
 let get_int = function None -> 0 | Some value -> int_of_string value
 
@@ -52,21 +59,24 @@ let get_list_length conn key =
   Client.send_custom_request conn ["LLEN"; key]
   >|= function `Int length -> length | _ -> 0
 
-let record_keys keys = Lwt_pool.use Db.pool (fun conn -> incr_keys conn keys)
-
 let record_yodab_request () =
-  record_keys
-    [key_yodab_requests_total; minute_key prefix_yodab_requests_minute]
+  Lwt_pool.use Db.pool (fun conn ->
+      incr_persistent conn [key_yodab_requests_total]
+      >>= fun () ->
+      incr_minute conn (minute_key prefix_yodab_requests_minute) )
 
 let record_submission_created () =
-  record_keys
-    [ key_submissions_total
-    ; minute_key prefix_submissions_minute
-    ; minute_key prefix_queued_jobs_minute ]
+  Lwt_pool.use Db.pool (fun conn ->
+      incr_persistent conn [key_submissions_total]
+      >>= fun () ->
+      incr_minute conn (minute_key prefix_submissions_minute)
+      >>= fun () -> incr_minute conn (minute_key prefix_queued_jobs_minute) )
 
 let record_processed_job () =
-  record_keys
-    [key_processed_jobs_total; minute_key prefix_processed_jobs_minute]
+  Lwt_pool.use Db.pool (fun conn ->
+      incr_persistent conn [key_processed_jobs_total]
+      >>= fun () ->
+      incr_minute conn (minute_key prefix_processed_jobs_minute) )
 
 let snapshot conn =
   let requests_minute = minute_key prefix_yodab_requests_minute in
