@@ -258,26 +258,37 @@ let getSubmissionsIdDetails request =
                       (Helpers.error_msg
                          "Forbidden - not allowed to access this submission" )
                   else
-                    (* [TODO] apenas guardámos o primeiro artefacto da
-                       solução; reconstruímos o nome de ficheiro com a
-                       extensão '.none' *)
+                    (* If we only stored the first solution artifact
+                       (legacy), we reconstruct the filename using the
+                       `.unknown` extension; otherwise, we use the original
+                       extension, with support for all artifacts. *)
                     let sub =
                       Helpers.makeSubmission user_id user_role (lst @ l)
                     in
                     let content = List.assoc "source_code" l in
                     (*let lang = List.assoc "language" l in*)
-                    let ext = ".none" in
-                    let filename = Printf.sprintf "main.%s" ext in
-                    let artifacts =
-                      [Openapi.create_sourceArtifact ~filename ~content ()]
-                    in
-                    let full =
-                      Openapi.create_submissionFullDetails ~submission:sub
-                        ~source_artifacts:artifacts ()
+                    (* check if source code is valid json *)
+                    let fulldetails =
+                      try
+                        let artifacts =
+                          Openapi.SourceArtifacts.of_json content
+                        in
+                        Openapi.create_submissionFullDetails ~submission:sub
+                          ~source_artifacts:artifacts ()
+                      with _ ->
+                        (* supports legacy format (plain text) *)
+                        let ext = "unknown" in
+                        let filename = Printf.sprintf "main.%s" ext in
+                        let artifacts =
+                          [ Openapi.create_sourceArtifact ~filename ~content
+                              () ]
+                        in
+                        Openapi.create_submissionFullDetails ~submission:sub
+                          ~source_artifacts:artifacts ()
                     in
                     Dream.json ~code:200
                       ~headers:[("Content-Type", "application/json")]
-                      (Openapi.SubmissionFullDetails.to_json full) ) ) )
+                      (Openapi.SubmissionFullDetails.to_json fulldetails) ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
