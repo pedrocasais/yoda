@@ -8,10 +8,12 @@ type yodab_snapshot =
   ; submissions_per_minute: int }
 
 type yodac_snapshot =
-  { queued_jobs: int
+  { queued_jobs_total: int
   ; queued_jobs_per_minute: int
   ; processed_jobs_total: int
   ; processed_jobs_per_minute: int }
+
+type snapshot = yodab_snapshot * yodac_snapshot
 
 let key_yodab_requests_total = "stats:yodab:requests:total"
 
@@ -19,74 +21,67 @@ let key_submissions_total = "stats:yodab:submissions:total"
 
 let key_processed_jobs_total = "stats:yodac:processed_jobs:total"
 
-let key_prefix_yodab_requests_minute = "stats:yodab:requests:per_minute"
-
-let key_prefix_submissions_minute = "stats:yodab:submissions:per_minute"
-
-let key_prefix_queued_jobs_minute = "stats:yodac:queued_jobs:per_minute"
-
-let key_prefix_processed_jobs_minute =
-  "stats:yodac:processed_jobs:per_minute"
-
 let key_submission_queue = "submission:job"
 
-let current_minute_bucket () = int_of_float (Unix.time () /. 60.)
+let key_yodab_requests_minute = "stats:yodab:requests:per_minute"
 
-let minute_key prefix =
-  Printf.sprintf "%s:%d" prefix (current_minute_bucket ())
+let key_submissions_minute = "stats:yodab:submissions:per_minute"
 
-let incr_key conn key =
-  Client.send_custom_request conn ["INCR"; key] >|= fun _ -> ()
+let key_queued_jobs_minute = "stats:yodac:queued_jobs:per_minute"
 
-let get_int_key conn key =
-  Client.get conn key
-  >|= function Some v -> ( try int_of_string v with _ -> 0 ) | None -> 0
+let key_processed_jobs_minute = "stats:yodac:processed_jobs:per_minute"
 
-let get_list_len conn key =
+let incr_keys conn keys =
+  let script =
+    "for i, key in ipairs(KEYS) do " ^ "redis.call('INCR', key) "
+    ^ "redis.call('EXPIRE', key, 60) " ^ "end return 1"
+  in
+  Client.send_custom_request conn
+    (["EVAL"; script; string_of_int (List.length keys)] @ keys)
+  >|= fun _ -> ()
+
+let get_int = function None -> 0 | Some value -> int_of_string value
+
+let get_string conn key = Client.get conn key
+
+let get_list_length conn key =
   Client.send_custom_request conn ["LLEN"; key]
-  >|= function `Int n -> n | _ -> 0
+  >|= function `Int length -> length | _ -> 0
+
+let record_keys keys = Lwt_pool.use Db.pool (fun conn -> incr_keys conn keys)
 
 let record_yodab_request () =
-  Lwt_pool.use Db.pool (fun conn ->
-      incr_key conn key_yodab_requests_total
-      >>= fun () ->
-      incr_key conn (minute_key key_prefix_yodab_requests_minute) )
+  record_keys [key_yodab_requests_total; key_yodab_requests_minute]
 
 let record_submission_created () =
-  Lwt_pool.use Db.pool (fun conn ->
-      incr_key conn key_submissions_total
-      >>= fun () ->
-      incr_key conn (minute_key key_prefix_submissions_minute)
-      >>= fun () -> incr_key conn (minute_key key_prefix_queued_jobs_minute) )
+  record_keys
+    [key_submissions_total; key_submissions_minute; key_queued_jobs_minute]
 
 let record_processed_job () =
-  Lwt_pool.use Db.pool (fun conn ->
-      incr_key conn key_processed_jobs_total
-      >>= fun () ->
-      incr_key conn (minute_key key_prefix_processed_jobs_minute) )
+  record_keys [key_processed_jobs_total; key_processed_jobs_minute]
 
 let snapshot conn =
-  get_int_key conn key_yodab_requests_total
-  >>= fun yodab_requests_total ->
-  get_int_key conn (minute_key key_prefix_yodab_requests_minute)
-  >>= fun yodab_requests_per_minute ->
-  get_int_key conn key_submissions_total
+  get_string conn key_yodab_requests_total
+  >>= fun requests_total ->
+  get_string conn key_yodab_requests_minute
+  >>= fun requests_per_minute ->
+  get_string conn key_submissions_total
   >>= fun submissions_total ->
-  get_int_key conn (minute_key key_prefix_submissions_minute)
+  get_string conn key_submissions_minute
   >>= fun submissions_per_minute ->
-  get_list_len conn key_submission_queue
-  >>= fun queued_jobs ->
-  get_int_key conn (minute_key key_prefix_queued_jobs_minute)
+  get_list_length conn key_submission_queue
+  >>= fun queued_jobs_total ->
+  get_string conn key_queued_jobs_minute
   >>= fun queued_jobs_per_minute ->
-  get_int_key conn key_processed_jobs_total
+  get_string conn key_processed_jobs_total
   >>= fun processed_jobs_total ->
-  get_int_key conn (minute_key key_prefix_processed_jobs_minute)
+  get_string conn key_processed_jobs_minute
   >|= fun processed_jobs_per_minute ->
-  ( { yodab_requests_total
-    ; yodab_requests_per_minute
-    ; submissions_total
-    ; submissions_per_minute }
-  , { queued_jobs
-    ; queued_jobs_per_minute
-    ; processed_jobs_total
-    ; processed_jobs_per_minute } )
+  ( { yodab_requests_total= get_int requests_total
+    ; yodab_requests_per_minute= get_int requests_per_minute
+    ; submissions_total= get_int submissions_total
+    ; submissions_per_minute= get_int submissions_per_minute }
+  , { queued_jobs_total
+    ; queued_jobs_per_minute= get_int queued_jobs_per_minute
+    ; processed_jobs_total= get_int processed_jobs_total
+    ; processed_jobs_per_minute= get_int processed_jobs_per_minute } )
