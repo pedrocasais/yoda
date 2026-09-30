@@ -363,7 +363,18 @@ let rec worker () =
 (** Arranca 4 workers em paralelo via [Lwt.join] e [Lwt_preemptive].
     Configura o thread pool com mínimo 4 e máximo 16 threads. *)
 let run () =
-  Lwt_preemptive.set_bounds (4, 16) ;
+  let worker_count () =
+    match Sys.getenv_opt "YODAC_WORKERS" with
+    | None -> 4
+    | Some value -> (
+      try
+        let n = int_of_string value in
+        if n > 0 then n else 4
+      with Failure _ -> 4 )
+  in
+  let workers = worker_count () in
+  let max_threads = workers * 4 in
+  Lwt_preemptive.set_bounds (workers, max_threads) ;
   Lwt_main.run
     ( Lwt.catch
         (fun () ->
@@ -374,5 +385,6 @@ let run () =
             "YodaC: failed to initialize runtime language config: %s\n%!"
             (Printexc.to_string exn) )
     >>= fun () ->
-    Lwt_io.printf "YodaC worker iniciado em %s:%d...\n%!" Db.host Db.port
-    >>= fun () -> Lwt.join [worker (); worker (); worker (); worker ()] )
+    Lwt_io.printf "YodaC worker iniciado em %s:%d com %d workers...\n%!"
+      Db.host Db.port workers
+    >>= fun () -> Lwt.join (List.init workers (fun _ -> worker ())) )
