@@ -82,6 +82,8 @@ let prepare_workdir job =
           let content = s.content in
           let filename = s.filename in
           let file = Printf.sprintf "%s/%s" dir filename in
+          (* add proper directory structure *)
+          ensure_dir (Filename.dirname file) ;
           let oc = open_out file in
           output_string oc content ; close_out oc ; () )
         sources
