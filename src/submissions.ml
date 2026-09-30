@@ -110,15 +110,12 @@ let postSubmissions request =
           ; "language"
           ; solution.language
           ; "source_code"
-            (* [TODO] just grab the first artifact content; do the
-               remaining *)
           ; ( if solution.source_artifacts = [] then
                 failwith
                   "No source artifacts provided. Please ensure at least one \
                    source artifact."
-              else
-                (List.hd solution.source_artifacts).content
-                |> Helpers.unscape_json_string ) ]
+              else Openapi.SourceArtifacts.to_json solution.source_artifacts
+            ) ]
         >>= fun _ ->
         Client.send_custom_request conn
           ["LPUSH"; "user:" ^ user_id ^ ":submissions"; string_of_int next_id]

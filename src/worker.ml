@@ -314,13 +314,16 @@ let process_job submission_id =
   >>= fun (time_limit_ms, memory_limit_mb) ->
   testcases problem_id
   >>= fun tests ->
+  (* source_code contains several source artifacts in json format:
+     SourceArtifacts *)
+  let source_artifacts_json = source_code in
   let job_json =
     `Assoc
       [ ("submission_id", `Int (int_of_string submission_id))
       ; ("user_id", `Int user_id)
       ; ("problem_id", `Int problem_id)
       ; ("language", `String language)
-      ; ("source_code", `String source_code)
+      ; ("source_code", `String source_artifacts_json)
       ; ("time_limit_ms", `Int time_limit_ms)
       ; ("memory_limit_mb", `Int memory_limit_mb)
       ; ("testcases", `List tests) ]
@@ -333,34 +336,37 @@ let process_job submission_id =
         job.submission_id job.lang
       >>= fun () ->
       Lwt_preemptive.detach (fun () -> Compiler.prepare_workdir job) ()
-      >>= fun (workdir, src) ->
-      Lwt_preemptive.detach (fun () -> Compiler.compile job workdir src) ()
       >>= function
-      | Error (c, stdout, stderr) ->
-          (* print stdout and stderr *)
-          Lwt_io.printf "stdout: %s\n%!" stdout
-          >>= fun () ->
-          Lwt_io.printf "stderr: %s\n%!" stderr
-          >>= fun () ->
-          (* print return code *)
-          Lwt_io.printf "return code: %d\n%!" c
-          >>= fun () ->
-          write_result
-            (Openapi.create_submission ~id:job.submission_id
-               ~problem_id:job.problem_id ~language:job.lang
-               ~status:"compile_error" ~score:0 ~time_ms:0 ~memory_kb:0
-               ~details:
-                 [ Openapi.SubmissionDetail.create ~testcase_id:(-1)
-                     ~status:"compile_error" ~time_ms:(-1)
-                     ~output:
-                       (Openapi.SubmissionDetailOutput.create ~stdout ~stderr
-                          ~return_code:c () )
-                     () ]
-               () )
-            job
-      | Ok _ ->
-          Lwt_preemptive.detach (fun () -> Runner.run_all job workdir) ()
-          >>= fun result -> write_result result job )
+      | Error e ->
+          Lwt_io.printf "Error: %s\n%!" e >>= fun () -> Lwt.return_unit
+      | Ok workdir -> (
+          Lwt_preemptive.detach (fun () -> Compiler.compile job workdir) ()
+          >>= function
+          | Error (c, stdout, stderr) ->
+              (* print stdout and stderr *)
+              Lwt_io.printf "stdout: %s\n%!" stdout
+              >>= fun () ->
+              Lwt_io.printf "stderr: %s\n%!" stderr
+              >>= fun () ->
+              (* print return code *)
+              Lwt_io.printf "return code: %d\n%!" c
+              >>= fun () ->
+              write_result
+                (Openapi.create_submission ~id:job.submission_id
+                   ~problem_id:job.problem_id ~language:job.lang
+                   ~status:"compile_error" ~score:0 ~time_ms:0 ~memory_kb:0
+                   ~details:
+                     [ Openapi.SubmissionDetail.create ~testcase_id:(-1)
+                         ~status:"compile_error" ~time_ms:(-1)
+                         ~output:
+                           (Openapi.SubmissionDetailOutput.create ~stdout
+                              ~stderr ~return_code:c () )
+                         () ]
+                   () )
+                job
+          | Ok _ ->
+              Lwt_preemptive.detach (fun () -> Runner.run_all job workdir) ()
+              >>= fun result -> write_result result job ) )
 
 (** Loop principal do worker.
     Bloqueia com [BRPOP] na fila [submission:job] até haver um job,

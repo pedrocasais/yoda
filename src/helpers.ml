@@ -138,49 +138,6 @@ let makeSubmission user_id user_role lst =
     ~owner:(user_id = List.assoc "user_id" lst)
     ()
 
-let escape_json_string s =
-  let b = Buffer.create (String.length s + 16) in
-  String.iter
-    (function
-      | '"' -> Buffer.add_string b "\\\""
-      | '\\' -> Buffer.add_string b "\\\\"
-      | '\n' -> Buffer.add_string b "\\n"
-      | '\r' -> Buffer.add_string b "\\r"
-      | '\t' -> Buffer.add_string b "\\t"
-      | c -> Buffer.add_char b c )
-    s ;
-  Buffer.contents b
-
-let unscape_json_string s =
-  let b = Buffer.create (String.length s) in
-  let rec aux i =
-    if i >= String.length s then ()
-    else if s.[i] = '\\' && i + 1 < String.length s then (
-      match s.[i + 1] with
-      | '"' ->
-          Buffer.add_char b '"' ;
-          aux (i + 2)
-      | '\\' ->
-          Buffer.add_char b '\\' ;
-          aux (i + 2)
-      | 'n' ->
-          Buffer.add_char b '\n' ;
-          aux (i + 2)
-      | 'r' ->
-          Buffer.add_char b '\r' ;
-          aux (i + 2)
-      | 't' ->
-          Buffer.add_char b '\t' ;
-          aux (i + 2)
-      | _ ->
-          Buffer.add_char b s.[i] ;
-          aux (i + 1) )
-    else (
-      Buffer.add_char b s.[i] ;
-      aux (i + 1) )
-  in
-  aux 0 ; Buffer.contents b
-
 let error_msg msg =
   let error = Openapi.ErrorResponse.create ~error:msg () in
   Openapi.ErrorResponse.to_json error

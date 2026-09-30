@@ -46,18 +46,46 @@ let ensure_dir path =
   Unix.chmod path 0o777
 
 (** Prepara a diretoria de trabalho da submissão e escreve o código fonte.
-    Cria [{work_root}/submission_{id}/main.{ext}].
+    Cria [{work_root}/submission_{id}/main.{ext}] se existir apenas um ficheiro fonte.
+    Cria [{work_root}/submission_{id}/{filename}] para cada ficheiro fonte se houver mais de um.
     @return par [(dir, src)] com a diretoria e o ficheiro fonte. *)
 let prepare_workdir job =
   ensure_dir work_root ;
   let dir = Printf.sprintf "%s/submission_%d" work_root job.submission_id in
   ensure_dir dir ;
-  let ext = lang_ext job.lang in
-  let src = Printf.sprintf "%s/main.%s" dir ext in
-  let oc = open_out src in
-  output_string oc job.source_code ;
-  close_out oc ;
-  (dir, src)
+  (* job.source_code contains several source artifacts in json format:
+     SourceArtifacts *)
+  let sources = Openapi.SourceArtifacts.of_json job.source_code in
+  (* if there is just one source artifact, we need to match if the extension
+     matches the chosen language and use common naming conventions. *)
+  if List.length sources = 1 then
+    let s = List.hd sources in
+    try
+      let ext = lang_ext job.lang in
+      if s.filename |> String.split_on_char '.' |> List.rev |> List.hd <> ext
+      then Error "Extension does not match the chosen language"
+      else
+        let src = Printf.sprintf "%s/main.%s" dir ext in
+        let oc = open_out src in
+        output_string oc s.content ;
+        close_out oc ;
+        Ok dir
+    with _ -> Error "Error occurred while processing the source artifact"
+  else if List.length sources > 1 then
+    (* if there are multiple source artifacts, we need to process each one
+       with the given namings. *)
+    let () =
+      List.iter
+        (fun (s : Openapi.SourceArtifact.t) ->
+          let content = s.content in
+          let filename = s.filename in
+          let file = Printf.sprintf "%s/%s" dir filename in
+          let oc = open_out file in
+          output_string oc content ; close_out oc ; () )
+        sources
+    in
+    Ok dir
+  else Error "No source files have been provided"
 
 (** Executa um comando de compilação num container Docker isolado.
     Monta [dir] em [/work] com escrita permitida.
@@ -102,7 +130,7 @@ let run_in_sandbox ~dir ~lang cmd =
     Para linguagens interpretadas devolve [Ok dir] sem compilar.
     @return [Ok path] com o caminho do binário, ou [Error msg] se falhar. *)
 
-let compile job dir _src =
+let compile job dir =
   match lang_compile_cmd job.lang with
   | None -> Ok dir
   | Some cmd -> (
