@@ -1112,6 +1112,10 @@ components:
           type: boolean
         owner_id:
           type: integer
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-10-02T14:30:00Z"
       required: ["id", "problem_id", "status", "score", "time_ms", "memory_kb", "details"]
 
     Submissions:

@@ -347,9 +347,10 @@ type submission = {
   details: submissionDetails;
   owner: bool option;
   owner_id: int option;
+  created_at: string option;
 }
 
-val create_submission : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> ?owner:bool -> ?owner_id:int -> unit -> submission
+val create_submission : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> ?owner:bool -> ?owner_id:int -> ?created_at:string -> unit -> submission
 val submission_of_yojson : Yojson.Safe.t -> submission
 val yojson_of_submission : submission -> Yojson.Safe.t
 val submission_of_json : string -> submission
@@ -357,7 +358,7 @@ val json_of_submission : submission -> string
 
 module Submission : sig
   type nonrec t = submission
-  val create : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> ?owner:bool -> ?owner_id:int -> unit -> t
+  val create : id:int -> problem_id:int -> ?language:string -> status:string -> score:int -> time_ms:int -> memory_kb:int -> details:submissionDetails -> ?owner:bool -> ?owner_id:int -> ?created_at:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

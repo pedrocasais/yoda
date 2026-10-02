@@ -141,6 +141,12 @@ let makeSubmission user_id user_role lst =
           || Openapi.userRole_of_json user_role = Openapi.Judge
         then Some (int_of_string (List.assoc "user_id" lst))
         else None )
+    ?created_at:
+      ( if
+          Openapi.userRole_of_json user_role = Openapi.Admin
+          || Openapi.userRole_of_json user_role = Openapi.Judge
+        then try Some (List.assoc "created_at" lst) with Not_found -> None
+        else None )
     ()
 
 let error_msg msg =

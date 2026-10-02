@@ -77,6 +77,10 @@ let postSubmissions request =
         in
         let key = "submission:" ^ string_of_int next_id in
         let key2 = "submission:" ^ string_of_int next_id ^ ":solution" in
+        let current_date =
+          (* get current date and time as RFC 3339 string *)
+          Helpers.date ()
+        in
         Client.multi conn
         >>= fun _ ->
         Client.send_custom_request conn
@@ -96,7 +100,9 @@ let postSubmissions request =
           ; "memory_kb"
           ; "0"
           ; "details"
-          ; "[" ^ String.concat "," testcases ^ "]" ]
+          ; "[" ^ String.concat "," testcases ^ "]"
+          ; "created_at"
+          ; current_date ]
         >>= fun _ ->
         (* get current user id *)
         let user_id = Helpers.get_actor_id request in
@@ -146,7 +152,8 @@ let postSubmissions request =
             let sub =
               Openapi.create_submission ~id:next_id
                 ~problem_id:solution.problem_id ~status:"queued" ~score:0
-                ~time_ms:0 ~memory_kb:0 ~details:[] ()
+                ~time_ms:0 ~memory_kb:0 ~details:[] ~created_at:current_date
+                ()
             in
             Dream.json ~code:201
               ~headers:[("Content-Type", "application/json")]

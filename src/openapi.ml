@@ -1004,10 +1004,11 @@ type submission = {
   details: submissionDetails;
   owner: bool option;
   owner_id: int option;
+  created_at: string option;
 }
 
-let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details ?owner ?owner_id () : submission =
-  { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id }
+let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details ?owner ?owner_id ?created_at () : submission =
+  { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id; created_at }
 
 let submission_of_yojson (x : Yojson.Safe.t) : submission =
   match x with
@@ -1072,7 +1073,12 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
     in
-    { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id }
+    let created_at =
+      match assoc "created_at" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id; created_at }
   | _ -> Atdml_runtime.Yojson.bad_type "submission" x
 
 let yojson_of_submission (x : submission) : Yojson.Safe.t =
@@ -1087,6 +1093,7 @@ let yojson_of_submission (x : submission) : Yojson.Safe.t =
     [("details", yojson_of_submissionDetails x.details)];
     (match x.owner with None -> [] | Some v -> [("owner", Atdml_runtime.Yojson.yojson_of_bool v)]);
     (match x.owner_id with None -> [] | Some v -> [("owner_id", Atdml_runtime.Yojson.yojson_of_int v)]);
+    (match x.created_at with None -> [] | Some v -> [("created_at", Atdml_runtime.Yojson.yojson_of_string v)]);
   ])
 
 let submission_of_json s =

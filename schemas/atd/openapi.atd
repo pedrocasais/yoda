@@ -170,6 +170,7 @@ type submission = {
   details : submissionDetails;
   ?owner : bool option;
   ?owner_id : int option;
+  ?created_at : string option;
 } 
 
 type problemUpdateRequest = {
