@@ -1003,10 +1003,11 @@ type submission = {
   memory_kb: int;
   details: submissionDetails;
   owner: bool option;
+  owner_id: int option;
 }
 
-let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details ?owner () : submission =
-  { id; problem_id; language; status; score; time_ms; memory_kb; details; owner }
+let create_submission ~id ~problem_id ?language ~status ~score ~time_ms ~memory_kb ~details ?owner ?owner_id () : submission =
+  { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id }
 
 let submission_of_yojson (x : Yojson.Safe.t) : submission =
   match x with
@@ -1066,7 +1067,12 @@ let submission_of_yojson (x : Yojson.Safe.t) : submission =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (Atdml_runtime.Yojson.bool_of_yojson v)
     in
-    { id; problem_id; language; status; score; time_ms; memory_kb; details; owner }
+    let owner_id =
+      match assoc "owner_id" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
+    in
+    { id; problem_id; language; status; score; time_ms; memory_kb; details; owner; owner_id }
   | _ -> Atdml_runtime.Yojson.bad_type "submission" x
 
 let yojson_of_submission (x : submission) : Yojson.Safe.t =
@@ -1080,6 +1086,7 @@ let yojson_of_submission (x : submission) : Yojson.Safe.t =
     [("memory_kb", Atdml_runtime.Yojson.yojson_of_int x.memory_kb)];
     [("details", yojson_of_submissionDetails x.details)];
     (match x.owner with None -> [] | Some v -> [("owner", Atdml_runtime.Yojson.yojson_of_bool v)]);
+    (match x.owner_id with None -> [] | Some v -> [("owner_id", Atdml_runtime.Yojson.yojson_of_int v)]);
   ])
 
 let submission_of_json s =

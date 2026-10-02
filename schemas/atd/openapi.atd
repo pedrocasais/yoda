@@ -169,6 +169,7 @@ type submission = {
   memory_kb : int;
   details : submissionDetails;
   ?owner : bool option;
+  ?owner_id : int option;
 } 
 
 type problemUpdateRequest = {

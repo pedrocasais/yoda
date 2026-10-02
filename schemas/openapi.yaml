@@ -2,7 +2,7 @@ openapi: 3.0.4
 info:
   title: "API specification for Yoda"
   description: "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications."
-  version: "1.7"
+  version: "1.7.1"
 
 paths:
   /admin/users:
@@ -1110,6 +1110,8 @@ components:
           $ref: "#/components/schemas/SubmissionDetails"
         owner:
           type: boolean
+        owner_id:
+          type: integer
       required: ["id", "problem_id", "status", "score", "time_ms", "memory_kb", "details"]
 
     Submissions:

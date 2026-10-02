@@ -96,29 +96,25 @@ let getAllTestCases conn lst =
    @return devolve uma lista de tipo [Openapi.submissionDetails list] para ser usada na criação de [[Openapi.submission list]]
    *)
 let makeSubmissionDetailsList user_id user_role l =
-  let user_role =
-    Option.value ~default:(Openapi.UserRole.to_json Openapi.User) user_role
-  in
   Openapi.SubmissionDetails.of_json (List.assoc "details" l)
   |> List.map (fun (sd : Openapi.SubmissionDetail.t) ->
-      if
-        Openapi.userRole_of_json user_role = Openapi.Admin
-        || Openapi.userRole_of_json user_role = Openapi.Judge
-        || Openapi.userRole_of_json user_role = Openapi.User
-           && user_id = List.assoc "user_id" l
-      then
-        Openapi.create_submissionDetail ~testcase_id:sd.testcase_id
-          ~status:sd.status ~time_ms:sd.time_ms
-          ~output:
-            (Option.value
-               ~default:
-                 (Openapi.SubmissionDetailOutput.create ~stdout:"" ~stderr:""
-                    ~return_code:(-1) () )
-               sd.output )
-          ()
-      else
-        Openapi.create_submissionDetail ~testcase_id:sd.testcase_id
-          ~status:sd.status ~time_ms:sd.time_ms () )
+      Openapi.create_submissionDetail ~testcase_id:sd.testcase_id
+        ~status:sd.status ~time_ms:sd.time_ms
+        ?output:
+          ( if
+              Openapi.userRole_of_json user_role = Openapi.Admin
+              || Openapi.userRole_of_json user_role = Openapi.Judge
+              || Openapi.userRole_of_json user_role = Openapi.User
+                 && user_id = List.assoc "user_id" l
+            then
+              Some
+                (Option.value
+                   ~default:
+                     (Openapi.SubmissionDetailOutput.create ~stdout:""
+                        ~stderr:"" ~return_code:(-1) () )
+                   sd.output )
+            else None )
+        () )
 
 (** [makeSubmission user_id user_role lst] cria uma submissão com os dados fornecidos.
     @param user_id ID do utilizador
@@ -126,6 +122,9 @@ let makeSubmissionDetailsList user_id user_role l =
     @param lst Lista de dados da submissão
     @return Devolve uma submissão de tipo [Openapi.submission] *)
 let makeSubmission user_id user_role lst =
+  let user_role =
+    Option.value ~default:(Openapi.UserRole.to_json Openapi.User) user_role
+  in
   Openapi.create_submission
     ~id:(int_of_string (List.assoc "id" lst))
     ~problem_id:(int_of_string (List.assoc "problem_id" lst))
@@ -136,6 +135,12 @@ let makeSubmission user_id user_role lst =
     ~memory_kb:(int_of_string (List.assoc "memory_kb" lst))
     ~details:(makeSubmissionDetailsList user_id user_role lst)
     ~owner:(user_id = List.assoc "user_id" lst)
+    ?owner_id:
+      ( if
+          Openapi.userRole_of_json user_role = Openapi.Admin
+          || Openapi.userRole_of_json user_role = Openapi.Judge
+        then Some (int_of_string (List.assoc "user_id" lst))
+        else None )
     ()
 
 let error_msg msg =

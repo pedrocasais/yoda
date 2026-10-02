@@ -28,6 +28,9 @@
     },
     "owner": {
       "type": "boolean"
+    },
+    "owner_id": {
+      "type": "integer"
     }
   },
   "required": [
