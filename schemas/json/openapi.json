@@ -1680,6 +1680,9 @@
           },
           "return_code": {
             "type": "integer"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/SubmissionDetailOutputMeta"
           }
         },
         "required": [
@@ -1687,6 +1690,14 @@
           "stderr",
           "return_code"
         ]
+      },
+      "SubmissionDetailOutputMeta": {
+        "type": "object",
+        "properties": {
+          "stderr_score": {
+            "type": "integer"
+          }
+        }
       },
       "SubmissionFullDetails": {
         "type": "object",

@@ -85,7 +85,7 @@
  (name yodac_lib)
  (public_name yoda.yodac_lib)
  (wrapped false)
- (modules container compiler runner job worker common)
+ (modules container compiler runner job worker common testcases_matcher)
  (libraries
   api_types
   valkey

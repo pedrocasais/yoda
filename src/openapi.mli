@@ -278,13 +278,33 @@ module TestCase : sig
   val to_json : t -> string
 end
 
+type submissionDetailOutputMeta = {
+  stderr_score: int option;
+}
+
+val create_submissionDetailOutputMeta : ?stderr_score:int -> unit -> submissionDetailOutputMeta
+val submissionDetailOutputMeta_of_yojson : Yojson.Safe.t -> submissionDetailOutputMeta
+val yojson_of_submissionDetailOutputMeta : submissionDetailOutputMeta -> Yojson.Safe.t
+val submissionDetailOutputMeta_of_json : string -> submissionDetailOutputMeta
+val json_of_submissionDetailOutputMeta : submissionDetailOutputMeta -> string
+
+module SubmissionDetailOutputMeta : sig
+  type nonrec t = submissionDetailOutputMeta
+  val create : ?stderr_score:int -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type submissionDetailOutput = {
   stdout: string;
   stderr: string;
   return_code: int;
+  meta: submissionDetailOutputMeta option;
 }
 
-val create_submissionDetailOutput : stdout:string -> stderr:string -> return_code:int -> unit -> submissionDetailOutput
+val create_submissionDetailOutput : stdout:string -> stderr:string -> return_code:int -> ?meta:submissionDetailOutputMeta -> unit -> submissionDetailOutput
 val submissionDetailOutput_of_yojson : Yojson.Safe.t -> submissionDetailOutput
 val yojson_of_submissionDetailOutput : submissionDetailOutput -> Yojson.Safe.t
 val submissionDetailOutput_of_json : string -> submissionDetailOutput
@@ -292,7 +312,7 @@ val json_of_submissionDetailOutput : submissionDetailOutput -> string
 
 module SubmissionDetailOutput : sig
   type nonrec t = submissionDetailOutput
-  val create : stdout:string -> stderr:string -> return_code:int -> unit -> t
+  val create : stdout:string -> stderr:string -> return_code:int -> ?meta:submissionDetailOutputMeta -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

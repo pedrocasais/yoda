@@ -10,6 +10,9 @@
     },
     "return_code": {
       "type": "integer"
+    },
+    "meta": {
+      "$ref": "#/components/schemas/SubmissionDetailOutputMeta"
     }
   },
   "required": [

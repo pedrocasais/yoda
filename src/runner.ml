@@ -64,17 +64,31 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
         (* Return a time-limit-exceeded result. *)
         ([], 124)
     in
+    (** Calculate the time taken for the test case to run. *)
+    let time_ms = int_of_float ((Unix.gettimeofday () -. start) *. 1000.) in
     (* Example: [ "\001\000\000\000\000\000\000\0051021\n";
        "\002\000\000\000\000\000\000\004oops";
        "\001\000\000\000\000\000\000\006hello!" ]*)
     let stdout, stderr =
       Container.decode_docker_output (List.map (fun (_, b) -> b) s)
     in
+    (* there is the possibility of having a leak of information if the user prints the input to stdout or stderr *)
+    (* as we know the testcase input (tc.input) can we find a way to detect it in the output? and if yes, replace with secret information! *)
+    let tokens_in = Testcases_matcher.tokens_of_string tc.input in
+    let tokens_out = Testcases_matcher.tokens_of_string stderr in
+    let distance =
+      Testcases_matcher.distance_to_any_token_sublist tokens_in tokens_out
+    in
+    let score = Testcases_matcher.similarity tokens_in distance in
+    let stderr = if score >= 0.90 then "*** Secret ***" else stderr in
     let json =
       Openapi.SubmissionDetailOutput.create ~stdout ~stderr ~return_code:code
+        ~meta:
+          (Openapi.SubmissionDetailOutputMeta.create
+             ~stderr_score:(int_of_float (score *. 100.0))
+             () )
         ()
     in
-    let time_ms = int_of_float ((Unix.gettimeofday () -. start) *. 1000.) in
     let detail_status =
       match code with
       | 0 ->

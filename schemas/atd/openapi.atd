@@ -142,10 +142,15 @@ type submissionFullDetails = {
   source_artifacts : sourceArtifacts;
 } 
 
+type submissionDetailOutputMeta = {
+  ?stderr_score : int option;
+} 
+
 type submissionDetailOutput = {
   stdout : string;
   stderr : string;
   return_code : int;
+  ?meta : submissionDetailOutputMeta option;
 } 
 
 type submissionDetail = {

@@ -840,14 +840,63 @@ module TestCase = struct
   let to_json = json_of_testCase
 end
 
+type submissionDetailOutputMeta = {
+  stderr_score: int option;
+}
+
+let create_submissionDetailOutputMeta ?stderr_score () : submissionDetailOutputMeta =
+  { stderr_score }
+
+let submissionDetailOutputMeta_of_yojson (x : Yojson.Safe.t) : submissionDetailOutputMeta =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let stderr_score =
+      match assoc "stderr_score" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
+    in
+    { stderr_score }
+  | _ -> Atdml_runtime.Yojson.bad_type "submissionDetailOutputMeta" x
+
+let yojson_of_submissionDetailOutputMeta (x : submissionDetailOutputMeta) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    (match x.stderr_score with None -> [] | Some v -> [("stderr_score", Atdml_runtime.Yojson.yojson_of_int v)]);
+  ])
+
+let submissionDetailOutputMeta_of_json s =
+  submissionDetailOutputMeta_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_submissionDetailOutputMeta x =
+  Yojson.Safe.to_string (yojson_of_submissionDetailOutputMeta x)
+
+module SubmissionDetailOutputMeta = struct
+  type nonrec t = submissionDetailOutputMeta
+  let create = create_submissionDetailOutputMeta
+  let of_yojson = submissionDetailOutputMeta_of_yojson
+  let to_yojson = yojson_of_submissionDetailOutputMeta
+  let of_json = submissionDetailOutputMeta_of_json
+  let to_json = json_of_submissionDetailOutputMeta
+end
+
 type submissionDetailOutput = {
   stdout: string;
   stderr: string;
   return_code: int;
+  meta: submissionDetailOutputMeta option;
 }
 
-let create_submissionDetailOutput ~stdout ~stderr ~return_code () : submissionDetailOutput =
-  { stdout; stderr; return_code }
+let create_submissionDetailOutput ~stdout ~stderr ~return_code ?meta () : submissionDetailOutput =
+  { stdout; stderr; return_code; meta }
 
 let submissionDetailOutput_of_yojson (x : Yojson.Safe.t) : submissionDetailOutput =
   match x with
@@ -877,7 +926,12 @@ let submissionDetailOutput_of_yojson (x : Yojson.Safe.t) : submissionDetailOutpu
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "submissionDetailOutput" "return_code"
     in
-    { stdout; stderr; return_code }
+    let meta =
+      match assoc "meta" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (submissionDetailOutputMeta_of_yojson v)
+    in
+    { stdout; stderr; return_code; meta }
   | _ -> Atdml_runtime.Yojson.bad_type "submissionDetailOutput" x
 
 let yojson_of_submissionDetailOutput (x : submissionDetailOutput) : Yojson.Safe.t =
@@ -885,6 +939,7 @@ let yojson_of_submissionDetailOutput (x : submissionDetailOutput) : Yojson.Safe.
     [("stdout", Atdml_runtime.Yojson.yojson_of_string x.stdout)];
     [("stderr", Atdml_runtime.Yojson.yojson_of_string x.stderr)];
     [("return_code", Atdml_runtime.Yojson.yojson_of_int x.return_code)];
+    (match x.meta with None -> [] | Some v -> [("meta", yojson_of_submissionDetailOutputMeta v)]);
   ])
 
 let submissionDetailOutput_of_json s =
