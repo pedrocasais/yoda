@@ -1442,6 +1442,25 @@
           "languages"
         ]
       },
+      "OracleConfig": {
+        "type": "object",
+        "properties": {
+          "entrypoint": {
+            "type": "string",
+            "description": "Oracle checker entrypoint filename"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional argv list passed to oracle checker"
+          }
+        },
+        "required": [
+          "entrypoint"
+        ]
+      },
       "TestCase": {
         "type": "object",
         "properties": {
@@ -1456,6 +1475,9 @@
           },
           "is_sample": {
             "type": "boolean"
+          },
+          "oracle": {
+            "$ref": "#/components/schemas/OracleConfig"
           }
         },
         "required": [
@@ -1479,6 +1501,9 @@
           },
           "is_sample": {
             "type": "boolean"
+          },
+          "oracle": {
+            "$ref": "#/components/schemas/OracleConfig"
           }
         },
         "required": [
@@ -1731,6 +1756,48 @@
           "problem_id",
           "language",
           "source_artifacts"
+        ]
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "submission_id": {
+            "type": "integer"
+          },
+          "user_id": {
+            "type": "integer"
+          },
+          "problem_id": {
+            "type": "integer"
+          },
+          "lang": {
+            "type": "string"
+          },
+          "source_code": {
+            "type": "string"
+          },
+          "time_limit_ms": {
+            "type": "integer"
+          },
+          "memory_limit_mb": {
+            "type": "integer"
+          },
+          "testcases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestCase"
+            }
+          }
+        },
+        "required": [
+          "submission_id",
+          "user_id",
+          "problem_id",
+          "lang",
+          "source_code",
+          "time_limit_ms",
+          "memory_limit_mb",
+          "testcases"
         ]
       },
       "ScoreboardEntry": {

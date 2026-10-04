@@ -5,22 +5,6 @@
 open Lwt.Infix
 open Redis_lwt
 
-(** [makeTestCaseList lst] converte uma lista de lista com tuplos numa [Openapi.testCase list]
-@param lst lista com listas de tuplos, contendo as informções de testCases
-@return [Openapi.testCase list] *)
-let makeTestCaseList lst =
-  List.fold_left
-    (fun acc x ->
-      let testcase =
-        Openapi.create_testCase
-          ~id:(int_of_string (List.assoc "id" x))
-          ~input:(List.assoc "input" x) ~output:(List.assoc "output" x)
-          ~is_sample:(bool_of_string (List.assoc "is_sample" x))
-          ()
-      in
-      List.rev_append [testcase] acc )
-    [] lst
-
 (** [postProblemsIdTestcases request] cria um novo testCase para o problema com [id] igual ao parâmetro da rota. 
  @return 200 OK, se for concluído com sucesso, devolve o testcase criado com tipo [Openapi.testCase]; 404 Not Found, se o problema não existir; 400 Bad Request ou 500 Internal Server Error, erro. *)
 let postProblemsIdTestcases request =
@@ -52,16 +36,20 @@ let postProblemsIdTestcases request =
             ["SADD"; "problem:" ^ id ^ ":testcases"; string_of_int next_id]
           >>= fun _ ->
           Client.send_custom_request conn
-            [ "HSET"
-            ; key
-            ; "id"
-            ; string_of_int next_id
-            ; "input"
-            ; testCase.input
-            ; "output"
-            ; testCase.output
-            ; "is_sample"
-            ; string_of_bool testCase.is_sample ]
+            ( [ "HSET"
+              ; key
+              ; "id"
+              ; string_of_int next_id
+              ; "input"
+              ; testCase.input
+              ; "output"
+              ; testCase.output
+              ; "is_sample"
+              ; string_of_bool testCase.is_sample ]
+            @
+            match testCase.oracle with
+            | Some o -> ["oracle"; Openapi.OracleConfig.to_json o]
+            | None -> [] )
           >>= fun _ ->
           Client.exec conn
           >>= function
@@ -126,7 +114,7 @@ let getProblemsIdTestcases request =
                 Dream.json ~code:200
                   ~headers:[("Content-Type", "application/json")]
                   (Openapi.json_of_problemsIdTestcasesGetResponse2
-                     (makeTestCaseList lst') ) ) )
+                     (Testcases.makeTestCaseList lst') ) ) )
       (fun exn ->
         Dream.json ~code:500
           ~headers:[("Content-Type", "application/json")]

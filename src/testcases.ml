@@ -1,6 +1,26 @@
 open Lwt.Infix
 open Redis_lwt
 
+(** [makeTestCaseList lst] converte uma lista de lista com tuplos numa [Openapi.testCase list]
+@param lst lista com listas de tuplos, contendo as informções de testCases
+@return [Openapi.testCase list] *)
+let makeTestCaseList lst =
+  List.fold_left
+    (fun acc x ->
+      let testcase =
+        Openapi.TestCase.create
+          ~id:(int_of_string (List.assoc "id" x))
+          ~input:(List.assoc "input" x) ~output:(List.assoc "output" x)
+          ~is_sample:(bool_of_string (List.assoc "is_sample" x))
+          ?oracle:
+            ( match List.assoc_opt "oracle" x with
+            | Some o -> Some (Openapi.OracleConfig.of_json o)
+            | None -> None )
+          ()
+      in
+      List.rev_append [testcase] acc )
+    [] lst
+
 (** [putTestcasesTestcaseId request] atualiza os campos [input, output, is_sample] do testcase identificado pelo parâmetro de rota [testcaseId] pertencente ao problema com [id] igual ao parâmetro da rota.
  @return 200 OK, se for concluído com sucesso devolve o testcase atualizado de tipo [Openapi.testCase]; 404 Not Found, se não existir o testcase com o [testcaseId] ou o problema com o [id]; 500 Internal Server Error, erro. *)
 let putTestcasesTestcaseId request =
@@ -32,15 +52,27 @@ let putTestcasesTestcaseId request =
                   "is_sample"
                   (string_of_bool testCase.is_sample)
                 >>= fun _ ->
+                ( match testCase.oracle with
+                  | Some o ->
+                      Client.hset conn
+                        ("testcase:" ^ testcase_id)
+                        "oracle"
+                        (Openapi.OracleConfig.to_json o)
+                  | None -> Lwt.return_false )
+                >>= fun _ ->
                 Client.hgetall conn ("testcase:" ^ testcase_id)
                 >>= fun testcase_data ->
                 let updated_testcase =
-                  Openapi.create_testCase
+                  Openapi.TestCase.create
                     ~id:(int_of_string testcase_id)
                     ~input:(List.assoc "input" testcase_data)
                     ~output:(List.assoc "output" testcase_data)
                     ~is_sample:
                       (bool_of_string (List.assoc "is_sample" testcase_data))
+                    ?oracle:
+                      ( match List.assoc_opt "oracle" testcase_data with
+                      | Some o -> Some (Openapi.OracleConfig.of_json o)
+                      | None -> None )
                     ()
                 in
                 Dream.json ~code:200

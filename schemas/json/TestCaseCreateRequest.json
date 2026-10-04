@@ -13,6 +13,9 @@
     },
     "is_sample": {
       "type": "boolean"
+    },
+    "oracle": {
+      "$ref": "#/components/schemas/OracleConfig"
     }
   },
   "required": [

@@ -131,6 +131,17 @@ type scoreboardEntry = {
   problems : json;
 } 
 
+type job = {
+  submission_id : int;
+  user_id : int;
+  problem_id : int;
+  lang : string;
+  source_code : string;
+  time_limit_ms : int;
+  memory_limit_mb : int;
+  testcases : testCase list;
+} 
+
 type solution = {
   problem_id : int;
   language : string;
@@ -214,6 +225,7 @@ type testCaseCreateRequest = {
   input : string;
   output : string;
   is_sample : bool;
+  ?oracle : oracleConfig option;
 } 
 
 type testCase = {
@@ -221,6 +233,12 @@ type testCase = {
   input : string;
   output : string;
   is_sample : bool;
+  ?oracle : oracleConfig option;
+} 
+
+type oracleConfig = {
+  entrypoint <doc text="Oracle checker entrypoint filename">: string;
+  ?args <doc text="Optional argv list passed to oracle checker">: string list option;
 } 
 
 type problem = {

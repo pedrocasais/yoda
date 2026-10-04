@@ -35,7 +35,7 @@ let getScoreboard conn id =
   @param job [Job.job] job recebido para avaliação
   @param result [Job.result] resultado da avaliação de um job
   @return devolve uma opção do tipo [exist], caso o utilizador não exista [NoProblems], caso exista e submeteu um problema que não esteja presente na scoreboarad [NewProblem], caso contrário [SameProblem] *)
-let checkExists lst (job : Job.job) (result : Job.result) =
+let checkExists lst (job : Openapi.Job.t) (result : Openapi.submission) =
   let score_team =
     List.find_opt
       (fun j ->
@@ -74,7 +74,7 @@ let checkExists lst (job : Job.job) (result : Job.result) =
  @param result [Job.result] resultado de uma avaliação
  @param x [string] de informações do utilizador no scoreboard 
  @return número de problemas resolvidos *)
-let getSolved (result : Job.result) x =
+let getSolved (result : Openapi.submission) x =
   if result.status = "accepted" then
     1
     + ( Yojson.Safe.from_string x
@@ -90,7 +90,8 @@ let getSolved (result : Job.result) x =
   @param result [Job.result] resultado da avaliação de um job
   @param exist [exist string] tipo de problema a adicionar no scoreboard 
   @return devolve [Openapi.scoreboardEntry] para adicionar há scoreboard  *)
-let makeScoreboardEntry (job : Job.job) (result : Job.result) = function
+let makeScoreboardEntry (job : Openapi.Job.t) (result : Openapi.submission) =
+  function
   | SameProblem x ->
       let old_problems =
         Yojson.Safe.from_string x
@@ -160,7 +161,7 @@ let hset_fields conn key fields =
 (** Persiste o resultado final de uma submissão no Valkey.
     Escreve na chave [submission:{id}] os campos status, score,
     time_ms, memory_kb e details. *)
-let persist_submission conn (result : Job.result) =
+let persist_submission conn (result : Openapi.submission) =
   let key = Printf.sprintf "submission:%d" result.id in
   let details = Openapi.SubmissionDetails.to_json result.details in
   hset_fields conn key
@@ -173,7 +174,7 @@ let persist_submission conn (result : Job.result) =
 
 (** Escreve o resultado da submissão no Valkey, adiciona ao scoreboard e imprime no stdout.
     Usa uma transação para garantir que todos os dados são guardados e a pool de conexões definido em {!Db}. *)
-let write_result (result : Job.result) (job : Job.job) =
+let write_result (result : Openapi.submission) (job : Openapi.Job.t) =
   let aux conn contest_id str details =
     Client.multi conn
     >>= fun _ ->
@@ -293,11 +294,15 @@ let testcases id =
         else
           let get f = List.assoc f fields in
           Lwt.return
-            (`Assoc
-               [ ("id", `Int (int_of_string tc_id))
-               ; ("input", `String (get "input"))
-               ; ("output", `String (get "output"))
-               ; ("is_sample", `Bool (bool_of_string (get "is_sample"))) ] ) )
+            (Openapi.TestCase.create ~id:(int_of_string tc_id)
+               ~input:(get "input") ~output:(get "output")
+               ~is_sample:(bool_of_string (get "is_sample"))
+               ?oracle:
+                 ( try
+                     let x = get "oracle" in
+                     Some (Openapi.OracleConfig.of_json x)
+                   with _ -> None )
+               () ) )
       tests
 
 (** Processa uma submissão completa.
@@ -314,59 +319,48 @@ let process_job submission_id =
   >>= fun (time_limit_ms, memory_limit_mb) ->
   testcases problem_id
   >>= fun tests ->
+  let source_artifacts_json = source_code in
+  let job =
+    Openapi.Job.create
+      ~submission_id:(int_of_string submission_id)
+      ~user_id ~problem_id ~lang:language ~source_code:source_artifacts_json
+      ~time_limit_ms ~memory_limit_mb ~testcases:tests ()
+  in
+  Lwt_io.printf "Process job: %s\n%!" (Openapi.Job.to_json job)
+  >>= fun () ->
   (* source_code contains several source artifacts in json format:
      SourceArtifacts *)
-  let source_artifacts_json = source_code in
-  let job_json =
-    `Assoc
-      [ ("submission_id", `Int (int_of_string submission_id))
-      ; ("user_id", `Int user_id)
-      ; ("problem_id", `Int problem_id)
-      ; ("language", `String language)
-      ; ("source_code", `String source_artifacts_json)
-      ; ("time_limit_ms", `Int time_limit_ms)
-      ; ("memory_limit_mb", `Int memory_limit_mb)
-      ; ("testcases", `List tests) ]
-  in
-  let job_str = Yojson.Safe.to_string job_json in
-  match Job.parse_job job_str with
-  | None -> Lwt_io.printf "Erro: JSON inválido\n%!"
-  | Some (job : Job.job) -> (
-      Lwt_io.printf "Job recebido: submission %d lang %s\n%!"
-        job.submission_id job.lang
-      >>= fun () ->
-      Lwt_preemptive.detach (fun () -> Compiler.prepare_workdir job) ()
+  Lwt_preemptive.detach (fun () -> Compiler.prepare_workdir job) ()
+  >>= function
+  | Error e -> Lwt_io.printf "Error: %s\n%!" e >>= fun () -> Lwt.return_unit
+  | Ok workdir -> (
+      Lwt_preemptive.detach (fun () -> Compiler.compile job workdir) ()
       >>= function
-      | Error e ->
-          Lwt_io.printf "Error: %s\n%!" e >>= fun () -> Lwt.return_unit
-      | Ok workdir -> (
-          Lwt_preemptive.detach (fun () -> Compiler.compile job workdir) ()
-          >>= function
-          | Error (c, stdout, stderr) ->
-              (* print stdout and stderr *)
-              Lwt_io.printf "stdout: %s\n%!" stdout
-              >>= fun () ->
-              Lwt_io.printf "stderr: %s\n%!" stderr
-              >>= fun () ->
-              (* print return code *)
-              Lwt_io.printf "return code: %d\n%!" c
-              >>= fun () ->
-              write_result
-                (Openapi.create_submission ~id:job.submission_id
-                   ~problem_id:job.problem_id ~language:job.lang
-                   ~status:"compile_error" ~score:0 ~time_ms:0 ~memory_kb:0
-                   ~details:
-                     [ Openapi.SubmissionDetail.create ~testcase_id:(-1)
-                         ~status:"compile_error" ~time_ms:(-1)
-                         ~output:
-                           (Openapi.SubmissionDetailOutput.create ~stdout
-                              ~stderr ~return_code:c () )
-                         () ]
-                   () )
-                job
-          | Ok _ ->
-              Lwt_preemptive.detach (fun () -> Runner.run_all job workdir) ()
-              >>= fun result -> write_result result job ) )
+      | Error (c, stdout, stderr) ->
+          (* print stdout and stderr *)
+          Lwt_io.printf "stdout: %s\n%!" stdout
+          >>= fun () ->
+          Lwt_io.printf "stderr: %s\n%!" stderr
+          >>= fun () ->
+          (* print return code *)
+          Lwt_io.printf "return code: %d\n%!" c
+          >>= fun () ->
+          write_result
+            (Openapi.create_submission ~id:job.submission_id
+               ~problem_id:job.problem_id ~language:job.lang
+               ~status:"compile_error" ~score:0 ~time_ms:0 ~memory_kb:0
+               ~details:
+                 [ Openapi.SubmissionDetail.create ~testcase_id:(-1)
+                     ~status:"compile_error" ~time_ms:(-1)
+                     ~output:
+                       (Openapi.SubmissionDetailOutput.create ~stdout ~stderr
+                          ~return_code:c () )
+                     () ]
+               () )
+            job
+      | Ok _ ->
+          Lwt_preemptive.detach (fun () -> Runner.run_all job workdir) ()
+          >>= fun result -> write_result result job )
 
 (** Loop principal do worker.
     Bloqueia com [BRPOP] na fila [submission:job] até haver um job,

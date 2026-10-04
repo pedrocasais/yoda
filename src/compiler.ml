@@ -4,7 +4,6 @@
     ler a configuração de linguagens do ficheiro {i languagesv2.yaml}
     e compilar o código dentro de um container Docker isolado. *)
 
-open Job
 module C = Docker.Container
 
 (** Diretoria raiz onde são criados os ambientes de trabalho.
@@ -49,7 +48,7 @@ let ensure_dir path =
     Cria [{work_root}/submission_{id}/main.{ext}] se existir apenas um ficheiro fonte.
     Cria [{work_root}/submission_{id}/{filename}] para cada ficheiro fonte se houver mais de um.
     @return par [(dir, src)] com a diretoria e o ficheiro fonte. *)
-let prepare_workdir job =
+let prepare_workdir (job : Openapi.Job.t) =
   ensure_dir work_root ;
   let dir = Printf.sprintf "%s/submission_%d" work_root job.submission_id in
   ensure_dir dir ;
@@ -134,7 +133,7 @@ let run_in_sandbox ~dir ~lang cmd =
     Para linguagens interpretadas devolve [Ok dir] sem compilar.
     @return [Ok path] com o caminho do binário, ou [Error msg] se falhar. *)
 
-let compile job dir =
+let compile (job : Openapi.Job.t) dir =
   match lang_compile_cmd job.lang with
   | None -> Ok dir
   | Some cmd -> (

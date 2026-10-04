@@ -234,14 +234,35 @@ module User : sig
   val to_json : t -> string
 end
 
+type oracleConfig = {
+  entrypoint: string;  (** Oracle checker entrypoint filename *)
+  args: string list option;  (** Optional argv list passed to oracle checker *)
+}
+
+val create_oracleConfig : entrypoint:string -> ?args:string list -> unit -> oracleConfig
+val oracleConfig_of_yojson : Yojson.Safe.t -> oracleConfig
+val yojson_of_oracleConfig : oracleConfig -> Yojson.Safe.t
+val oracleConfig_of_json : string -> oracleConfig
+val json_of_oracleConfig : oracleConfig -> string
+
+module OracleConfig : sig
+  type nonrec t = oracleConfig
+  val create : entrypoint:string -> ?args:string list -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type testCaseCreateRequest = {
   id: int option;
   input: string;
   output: string;
   is_sample: bool;
+  oracle: oracleConfig option;
 }
 
-val create_testCaseCreateRequest : ?id:int -> input:string -> output:string -> is_sample:bool -> unit -> testCaseCreateRequest
+val create_testCaseCreateRequest : ?id:int -> input:string -> output:string -> is_sample:bool -> ?oracle:oracleConfig -> unit -> testCaseCreateRequest
 val testCaseCreateRequest_of_yojson : Yojson.Safe.t -> testCaseCreateRequest
 val yojson_of_testCaseCreateRequest : testCaseCreateRequest -> Yojson.Safe.t
 val testCaseCreateRequest_of_json : string -> testCaseCreateRequest
@@ -249,7 +270,7 @@ val json_of_testCaseCreateRequest : testCaseCreateRequest -> string
 
 module TestCaseCreateRequest : sig
   type nonrec t = testCaseCreateRequest
-  val create : ?id:int -> input:string -> output:string -> is_sample:bool -> unit -> t
+  val create : ?id:int -> input:string -> output:string -> is_sample:bool -> ?oracle:oracleConfig -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -261,9 +282,10 @@ type testCase = {
   input: string;
   output: string;
   is_sample: bool;
+  oracle: oracleConfig option;
 }
 
-val create_testCase : id:int -> input:string -> output:string -> is_sample:bool -> unit -> testCase
+val create_testCase : id:int -> input:string -> output:string -> is_sample:bool -> ?oracle:oracleConfig -> unit -> testCase
 val testCase_of_yojson : Yojson.Safe.t -> testCase
 val yojson_of_testCase : testCase -> Yojson.Safe.t
 val testCase_of_json : string -> testCase
@@ -271,7 +293,7 @@ val json_of_testCase : testCase -> string
 
 module TestCase : sig
   type nonrec t = testCase
-  val create : id:int -> input:string -> output:string -> is_sample:bool -> unit -> t
+  val create : id:int -> input:string -> output:string -> is_sample:bool -> ?oracle:oracleConfig -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -667,6 +689,32 @@ val json_of_judgeContestsIdPutRequest : judgeContestsIdPutRequest -> string
 module JudgeContestsIdPutRequest : sig
   type nonrec t = judgeContestsIdPutRequest
   val create : ?title:string -> ?description:string -> ?start_time:string -> ?end_time:string -> ?status:judgeContestsIdPutRequestStatus -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type job = {
+  submission_id: int;
+  user_id: int;
+  problem_id: int;
+  lang: string;
+  source_code: string;
+  time_limit_ms: int;
+  memory_limit_mb: int;
+  testcases: testCase list;
+}
+
+val create_job : submission_id:int -> user_id:int -> problem_id:int -> lang:string -> source_code:string -> time_limit_ms:int -> memory_limit_mb:int -> testcases:testCase list -> unit -> job
+val job_of_yojson : Yojson.Safe.t -> job
+val yojson_of_job : job -> Yojson.Safe.t
+val job_of_json : string -> job
+val json_of_job : job -> string
+
+module Job : sig
+  type nonrec t = job
+  val create : submission_id:int -> user_id:int -> problem_id:int -> lang:string -> source_code:string -> time_limit_ms:int -> memory_limit_mb:int -> testcases:testCase list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

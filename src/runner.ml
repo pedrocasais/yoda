@@ -3,8 +3,6 @@
     Este módulo corre o código compilado para cada caso de teste
     e compara o output produzido com o output esperado. *)
 
-open Job
-
 (** Executa um único caso de teste dentro de um container Docker isolado.
 
     O container é criado com as seguintes restrições de segurança:
@@ -29,7 +27,8 @@ module C = Docker.Container
     @param workdir diretoria com o binário compilado
     @param tc caso de teste a executar
     @return detalhe com o veredicto e o tempo de execução *)
-let run_testcase (job : job) (workdir : string) (tc : testcase) =
+let run_testcase (job : Openapi.Job.t) (workdir : string)
+    (tc : Openapi.TestCase.t) =
   let run_cmd = Compiler.lang_run_cmd job.lang in
   let lang = job.lang in
   let tag = Compiler.lang_tag lang in
@@ -43,6 +42,17 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
   output_string oc tc.input ;
   close_out oc ;
   let cmd = Printf.sprintf "%s < /work/input_%d.txt" run_cmd tc.id in
+  let cmd =
+    (* if this test is an oracle-based test case, we need to append the
+       oracle configuration to the command *)
+    match tc.oracle with
+    | Some o ->
+        Printf.sprintf "%s | '%s' %s" cmd o.entrypoint
+          ( Option.value ~default:[] o.args
+          |> List.map (fun s -> Printf.sprintf "'%s'" s)
+          |> String.concat " " )
+    | None -> cmd
+  in
   let start = Unix.gettimeofday () in
   let h =
     Docker.Container.host
@@ -64,7 +74,7 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
         (* Return a time-limit-exceeded result. *)
         ([], 124)
     in
-    (** Calculate the time taken for the test case to run. *)
+    (* Calculate the time taken for the test case to run. *)
     let time_ms = int_of_float ((Unix.gettimeofday () -. start) *. 1000.) in
     (* Example: [ "\001\000\000\000\000\000\000\0051021\n";
        "\002\000\000\000\000\000\000\004oops";
@@ -122,7 +132,7 @@ let run_testcase (job : job) (workdir : string) (tc : testcase) =
     @param job job com os casos de teste e limites
     @param workdir diretoria com o binário compilado
     @return resultado agregado com score, tempo e detalhes por testcase *)
-let run_all (job : job) (workdir : string) =
+let run_all (job : Openapi.Job.t) (workdir : string) =
   let details = List.map (run_testcase job workdir) job.testcases in
   let total = List.length details in
   let accepted =

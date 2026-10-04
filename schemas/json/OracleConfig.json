@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "entrypoint": {
+      "type": "string",
+      "description": "Oracle checker entrypoint filename"
+    },
+    "args": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Optional argv list passed to oracle checker"
+    }
+  },
+  "required": [
+    "entrypoint"
+  ]
+}
