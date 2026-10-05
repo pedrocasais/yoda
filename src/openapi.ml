@@ -1542,6 +1542,90 @@ module ProblemsIdTestcasesGetResponse2 = struct
   let to_json = json_of_problemsIdTestcasesGetResponse2
 end
 
+type objectArtifact = {
+  filename: string;  (** The name of the object file *)
+  content: string;  (** The content of the object file *)
+  sha256: string option;  (** The SHA256 hash of the object file *)
+}
+
+let create_objectArtifact ~filename ~content ?sha256 () : objectArtifact =
+  { filename; content; sha256 }
+
+let objectArtifact_of_yojson (x : Yojson.Safe.t) : objectArtifact =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let filename =
+      match assoc "filename" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "objectArtifact" "filename"
+    in
+    let content =
+      match assoc "content" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "objectArtifact" "content"
+    in
+    let sha256 =
+      match assoc "sha256" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    { filename; content; sha256 }
+  | _ -> Atdml_runtime.Yojson.bad_type "objectArtifact" x
+
+let yojson_of_objectArtifact (x : objectArtifact) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("filename", Atdml_runtime.Yojson.yojson_of_string x.filename)];
+    [("content", Atdml_runtime.Yojson.yojson_of_string x.content)];
+    (match x.sha256 with None -> [] | Some v -> [("sha256", Atdml_runtime.Yojson.yojson_of_string v)]);
+  ])
+
+let objectArtifact_of_json s =
+  objectArtifact_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_objectArtifact x =
+  Yojson.Safe.to_string (yojson_of_objectArtifact x)
+
+module ObjectArtifact = struct
+  type nonrec t = objectArtifact
+  let create = create_objectArtifact
+  let of_yojson = objectArtifact_of_yojson
+  let to_yojson = yojson_of_objectArtifact
+  let of_json = objectArtifact_of_json
+  let to_json = json_of_objectArtifact
+end
+
+type objectArtifacts = objectArtifact list
+
+let objectArtifacts_of_yojson (x : Yojson.Safe.t) : objectArtifacts =
+  (Atdml_runtime.Yojson.list_of_yojson objectArtifact_of_yojson) x
+
+let yojson_of_objectArtifacts (x : objectArtifacts) : Yojson.Safe.t =
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_objectArtifact) x
+
+let objectArtifacts_of_json s =
+  objectArtifacts_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_objectArtifacts x =
+  Yojson.Safe.to_string (yojson_of_objectArtifacts x)
+
+module ObjectArtifacts = struct
+  type nonrec t = objectArtifacts
+  let of_yojson = objectArtifacts_of_yojson
+  let to_yojson = yojson_of_objectArtifacts
+  let of_json = objectArtifacts_of_json
+  let to_json = json_of_objectArtifacts
+end
+
 type languages = string list
 
 let languages_of_yojson (x : Yojson.Safe.t) : languages =
@@ -1574,10 +1658,11 @@ type problemUpdateRequest = {
   time_limit_ms: int option;
   memory_limit_mb: int option;
   source_artifacts: sourceArtifacts option;
+  object_artifacts: objectArtifacts option;
 }
 
-let create_problemUpdateRequest ?code ?title ?description ?input_spec ?output_spec ?languages ?time_limit_ms ?memory_limit_mb ?source_artifacts () : problemUpdateRequest =
-  { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts }
+let create_problemUpdateRequest ?code ?title ?description ?input_spec ?output_spec ?languages ?time_limit_ms ?memory_limit_mb ?source_artifacts ?object_artifacts () : problemUpdateRequest =
+  { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts; object_artifacts }
 
 let problemUpdateRequest_of_yojson (x : Yojson.Safe.t) : problemUpdateRequest =
   match x with
@@ -1637,7 +1722,12 @@ let problemUpdateRequest_of_yojson (x : Yojson.Safe.t) : problemUpdateRequest =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (sourceArtifacts_of_yojson v)
     in
-    { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts }
+    let object_artifacts =
+      match assoc "object_artifacts" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (objectArtifacts_of_yojson v)
+    in
+    { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts; object_artifacts }
   | _ -> Atdml_runtime.Yojson.bad_type "problemUpdateRequest" x
 
 let yojson_of_problemUpdateRequest (x : problemUpdateRequest) : Yojson.Safe.t =
@@ -1651,6 +1741,7 @@ let yojson_of_problemUpdateRequest (x : problemUpdateRequest) : Yojson.Safe.t =
     (match x.time_limit_ms with None -> [] | Some v -> [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int v)]);
     (match x.memory_limit_mb with None -> [] | Some v -> [("memory_limit_mb", Atdml_runtime.Yojson.yojson_of_int v)]);
     (match x.source_artifacts with None -> [] | Some v -> [("source_artifacts", yojson_of_sourceArtifacts v)]);
+    (match x.object_artifacts with None -> [] | Some v -> [("object_artifacts", yojson_of_objectArtifacts v)]);
   ])
 
 let problemUpdateRequest_of_json s =

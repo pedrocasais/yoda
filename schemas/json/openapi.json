@@ -3,7 +3,7 @@
   "info": {
     "title": "API specification for Yoda",
     "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
-    "version": "1.7.1"
+    "version": "1.7.3"
   },
   "paths": {
     "/admin/users": {
@@ -1536,6 +1536,34 @@
           "$ref": "#/components/schemas/SourceArtifact"
         }
       },
+      "ObjectArtifact": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "The name of the object file"
+          },
+          "content": {
+            "type": "string",
+            "description": "The content of the object file"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "The SHA256 hash of the object file"
+          }
+        },
+        "required": [
+          "filename",
+          "content"
+        ]
+      },
+      "ObjectArtifacts": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "$ref": "#/components/schemas/ObjectArtifact"
+        }
+      },
       "ProblemCreateRequest": {
         "type": "object",
         "properties": {
@@ -1608,6 +1636,9 @@
           },
           "source_artifacts": {
             "$ref": "#/components/schemas/SourceArtifacts"
+          },
+          "object_artifacts": {
+            "$ref": "#/components/schemas/ObjectArtifacts"
           }
         }
       },

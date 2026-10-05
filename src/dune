@@ -46,6 +46,7 @@
  (modules
   build_info
   contests
+  object_artifacts
   auth
   judge
   problems
@@ -62,6 +63,7 @@
   config
   stats
   dream
+  digestif
   yojson
   lwt
   lwt.unix

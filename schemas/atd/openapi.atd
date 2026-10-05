@@ -199,6 +199,7 @@ type problemUpdateRequest = {
   ?time_limit_ms : int option;
   ?memory_limit_mb : int option;
   ?source_artifacts : sourceArtifacts option;
+  ?object_artifacts : objectArtifacts option;
 } 
 
 type problemCreateRequest = {
@@ -211,6 +212,14 @@ type problemCreateRequest = {
   time_limit_ms : int;
   memory_limit_mb : int;
   source_artifacts : sourceArtifacts;
+} 
+
+type objectArtifacts = objectArtifact list 
+
+type objectArtifact = {
+  filename <doc text="The name of the object file">: string;
+  content <doc text="The content of the object file">: string;
+  ?sha256 <doc text="The SHA256 hash of the object file">: string option;
 } 
 
 type sourceArtifacts = sourceArtifact list 

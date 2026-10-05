@@ -187,6 +187,9 @@ let putProblemsId request =
       Dream.body request
       >>= fun data ->
       let problem = Openapi.ProblemUpdateRequest.of_json data in
+      let object_artifacts_json =
+        problem.object_artifacts |> Option.map (Object_artifacts.persist id)
+      in
       let key = "problem:" ^ id in
       Lwt_pool.use Db.pool (fun conn ->
           Client.exists conn key
@@ -222,6 +225,10 @@ let putProblemsId request =
                 (Client.hset conn key "source_artifacts")
                 ( problem.source_artifacts
                 |> Option.map Openapi.SourceArtifacts.to_json )
+              >>= fun _ ->
+              check
+                (Client.hset conn key "object_artifacts")
+                object_artifacts_json
               >>= fun _ ->
               Client.hgetall conn key
               >>= fun lst ->

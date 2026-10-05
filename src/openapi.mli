@@ -535,6 +535,42 @@ module ProblemsIdTestcasesGetResponse2 : sig
   val to_json : t -> string
 end
 
+type objectArtifact = {
+  filename: string;  (** The name of the object file *)
+  content: string;  (** The content of the object file *)
+  sha256: string option;  (** The SHA256 hash of the object file *)
+}
+
+val create_objectArtifact : filename:string -> content:string -> ?sha256:string -> unit -> objectArtifact
+val objectArtifact_of_yojson : Yojson.Safe.t -> objectArtifact
+val yojson_of_objectArtifact : objectArtifact -> Yojson.Safe.t
+val objectArtifact_of_json : string -> objectArtifact
+val json_of_objectArtifact : objectArtifact -> string
+
+module ObjectArtifact : sig
+  type nonrec t = objectArtifact
+  val create : filename:string -> content:string -> ?sha256:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type objectArtifacts = objectArtifact list
+
+val objectArtifacts_of_yojson : Yojson.Safe.t -> objectArtifacts
+val yojson_of_objectArtifacts : objectArtifacts -> Yojson.Safe.t
+val objectArtifacts_of_json : string -> objectArtifacts
+val json_of_objectArtifacts : objectArtifacts -> string
+
+module ObjectArtifacts : sig
+  type nonrec t = objectArtifacts
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type languages = string list
 
 val languages_of_yojson : Yojson.Safe.t -> languages
@@ -560,9 +596,10 @@ type problemUpdateRequest = {
   time_limit_ms: int option;
   memory_limit_mb: int option;
   source_artifacts: sourceArtifacts option;
+  object_artifacts: objectArtifacts option;
 }
 
-val create_problemUpdateRequest : ?code:string -> ?title:string -> ?description:string -> ?input_spec:string -> ?output_spec:string -> ?languages:languages -> ?time_limit_ms:int -> ?memory_limit_mb:int -> ?source_artifacts:sourceArtifacts -> unit -> problemUpdateRequest
+val create_problemUpdateRequest : ?code:string -> ?title:string -> ?description:string -> ?input_spec:string -> ?output_spec:string -> ?languages:languages -> ?time_limit_ms:int -> ?memory_limit_mb:int -> ?source_artifacts:sourceArtifacts -> ?object_artifacts:objectArtifacts -> unit -> problemUpdateRequest
 val problemUpdateRequest_of_yojson : Yojson.Safe.t -> problemUpdateRequest
 val yojson_of_problemUpdateRequest : problemUpdateRequest -> Yojson.Safe.t
 val problemUpdateRequest_of_json : string -> problemUpdateRequest
@@ -570,7 +607,7 @@ val json_of_problemUpdateRequest : problemUpdateRequest -> string
 
 module ProblemUpdateRequest : sig
   type nonrec t = problemUpdateRequest
-  val create : ?code:string -> ?title:string -> ?description:string -> ?input_spec:string -> ?output_spec:string -> ?languages:languages -> ?time_limit_ms:int -> ?memory_limit_mb:int -> ?source_artifacts:sourceArtifacts -> unit -> t
+  val create : ?code:string -> ?title:string -> ?description:string -> ?input_spec:string -> ?output_spec:string -> ?languages:languages -> ?time_limit_ms:int -> ?memory_limit_mb:int -> ?source_artifacts:sourceArtifacts -> ?object_artifacts:objectArtifacts -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

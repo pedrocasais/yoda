@@ -28,6 +28,9 @@
     },
     "source_artifacts": {
       "$ref": "#/components/schemas/SourceArtifacts"
+    },
+    "object_artifacts": {
+      "$ref": "#/components/schemas/ObjectArtifacts"
     }
   }
 }
