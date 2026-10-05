@@ -21,14 +21,19 @@
     @return detalhe com o veredicto e o tempo de execução *)
 module C = Docker.Container
 
+let artifact_target_path filename =
+  Filename.concat "/usr/local/bin" (Filename.basename filename)
+
 (** Executa um único caso de teste num container Docker isolado.
     O volume é montado como só de leitura. Garante remoção do container em caso de erro.
     @param job job com os limites e configuração da linguagem
     @param workdir diretoria com o binário compilado
+    @param object_artifacts pares [(host_path, filename)] a montar em
+       [/usr/local/bin]
     @param tc caso de teste a executar
     @return detalhe com o veredicto e o tempo de execução *)
 let run_testcase (job : Openapi.Job.t) (workdir : string)
-    (tc : Openapi.TestCase.t) =
+    (object_artifacts : (string * string) list) (tc : Openapi.TestCase.t) =
   let run_cmd = Compiler.lang_run_cmd job.lang in
   let lang = job.lang in
   let tag = Compiler.lang_tag lang in
@@ -54,9 +59,15 @@ let run_testcase (job : Openapi.Job.t) (workdir : string)
     | None -> cmd
   in
   let start = Unix.gettimeofday () in
+  let artifact_binds =
+    List.map
+      (fun (host_path, filename) ->
+        Docker.Container.Mount_ro (host_path, artifact_target_path filename) )
+      object_artifacts
+  in
   let h =
     Docker.Container.host
-      ~binds:[Docker.Container.Mount_ro (workdir, "/work")]
+      ~binds:(Docker.Container.Mount_ro (workdir, "/work") :: artifact_binds)
       ~network_mode:"none" ~memory ~memory_swap:memory ()
   in
   Common.install_image image ~tag ;
@@ -132,8 +143,11 @@ let run_testcase (job : Openapi.Job.t) (workdir : string)
     @param job job com os casos de teste e limites
     @param workdir diretoria com o binário compilado
     @return resultado agregado com score, tempo e detalhes por testcase *)
-let run_all (job : Openapi.Job.t) (workdir : string) =
-  let details = List.map (run_testcase job workdir) job.testcases in
+let run_all (job : Openapi.Job.t) (workdir : string)
+    (object_artifacts : (string * string) list) =
+  let details =
+    List.map (run_testcase job workdir object_artifacts) job.testcases
+  in
   let total = List.length details in
   let accepted =
     List.length

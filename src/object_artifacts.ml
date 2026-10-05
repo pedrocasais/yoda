@@ -1,6 +1,6 @@
 (** Persistencia de object artifacts no filesystem. *)
 
-let work_root = Option.value (Sys.getenv_opt "YODA_ROOT") ~default:"/yoda"
+let work_root = Config.object_artifacts_root
 
 let rec ensure_dir path =
   match path with
@@ -14,13 +14,10 @@ let rec ensure_dir path =
 let sha256_hex content = Digestif.SHA256.(to_hex (digest_string content))
 
 let object_artifact_path ~problem_id sha256 =
-  Filename.concat work_root
-    (Filename.concat "object_artifacts" (Filename.concat problem_id sha256))
+  Filename.concat work_root (Filename.concat problem_id sha256)
 
 let persist problem_id artifacts =
-  let dir =
-    Filename.concat work_root (Filename.concat "object_artifacts" problem_id)
-  in
+  let dir = Filename.concat work_root problem_id in
   ensure_dir dir ;
   List.map
     (fun (artifact : Openapi.objectArtifact) ->

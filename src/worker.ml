@@ -268,9 +268,32 @@ let problem problem_id =
   if fields = [] then Lwt.fail_with "problem not found"
   else
     let get f = List.assoc f fields in
+    let object_artifacts =
+      match List.assoc_opt "object_artifacts" fields with
+      | None -> []
+      | Some raw -> (
+        try
+          let root = Config.object_artifacts_root in
+          let entries =
+            Yojson.Safe.from_string raw |> Yojson.Safe.Util.to_list
+          in
+          List.filter_map
+            (fun item ->
+              let open Yojson.Safe.Util in
+              match (item |> member "filename", item |> member "sha256") with
+              | `String filename, `String sha256 ->
+                  Some
+                    ( Filename.concat root
+                        (Filename.concat (string_of_int problem_id) sha256)
+                    , filename )
+              | _ -> None )
+            entries
+        with _ -> [] )
+    in
     Lwt.return
       ( int_of_string (get "time_limit_ms")
-      , int_of_string (get "memory_limit_mb") )
+      , int_of_string (get "memory_limit_mb")
+      , object_artifacts )
 
 (** Vai buscar todos os casos de teste de um problema ao Valkey.
     Primeiro obtém os IDs com [SMEMBERS], depois faz [HGETALL]
@@ -316,7 +339,7 @@ let process_job submission_id =
   solution submission_id
   >>= fun (problem_id, user_id, language, source_code) ->
   problem problem_id
-  >>= fun (time_limit_ms, memory_limit_mb) ->
+  >>= fun (time_limit_ms, memory_limit_mb, object_artifacts) ->
   testcases problem_id
   >>= fun tests ->
   let source_artifacts_json = source_code in
@@ -359,7 +382,9 @@ let process_job submission_id =
                () )
             job
       | Ok _ ->
-          Lwt_preemptive.detach (fun () -> Runner.run_all job workdir) ()
+          Lwt_preemptive.detach
+            (fun () -> Runner.run_all job workdir object_artifacts)
+            ()
           >>= fun result -> write_result result job )
 
 (** Loop principal do worker.

@@ -1,6 +1,13 @@
 open Lwt.Infix
 open Redis_lwt
 
+let yoda_root = Option.value (Sys.getenv_opt "YODA_ROOT") ~default:"/yoda"
+
+(* [TODO] replace YODA_WORK_ROOT with this later *)
+let submissions_root = Filename.concat yoda_root "submissions"
+
+let object_artifacts_root = Filename.concat yoda_root "object_artifacts"
+
 let config_key = "yodac:config:languages"
 
 let version_key = "yodac:config:languages:version"
