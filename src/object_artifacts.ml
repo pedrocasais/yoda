@@ -35,7 +35,7 @@ let persist problem_id artifacts =
       let path = object_artifact_path ~problem_id sha256 in
       let oc = open_out_bin path in
       Fun.protect
-        ~finally:(fun () -> close_out_noerr oc)
+        ~finally:(fun () -> close_out_noerr oc ; Unix.chmod path 0o755)
         (fun () -> output_string oc decoded_content) ;
       `Assoc
         [("filename", `String artifact.filename); ("sha256", `String sha256)] )
