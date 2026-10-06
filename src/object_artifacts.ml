@@ -13,6 +13,13 @@ let rec ensure_dir path =
 
 let sha256_hex content = Digestif.SHA256.(to_hex (digest_string content))
 
+let decode_base64_content filename content =
+  try Base64.decode_exn content
+  with _ ->
+    failwith
+      (Printf.sprintf "Invalid base64 object artifact content for '%s'"
+         filename )
+
 let object_artifact_path ~problem_id sha256 =
   Filename.concat work_root (Filename.concat problem_id sha256)
 
@@ -21,12 +28,15 @@ let persist problem_id artifacts =
   ensure_dir dir ;
   List.map
     (fun (artifact : Openapi.objectArtifact) ->
-      let sha256 = sha256_hex artifact.content in
+      let decoded_content =
+        decode_base64_content artifact.filename artifact.content
+      in
+      let sha256 = sha256_hex decoded_content in
       let path = object_artifact_path ~problem_id sha256 in
       let oc = open_out_bin path in
       Fun.protect
         ~finally:(fun () -> close_out_noerr oc)
-        (fun () -> output_string oc artifact.content) ;
+        (fun () -> output_string oc decoded_content) ;
       `Assoc
         [("filename", `String artifact.filename); ("sha256", `String sha256)] )
     artifacts

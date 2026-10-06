@@ -13,6 +13,7 @@ depends: [
   "ocaml"
   "dream"
   "digestif"
+  "base64"
   "yojson"
   "lwt"
   "redis-lwt"

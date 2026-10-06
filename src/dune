@@ -64,6 +64,7 @@
   stats
   dream
   digestif
+  base64
   yojson
   lwt
   lwt.unix
