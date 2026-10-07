@@ -176,7 +176,7 @@ let deleteProblemsId request =
         ~headers:[("Content-Type", "application/json")]
         (Printexc.to_string exn) )
 
-(** [putProblemsId request] atualiza os campos [code, title, time_limit_ms, memory_limit_mb, description, input_spec, output_spec] do problema identificado pelo parâmetro de rota [id].
+(** [putProblemsId request] atualiza os campos [code, title, time_limit_ms, memory_limit_mb, description, input_spec, output_spec, open_at, close_at, is_force_closed, languages, source_artifacts, object_artifacts] do problema identificado pelo parâmetro de rota [id].
  @return 200 OK, se for concluído com sucesso devolve o problema atualizado de tipo [Openapi.problem]; 404 Not Found, se não existir o problema com o [id]; 500 Internal Server Error, erro. *)
 let putProblemsId request =
   (* no need to check for admin permission; it came from a protected route *)
@@ -187,74 +187,107 @@ let putProblemsId request =
       Dream.body request
       >>= fun data ->
       let problem = Openapi.ProblemUpdateRequest.of_json data in
-      let object_artifacts_json =
-        problem.object_artifacts |> Option.map (Object_artifacts.persist id)
+      let has_invalid_date = function
+        | Some d -> not (Helpers.Date.is_valid_utc_datetime d)
+        | None -> false
       in
-      let key = "problem:" ^ id in
-      Lwt_pool.use Db.pool (fun conn ->
-          Client.exists conn key
-          >>= function
-          | false ->
-              Dream.json ~code:404
-                ~headers:[("Content-Type", "application/json")]
-                "Problem not Found"
-          | true ->
-              check (Client.hset conn key "code") problem.code
-              >>= fun _ ->
-              check (Client.hset conn key "title") problem.title
-              >>= fun _ ->
-              check
-                (Client.hset conn key "time_limit_ms")
-                (problem.time_limit_ms |> Option.map string_of_int)
-              >>= fun _ ->
-              check
-                (Client.hset conn key "memory_limit_mb")
-                (problem.memory_limit_mb |> Option.map string_of_int)
-              >>= fun _ ->
-              check (Client.hset conn key "description") problem.description
-              >>= fun _ ->
-              check (Client.hset conn key "input_spec") problem.input_spec
-              >>= fun _ ->
-              check (Client.hset conn key "output_spec") problem.output_spec
-              >>= fun _ ->
-              check
-                (Client.hset conn key "languages")
-                (problem.languages |> Option.map Openapi.Languages.to_json)
-              >>= fun _ ->
-              check
-                (Client.hset conn key "source_artifacts")
-                ( problem.source_artifacts
-                |> Option.map Openapi.SourceArtifacts.to_json )
-              >>= fun _ ->
-              check
-                (Client.hset conn key "object_artifacts")
-                object_artifacts_json
-              >>= fun _ ->
-              Client.hgetall conn key
-              >>= fun lst ->
-              let problem =
-                Openapi.create_problem ~code:(List.assoc "code" lst)
-                  ~title:(List.assoc "title" lst)
-                  ~time_limit_ms:
-                    (int_of_string (List.assoc "time_limit_ms" lst))
-                  ~memory_limit_mb:
-                    (int_of_string (List.assoc "memory_limit_mb" lst))
-                  ~description:(List.assoc "description" lst)
-                  ~input_spec:(List.assoc "input_spec" lst)
-                  ~output_spec:(List.assoc "output_spec" lst)
-                  ~languages:
-                    ( match List.assoc_opt "languages" lst with
-                    | Some x -> Openapi.Languages.of_json x
-                    | None -> [] )
-                  ~source_artifacts:
-                    ( match List.assoc_opt "source_artifacts" lst with
-                    | Some x -> Openapi.SourceArtifacts.of_json x
-                    | None -> [] )
-                  ()
-              in
-              Dream.json ~code:200
-                ~headers:[("Content-Type", "application/json")]
-                (Openapi.json_of_problem problem) ) )
+      if
+        has_invalid_date problem.open_at || has_invalid_date problem.close_at
+      then
+        Dream.json ~code:400
+          ~headers:[("Content-Type", "application/json")]
+          (Helpers.error_msg
+             "Invalid date format. Use YYYY-MM-DDTHH:MM:SSZ for open_at and \
+              close_at." )
+      else
+        let object_artifacts_json =
+          problem.object_artifacts
+          |> Option.map (Object_artifacts.persist id)
+        in
+        let key = "problem:" ^ id in
+        Lwt_pool.use Db.pool (fun conn ->
+            Client.exists conn key
+            >>= function
+            | false ->
+                Dream.json ~code:404
+                  ~headers:[("Content-Type", "application/json")]
+                  "Problem not Found"
+            | true ->
+                check (Client.hset conn key "code") problem.code
+                >>= fun _ ->
+                check (Client.hset conn key "title") problem.title
+                >>= fun _ ->
+                check
+                  (Client.hset conn key "time_limit_ms")
+                  (problem.time_limit_ms |> Option.map string_of_int)
+                >>= fun _ ->
+                check
+                  (Client.hset conn key "memory_limit_mb")
+                  (problem.memory_limit_mb |> Option.map string_of_int)
+                >>= fun _ ->
+                check
+                  (Client.hset conn key "description")
+                  problem.description
+                >>= fun _ ->
+                check (Client.hset conn key "input_spec") problem.input_spec
+                >>= fun _ ->
+                check
+                  (Client.hset conn key "output_spec")
+                  problem.output_spec
+                >>= fun _ ->
+                check (Client.hset conn key "open_at") problem.open_at
+                >>= fun _ ->
+                check (Client.hset conn key "close_at") problem.close_at
+                >>= fun _ ->
+                check
+                  (Client.hset conn key "is_force_closed")
+                  (problem.is_force_closed |> Option.map string_of_bool)
+                >>= fun _ ->
+                check
+                  (Client.hset conn key "languages")
+                  (problem.languages |> Option.map Openapi.Languages.to_json)
+                >>= fun _ ->
+                check
+                  (Client.hset conn key "source_artifacts")
+                  ( problem.source_artifacts
+                  |> Option.map Openapi.SourceArtifacts.to_json )
+                >>= fun _ ->
+                check
+                  (Client.hset conn key "object_artifacts")
+                  object_artifacts_json
+                >>= fun _ ->
+                Client.hgetall conn key
+                >>= fun lst ->
+                let problem =
+                  Openapi.create_problem ~code:(List.assoc "code" lst)
+                    ~title:(List.assoc "title" lst)
+                    ~time_limit_ms:
+                      (int_of_string (List.assoc "time_limit_ms" lst))
+                    ~memory_limit_mb:
+                      (int_of_string (List.assoc "memory_limit_mb" lst))
+                    ~description:(List.assoc "description" lst)
+                    ~input_spec:(List.assoc "input_spec" lst)
+                    ~output_spec:(List.assoc "output_spec" lst)
+                    ?open_at:(List.assoc_opt "open_at" lst)
+                    ?close_at:(List.assoc_opt "close_at" lst)
+                    ?is_force_closed:
+                      ( match List.assoc_opt "is_force_closed" lst with
+                      | Some "true" -> Some true
+                      | Some "false" -> Some false
+                      | _ -> None )
+                    ~languages:
+                      ( match List.assoc_opt "languages" lst with
+                      | Some x -> Openapi.Languages.of_json x
+                      | None -> [] )
+                    ~source_artifacts:
+                      ( match List.assoc_opt "source_artifacts" lst with
+                      | Some x -> Openapi.SourceArtifacts.of_json x
+                      | None -> [] )
+                    ()
+                in
+                Dream.json ~code:200
+                  ~headers:[("Content-Type", "application/json")]
+                  (Openapi.json_of_problem problem) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
@@ -263,39 +296,61 @@ let putProblemsId request =
 (** [getProblemsId _request] devolve o problema com [id] igual ao parâmetro da rota. 
  @return 200 OK, se for concluído com sucesso, devolve problema [Openapi.problem]; 404 Not Found, se não existir o [problem:id] ; 500 Internal Server Error, erro. *)
 let getProblemsId request =
+  let user_id = Helpers.get_actor_id request in
   Lwt.catch
     (fun () ->
       let id = Dream.param request "id" in
       Lwt_pool.use Db.pool (fun conn ->
-          Client.hgetall conn ("problem:" ^ id) )
-      >>= function
-      | [] ->
-          Dream.json ~code:404
-            ~headers:[("Content-Type", "application/json")]
-            "Problem not found"
-      | x ->
-          let problem =
-            Openapi.create_problem ~code:(List.assoc "code" x)
-              ~title:(List.assoc "title" x)
-              ~time_limit_ms:(int_of_string (List.assoc "time_limit_ms" x))
-              ~memory_limit_mb:
-                (int_of_string (List.assoc "memory_limit_mb" x))
-              ~description:(List.assoc "description" x)
-              ~input_spec:(List.assoc "input_spec" x)
-              ~output_spec:(List.assoc "output_spec" x)
-              ~languages:
-                ( match List.assoc_opt "languages" x with
-                | Some l -> Openapi.Languages.of_json l
-                | None -> [] )
-              ~source_artifacts:
-                ( match List.assoc_opt "source_artifacts" x with
-                | Some sa -> Openapi.SourceArtifacts.of_json sa
-                | None -> [] )
-              ()
+          Helpers.get_actor_role conn user_id
+          >>= fun user_role ->
+          let privileged =
+            user_role = Some (Openapi.UserRole.to_json Openapi.Admin)
+            || user_role = Some (Openapi.UserRole.to_json Openapi.Judge)
           in
-          Dream.json ~code:200
-            ~headers:[("Content-Type", "application/json")]
-            (Openapi.json_of_problem problem) )
+          Client.hgetall conn ("problem:" ^ id)
+          >>= function
+          | [] ->
+              Dream.json ~code:404
+                ~headers:[("Content-Type", "application/json")]
+                "Problem not found"
+          | x ->
+              let object_artifacts =
+                if privileged then
+                  match List.assoc_opt "object_artifacts" x with
+                  | Some oa -> Some (Openapi.ObjectArtifacts.of_json oa)
+                  | None -> Some []
+                else None
+              in
+              let problem =
+                Openapi.create_problem ~code:(List.assoc "code" x)
+                  ~title:(List.assoc "title" x)
+                  ~time_limit_ms:
+                    (int_of_string (List.assoc "time_limit_ms" x))
+                  ~memory_limit_mb:
+                    (int_of_string (List.assoc "memory_limit_mb" x))
+                  ~description:(List.assoc "description" x)
+                  ~input_spec:(List.assoc "input_spec" x)
+                  ~output_spec:(List.assoc "output_spec" x)
+                  ?open_at:(List.assoc_opt "open_at" x)
+                  ?close_at:(List.assoc_opt "close_at" x)
+                  ?is_force_closed:
+                    ( match List.assoc_opt "is_force_closed" x with
+                    | Some "true" -> Some true
+                    | Some "false" -> Some false
+                    | _ -> None )
+                  ~languages:
+                    ( match List.assoc_opt "languages" x with
+                    | Some l -> Openapi.Languages.of_json l
+                    | None -> [] )
+                  ~source_artifacts:
+                    ( match List.assoc_opt "source_artifacts" x with
+                    | Some sa -> Openapi.SourceArtifacts.of_json sa
+                    | None -> [] )
+                  ?object_artifacts ()
+              in
+              Dream.json ~code:200
+                ~headers:[("Content-Type", "application/json")]
+                (Openapi.json_of_problem problem) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]

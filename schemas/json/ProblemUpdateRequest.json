@@ -17,6 +17,17 @@
     "output_spec": {
       "type": "string"
     },
+    "open_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "close_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_force_closed": {
+      "type": "boolean"
+    },
     "languages": {
       "$ref": "#/components/schemas/Languages"
     },

@@ -1654,6 +1654,9 @@ type problemUpdateRequest = {
   description: string option;
   input_spec: string option;
   output_spec: string option;
+  open_at: string option;
+  close_at: string option;
+  is_force_closed: bool option;
   languages: languages option;
   time_limit_ms: int option;
   memory_limit_mb: int option;
@@ -1661,8 +1664,8 @@ type problemUpdateRequest = {
   object_artifacts: objectArtifacts option;
 }
 
-let create_problemUpdateRequest ?code ?title ?description ?input_spec ?output_spec ?languages ?time_limit_ms ?memory_limit_mb ?source_artifacts ?object_artifacts () : problemUpdateRequest =
-  { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts; object_artifacts }
+let create_problemUpdateRequest ?code ?title ?description ?input_spec ?output_spec ?open_at ?close_at ?is_force_closed ?languages ?time_limit_ms ?memory_limit_mb ?source_artifacts ?object_artifacts () : problemUpdateRequest =
+  { code; title; description; input_spec; output_spec; open_at; close_at; is_force_closed; languages; time_limit_ms; memory_limit_mb; source_artifacts; object_artifacts }
 
 let problemUpdateRequest_of_yojson (x : Yojson.Safe.t) : problemUpdateRequest =
   match x with
@@ -1702,6 +1705,21 @@ let problemUpdateRequest_of_yojson (x : Yojson.Safe.t) : problemUpdateRequest =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
+    let open_at =
+      match assoc "open_at" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let close_at =
+      match assoc "close_at" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let is_force_closed =
+      match assoc "is_force_closed" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.bool_of_yojson v)
+    in
     let languages =
       match assoc "languages" with
       | None | Some `Null -> Option.None
@@ -1727,7 +1745,7 @@ let problemUpdateRequest_of_yojson (x : Yojson.Safe.t) : problemUpdateRequest =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (objectArtifacts_of_yojson v)
     in
-    { code; title; description; input_spec; output_spec; languages; time_limit_ms; memory_limit_mb; source_artifacts; object_artifacts }
+    { code; title; description; input_spec; output_spec; open_at; close_at; is_force_closed; languages; time_limit_ms; memory_limit_mb; source_artifacts; object_artifacts }
   | _ -> Atdml_runtime.Yojson.bad_type "problemUpdateRequest" x
 
 let yojson_of_problemUpdateRequest (x : problemUpdateRequest) : Yojson.Safe.t =
@@ -1737,6 +1755,9 @@ let yojson_of_problemUpdateRequest (x : problemUpdateRequest) : Yojson.Safe.t =
     (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
     (match x.input_spec with None -> [] | Some v -> [("input_spec", Atdml_runtime.Yojson.yojson_of_string v)]);
     (match x.output_spec with None -> [] | Some v -> [("output_spec", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.open_at with None -> [] | Some v -> [("open_at", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.close_at with None -> [] | Some v -> [("close_at", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.is_force_closed with None -> [] | Some v -> [("is_force_closed", Atdml_runtime.Yojson.yojson_of_bool v)]);
     (match x.languages with None -> [] | Some v -> [("languages", yojson_of_languages v)]);
     (match x.time_limit_ms with None -> [] | Some v -> [("time_limit_ms", Atdml_runtime.Yojson.yojson_of_int v)]);
     (match x.memory_limit_mb with None -> [] | Some v -> [("memory_limit_mb", Atdml_runtime.Yojson.yojson_of_int v)]);
@@ -1872,12 +1893,16 @@ type problem = {
   description: string;
   input_spec: string;
   output_spec: string;
+  open_at: string option;  (** Optional date/time from which the problem is open. *)
+  close_at: string option;  (** Optional date/time after which the problem is closed. *)
+  is_force_closed: bool option;  (** True when the problem has been manually stopped by an admin. *)
   languages: languages;
   source_artifacts: sourceArtifacts option;
+  object_artifacts: objectArtifacts option;
 }
 
-let create_problem ?id ~code ~title ~time_limit_ms ~memory_limit_mb ~description ~input_spec ~output_spec ~languages ?source_artifacts () : problem =
-  { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec; languages; source_artifacts }
+let create_problem ?id ~code ~title ~time_limit_ms ~memory_limit_mb ~description ~input_spec ~output_spec ?open_at ?close_at ?is_force_closed ~languages ?source_artifacts ?object_artifacts () : problem =
+  { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec; open_at; close_at; is_force_closed; languages; source_artifacts; object_artifacts }
 
 let problem_of_yojson (x : Yojson.Safe.t) : problem =
   match x with
@@ -1932,6 +1957,21 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "problem" "output_spec"
     in
+    let open_at =
+      match assoc "open_at" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let close_at =
+      match assoc "close_at" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
+    in
+    let is_force_closed =
+      match assoc "is_force_closed" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.bool_of_yojson v)
+    in
     let languages =
       match assoc "languages" with
       | Some v -> languages_of_yojson v
@@ -1942,7 +1982,12 @@ let problem_of_yojson (x : Yojson.Safe.t) : problem =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (sourceArtifacts_of_yojson v)
     in
-    { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec; languages; source_artifacts }
+    let object_artifacts =
+      match assoc "object_artifacts" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (objectArtifacts_of_yojson v)
+    in
+    { id; code; title; time_limit_ms; memory_limit_mb; description; input_spec; output_spec; open_at; close_at; is_force_closed; languages; source_artifacts; object_artifacts }
   | _ -> Atdml_runtime.Yojson.bad_type "problem" x
 
 let yojson_of_problem (x : problem) : Yojson.Safe.t =
@@ -1955,8 +2000,12 @@ let yojson_of_problem (x : problem) : Yojson.Safe.t =
     [("description", Atdml_runtime.Yojson.yojson_of_string x.description)];
     [("input_spec", Atdml_runtime.Yojson.yojson_of_string x.input_spec)];
     [("output_spec", Atdml_runtime.Yojson.yojson_of_string x.output_spec)];
+    (match x.open_at with None -> [] | Some v -> [("open_at", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.close_at with None -> [] | Some v -> [("close_at", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.is_force_closed with None -> [] | Some v -> [("is_force_closed", Atdml_runtime.Yojson.yojson_of_bool v)]);
     [("languages", yojson_of_languages x.languages)];
     (match x.source_artifacts with None -> [] | Some v -> [("source_artifacts", yojson_of_sourceArtifacts v)]);
+    (match x.object_artifacts with None -> [] | Some v -> [("object_artifacts", yojson_of_objectArtifacts v)]);
   ])
 
 let problem_of_json s =

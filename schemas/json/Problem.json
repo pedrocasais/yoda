@@ -26,11 +26,28 @@
     "output_spec": {
       "type": "string"
     },
+    "open_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional date/time from which the problem is open."
+    },
+    "close_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional date/time after which the problem is closed."
+    },
+    "is_force_closed": {
+      "type": "boolean",
+      "description": "True when the problem has been manually stopped by an admin."
+    },
     "languages": {
       "$ref": "#/components/schemas/Languages"
     },
     "source_artifacts": {
       "$ref": "#/components/schemas/SourceArtifacts"
+    },
+    "object_artifacts": {
+      "$ref": "#/components/schemas/ObjectArtifacts"
     }
   },
   "required": [

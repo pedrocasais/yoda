@@ -59,6 +59,8 @@ let check_admin_permissions request next =
         (Openapi.ErrorResponse.to_json error)
   | Ok -> next ()
 
+(* [TODO] replace by Date.now_utc *)
+
 (** [date] obtém a data atual no formato year-month-day-hour-min-sec. *)
 let date () =
   let today : Unix.tm = Unix.localtime (Unix.time ()) in
@@ -68,6 +70,58 @@ let date () =
       t.Unix.tm_hour t.Unix.tm_min t.Unix.tm_sec
   in
   Format.asprintf "%a" pp_tm today
+
+module Date = struct
+  let is_leap_year y = (y mod 4 = 0 && y mod 100 <> 0) || y mod 400 = 0
+
+  let days_in_month y m =
+    match m with
+    | 1 | 3 | 5 | 7 | 8 | 10 | 12 -> 31
+    | 4 | 6 | 9 | 11 -> 30
+    | 2 -> if is_leap_year y then 29 else 28
+    | _ -> 0
+
+  let is_valid_utc_datetime date_time =
+    let int_sub s start len =
+      try Some (int_of_string (String.sub s start len)) with _ -> None
+    in
+    let expected_format =
+      String.length date_time = 20
+      && date_time.[4] = '-'
+      && date_time.[7] = '-'
+      && date_time.[10] = 'T'
+      && date_time.[13] = ':'
+      && date_time.[16] = ':'
+      && date_time.[19] = 'Z'
+    in
+    if not expected_format then false
+    else
+      match
+        ( int_sub date_time 0 4
+        , int_sub date_time 5 2
+        , int_sub date_time 8 2
+        , int_sub date_time 11 2
+        , int_sub date_time 14 2
+        , int_sub date_time 17 2 )
+      with
+      | Some year, Some month, Some day, Some hour, Some minute, Some second
+        ->
+          month >= 1 && month <= 12 && day >= 1
+          && day <= days_in_month year month
+          && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59
+          && second >= 0 && second <= 59
+      | _ -> false
+
+  let now_utc () =
+    let now : Unix.tm = Unix.gmtime (Unix.time ()) in
+    Format.asprintf "%04d-%02d-%02dT%02d:%02d:%02dZ"
+      (now.Unix.tm_year + 1900) (now.Unix.tm_mon + 1) now.Unix.tm_mday
+      now.Unix.tm_hour now.Unix.tm_min now.Unix.tm_sec
+
+  let has_passed_utc_datetime date_time =
+    is_valid_utc_datetime date_time
+    && String.compare date_time (now_utc ()) <= 0
+end
 
 (** [getAllTestCases conn lst] obtém todos os casos de teste pedidos.
     @param conn conexão com a base de dados
