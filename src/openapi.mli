@@ -539,9 +539,10 @@ type objectArtifact = {
   filename: string;  (** The name of the object file *)
   content: string;  (** The content of the object file *)
   sha256: string option;  (** The SHA256 hash of the object file *)
+  size: int option;  (** The size of the object file in bytes *)
 }
 
-val create_objectArtifact : filename:string -> content:string -> ?sha256:string -> unit -> objectArtifact
+val create_objectArtifact : filename:string -> content:string -> ?sha256:string -> ?size:int -> unit -> objectArtifact
 val objectArtifact_of_yojson : Yojson.Safe.t -> objectArtifact
 val yojson_of_objectArtifact : objectArtifact -> Yojson.Safe.t
 val objectArtifact_of_json : string -> objectArtifact
@@ -549,7 +550,7 @@ val json_of_objectArtifact : objectArtifact -> string
 
 module ObjectArtifact : sig
   type nonrec t = objectArtifact
-  val create : filename:string -> content:string -> ?sha256:string -> unit -> t
+  val create : filename:string -> content:string -> ?sha256:string -> ?size:int -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

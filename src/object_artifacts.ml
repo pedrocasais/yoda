@@ -31,13 +31,14 @@ let persist problem_id artifacts =
       let decoded_content =
         decode_base64_content artifact.filename artifact.content
       in
+      let size = String.length decoded_content in
       let sha256 = sha256_hex decoded_content in
       let path = object_artifact_path ~problem_id sha256 in
       let oc = open_out_bin path in
       Fun.protect
         ~finally:(fun () -> close_out_noerr oc ; Unix.chmod path 0o755)
         (fun () -> output_string oc decoded_content) ;
-      `Assoc
-        [("filename", `String artifact.filename); ("sha256", `String sha256)] )
+      Openapi.ObjectArtifact.create ~filename:artifact.filename ~content:""
+        ~sha256 ~size () )
     artifacts
-  |> fun stored -> Yojson.Safe.to_string (`List stored)
+  |> fun stored -> Openapi.ObjectArtifacts.to_json stored

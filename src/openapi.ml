@@ -1546,10 +1546,11 @@ type objectArtifact = {
   filename: string;  (** The name of the object file *)
   content: string;  (** The content of the object file *)
   sha256: string option;  (** The SHA256 hash of the object file *)
+  size: int option;  (** The size of the object file in bytes *)
 }
 
-let create_objectArtifact ~filename ~content ?sha256 () : objectArtifact =
-  { filename; content; sha256 }
+let create_objectArtifact ~filename ~content ?sha256 ?size () : objectArtifact =
+  { filename; content; sha256; size }
 
 let objectArtifact_of_yojson (x : Yojson.Safe.t) : objectArtifact =
   match x with
@@ -1579,7 +1580,12 @@ let objectArtifact_of_yojson (x : Yojson.Safe.t) : objectArtifact =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
-    { filename; content; sha256 }
+    let size =
+      match assoc "size" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
+    in
+    { filename; content; sha256; size }
   | _ -> Atdml_runtime.Yojson.bad_type "objectArtifact" x
 
 let yojson_of_objectArtifact (x : objectArtifact) : Yojson.Safe.t =
@@ -1587,6 +1593,7 @@ let yojson_of_objectArtifact (x : objectArtifact) : Yojson.Safe.t =
     [("filename", Atdml_runtime.Yojson.yojson_of_string x.filename)];
     [("content", Atdml_runtime.Yojson.yojson_of_string x.content)];
     (match x.sha256 with None -> [] | Some v -> [("sha256", Atdml_runtime.Yojson.yojson_of_string v)]);
+    (match x.size with None -> [] | Some v -> [("size", Atdml_runtime.Yojson.yojson_of_int v)]);
   ])
 
 let objectArtifact_of_json s =

@@ -223,6 +223,7 @@ type objectArtifact = {
   filename <doc text="The name of the object file">: string;
   content <doc text="The content of the object file">: string;
   ?sha256 <doc text="The SHA256 hash of the object file">: string option;
+  ?size <doc text="The size of the object file in bytes">: int option;
 } 
 
 type sourceArtifacts = sourceArtifact list 

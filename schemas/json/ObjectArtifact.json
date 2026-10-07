@@ -13,6 +13,10 @@
     "sha256": {
       "type": "string",
       "description": "The SHA256 hash of the object file"
+    },
+    "size": {
+      "type": "integer",
+      "description": "The size of the object file in bytes"
     }
   },
   "required": [
