@@ -61,30 +61,6 @@ let makeContestList user_groups lst =
       else acc )
     [] lst
 
-(** [makeProblemList lst] converte uma lista de listas de tuplos numa problem list, [Openapi.problem list], 
-@param lst [(string*string) list list] com problemas, [Openapi.problem]
-@return devolve uma lista de problemas [Openapi.problems list] *)
-let makeProblemList lst =
-  List.fold_left
-    (fun acc x ->
-      let problem =
-        Openapi.Problem.create
-          ~id:(int_of_string (List.assoc "id" x))
-          ~code:(List.assoc "code" x) ~title:(List.assoc "title" x)
-          ~description:(List.assoc "description" x)
-          ~time_limit_ms:(int_of_string (List.assoc "time_limit_ms" x))
-          ~memory_limit_mb:(int_of_string (List.assoc "memory_limit_mb" x))
-          ~input_spec:(List.assoc "input_spec" x)
-          ~output_spec:(List.assoc "output_spec" x)
-          ~languages:
-            ( match List.assoc_opt "languages" x with
-            | Some l -> Openapi.Languages.of_json l
-            | None -> [] )
-          ()
-      in
-      List.rev_append [problem] acc )
-    [] lst
-
 (** [getAllSubmissions conn problems] obtém as submissões de vários problemas, 
 @param conn conexão há base de dados
 @param problems [string list] com ids de problemas
@@ -325,11 +301,14 @@ let postContestsContestsIdProblems request =
 (** [getContestsContestsIdProblems request] devolve uma lista de problemas pertencentes a um concurso com [id] igual ao parâmetro da rota. 
  @return 200 OK, se for concluído com sucesso, devolve os problemas na forma de [Openapi.problems list]; 404 Not Found, se não existirem problemas no concurso com o [id]; 500 Internal Server Error, erro. *)
 let getContestsContestsIdProblems request =
+  let user_id = Helpers.get_actor_id request in
   Lwt.catch
     (fun () ->
       let cid = Dream.param request "contestsId" in
       (* need to check if the contest exists *)
       Lwt_pool.use Db.pool (fun conn ->
+          Helpers.get_actor_role conn user_id
+          >>= fun user_role ->
           Client.exists conn ("contest:" ^ cid)
           >>= fun exists ->
           if not exists then
@@ -346,7 +325,7 @@ let getContestsContestsIdProblems request =
             Dream.json ~code:200
               ~headers:[("Content-Type", "application/json")]
               (Openapi.json_of_contestsContestsidProblemsGetResponse2
-                 (makeProblemList lst') ) ) )
+                 (Problems.makeProblemList user_id user_role lst') ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]

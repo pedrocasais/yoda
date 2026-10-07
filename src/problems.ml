@@ -5,6 +5,55 @@
 open Lwt.Infix
 open Redis_lwt
 
+let makeProblem user_id user_role x =
+  let _ = user_id in
+  (* this argument is not being used! *)
+  let privileged =
+    user_role = Some (Openapi.UserRole.to_json Openapi.Admin)
+    || user_role = Some (Openapi.UserRole.to_json Openapi.Judge)
+  in
+  let object_artifacts =
+    if privileged then
+      match List.assoc_opt "object_artifacts" x with
+      | Some oa -> Some (Openapi.ObjectArtifacts.of_json oa)
+      | None -> Some []
+    else None
+  in
+  let problem =
+    Openapi.create_problem ~code:(List.assoc "code" x)
+      ~title:(List.assoc "title" x)
+      ~time_limit_ms:(int_of_string (List.assoc "time_limit_ms" x))
+      ~memory_limit_mb:(int_of_string (List.assoc "memory_limit_mb" x))
+      ~description:(List.assoc "description" x)
+      ~input_spec:(List.assoc "input_spec" x)
+      ~output_spec:(List.assoc "output_spec" x)
+      ?open_at:(List.assoc_opt "open_at" x)
+      ?close_at:(List.assoc_opt "close_at" x)
+      ?is_force_closed:
+        ( match List.assoc_opt "is_force_closed" x with
+        | Some "true" -> Some true
+        | Some "false" -> Some false
+        | _ -> None )
+      ~languages:
+        ( match List.assoc_opt "languages" x with
+        | Some l -> Openapi.Languages.of_json l
+        | None -> [] )
+      ~source_artifacts:
+        ( match List.assoc_opt "source_artifacts" x with
+        | Some sa -> Openapi.SourceArtifacts.of_json sa
+        | None -> [] )
+      ?object_artifacts ()
+  in
+  problem
+
+(** [makeProblemList lst] converte uma lista de listas de tuplos numa problem list, [Openapi.problem list], 
+@param lst [(string*string) list list] com problemas, [Openapi.problem]
+@return devolve uma lista de problemas [Openapi.problems list] *)
+let makeProblemList user_id user_role lst =
+  List.fold_left
+    (fun acc x -> List.rev_append [makeProblem user_id user_role x] acc)
+    [] lst
+
 (** [postProblemsIdTestcases request] cria um novo testCase para o problema com [id] igual ao parâmetro da rota. 
  @return 200 OK, se for concluído com sucesso, devolve o testcase criado com tipo [Openapi.testCase]; 404 Not Found, se o problema não existir; 400 Bad Request ou 500 Internal Server Error, erro. *)
 let postProblemsIdTestcases request =
@@ -303,10 +352,6 @@ let getProblemsId request =
       Lwt_pool.use Db.pool (fun conn ->
           Helpers.get_actor_role conn user_id
           >>= fun user_role ->
-          let privileged =
-            user_role = Some (Openapi.UserRole.to_json Openapi.Admin)
-            || user_role = Some (Openapi.UserRole.to_json Openapi.Judge)
-          in
           Client.hgetall conn ("problem:" ^ id)
           >>= function
           | [] ->
@@ -314,43 +359,9 @@ let getProblemsId request =
                 ~headers:[("Content-Type", "application/json")]
                 "Problem not found"
           | x ->
-              let object_artifacts =
-                if privileged then
-                  match List.assoc_opt "object_artifacts" x with
-                  | Some oa -> Some (Openapi.ObjectArtifacts.of_json oa)
-                  | None -> Some []
-                else None
-              in
-              let problem =
-                Openapi.create_problem ~code:(List.assoc "code" x)
-                  ~title:(List.assoc "title" x)
-                  ~time_limit_ms:
-                    (int_of_string (List.assoc "time_limit_ms" x))
-                  ~memory_limit_mb:
-                    (int_of_string (List.assoc "memory_limit_mb" x))
-                  ~description:(List.assoc "description" x)
-                  ~input_spec:(List.assoc "input_spec" x)
-                  ~output_spec:(List.assoc "output_spec" x)
-                  ?open_at:(List.assoc_opt "open_at" x)
-                  ?close_at:(List.assoc_opt "close_at" x)
-                  ?is_force_closed:
-                    ( match List.assoc_opt "is_force_closed" x with
-                    | Some "true" -> Some true
-                    | Some "false" -> Some false
-                    | _ -> None )
-                  ~languages:
-                    ( match List.assoc_opt "languages" x with
-                    | Some l -> Openapi.Languages.of_json l
-                    | None -> [] )
-                  ~source_artifacts:
-                    ( match List.assoc_opt "source_artifacts" x with
-                    | Some sa -> Openapi.SourceArtifacts.of_json sa
-                    | None -> [] )
-                  ?object_artifacts ()
-              in
               Dream.json ~code:200
                 ~headers:[("Content-Type", "application/json")]
-                (Openapi.json_of_problem problem) ) )
+                (Openapi.json_of_problem (makeProblem user_id user_role x)) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
