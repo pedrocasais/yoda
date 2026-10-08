@@ -107,7 +107,7 @@ let rec go acc lst = function
           ("", lst) routes
       in
       let scope =
-        if key = "auth" then
+        if key = "auth" || key = "status" then
           Printf.sprintf "\n;Dream.scope \"/%s\" [] \n[%s\n]" key
             dream_routes
         else if key = "admin" then
