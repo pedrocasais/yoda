@@ -477,6 +477,43 @@ module SubmissionFullDetails : sig
   val to_json : t -> string
 end
 
+type statusStatus =
+  | Ok
+  | Maintenance
+
+val statusStatus_of_yojson : Yojson.Safe.t -> statusStatus
+val yojson_of_statusStatus : statusStatus -> Yojson.Safe.t
+val statusStatus_of_json : string -> statusStatus
+val json_of_statusStatus : statusStatus -> string
+
+module StatusStatus : sig
+  type nonrec t = statusStatus
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type status = {
+  status: statusStatus;
+  message: string;
+}
+
+val create_status : status:statusStatus -> message:string -> unit -> status
+val status_of_yojson : Yojson.Safe.t -> status
+val yojson_of_status : status -> Yojson.Safe.t
+val status_of_json : string -> status
+val json_of_status : status -> string
+
+module Status : sig
+  type nonrec t = status
+  val create : status:statusStatus -> message:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 type solution = {
   problem_id: int;
   language: string;

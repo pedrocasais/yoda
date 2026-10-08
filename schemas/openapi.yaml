@@ -2,7 +2,7 @@ openapi: 3.0.4
 info:
   title: "API specification for Yoda"
   description: "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications."
-  version: "1.7.5"
+  version: "1.7.6"
 
 paths:
   /admin/users:
@@ -225,6 +225,23 @@ paths:
           description: Unauthorized access
         "403":
           description: Forbidden - admin only
+        "500":
+          description: Server error
+
+  /status:
+    get:
+      summary: Get service status.
+      description: Returns the current service status and an explanatory message.
+      responses:
+        "200":
+          description: Current service status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Status"
+              example:
+                status: "ok"
+                message: "Yoda is running normally."
         "500":
           description: Server error
 
@@ -894,6 +911,16 @@ components:
         error:
           type: string
       required: ["error"]
+
+    Status:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ["ok", "maintenance"]
+        message:
+          type: string
+      required: ["status", "message"]
     
     UserRole:
       type: string

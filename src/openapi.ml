@@ -1389,6 +1389,90 @@ module SubmissionFullDetails = struct
   let to_json = json_of_submissionFullDetails
 end
 
+type statusStatus =
+  | Ok
+  | Maintenance
+
+let statusStatus_of_yojson (x : Yojson.Safe.t) : statusStatus =
+  match x with
+  | `String "ok" -> Ok
+  | `String "maintenance" -> Maintenance
+  | _ -> Atdml_runtime.Yojson.bad_sum "statusStatus" x
+
+let yojson_of_statusStatus (x : statusStatus) : Yojson.Safe.t =
+  match x with
+  | Ok -> `String "ok"
+  | Maintenance -> `String "maintenance"
+
+let statusStatus_of_json s =
+  statusStatus_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_statusStatus x =
+  Yojson.Safe.to_string (yojson_of_statusStatus x)
+
+module StatusStatus = struct
+  type nonrec t = statusStatus
+  let of_yojson = statusStatus_of_yojson
+  let to_yojson = yojson_of_statusStatus
+  let of_json = statusStatus_of_json
+  let to_json = json_of_statusStatus
+end
+
+type status = {
+  status: statusStatus;
+  message: string;
+}
+
+let create_status ~status ~message () : status =
+  { status; message }
+
+let status_of_yojson (x : Yojson.Safe.t) : status =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let status =
+      match assoc "status" with
+      | Some v -> statusStatus_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "status" "status"
+    in
+    let message =
+      match assoc "message" with
+      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "status" "message"
+    in
+    { status; message }
+  | _ -> Atdml_runtime.Yojson.bad_type "status" x
+
+let yojson_of_status (x : status) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("status", yojson_of_statusStatus x.status)];
+    [("message", Atdml_runtime.Yojson.yojson_of_string x.message)];
+  ])
+
+let status_of_json s =
+  status_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_status x =
+  Yojson.Safe.to_string (yojson_of_status x)
+
+module Status = struct
+  type nonrec t = status
+  let create = create_status
+  let of_yojson = status_of_yojson
+  let to_yojson = yojson_of_status
+  let of_json = status_of_json
+  let to_json = json_of_status
+end
+
 type solution = {
   problem_id: int;
   language: string;

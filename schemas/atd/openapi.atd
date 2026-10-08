@@ -2,6 +2,11 @@
 type json <ocaml module="Yojson.Basic" t="t"> = abstract
 type int64 = int <ocaml repr="int64">
 
+type statusStatus = [
+  | Ok <json name="ok">
+  | Maintenance <json name="maintenance">
+] 
+
 type contestStatus = [
   | Upcoming <json name="upcoming">
   | Running <json name="running">
@@ -302,6 +307,11 @@ type userRole = [
   | Judge <json name="judge">
   | Admin <json name="admin">
 ] 
+
+type status = {
+  status : statusStatus;
+  message : string;
+} 
 
 type errorResponse = {
   error : string;

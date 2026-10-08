@@ -55,7 +55,8 @@
   admin_users
   admin_yodac
   admin_stats
-  admin)
+  admin
+  status)
  (libraries
   api_types
   valkey
