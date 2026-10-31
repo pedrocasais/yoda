@@ -266,7 +266,7 @@ paths:
   /judge/contests:
     post:
       summary: Create a contest.
-      description: Admin only
+      description: Judge or Admin only
       requestBody:
         required: true
         content:
@@ -297,7 +297,7 @@ paths:
         "401":
           description: Unauthorized access
         "403":
-          description: Forbidden - admin only
+          description: Forbidden - judge or admin only
         "500":
           description: Server error
 
@@ -310,7 +310,7 @@ paths:
           type: integer
     put:
       summary: Update a contest.
-      description: Admin only
+      description: Judge or Admin only
       requestBody:
         required: true
         content:
@@ -343,23 +343,31 @@ paths:
         "401":
           description: Unauthorized access
         "403":
-          description: Forbidden - admin only
+          description: Forbidden - judge or admin only
         "404":
           description: Contest not found
         "500":
           description: Server error
     delete:
       summary: Delete a contest.
-      description: Admin only
+      description: Judge or Admin only. Only empty contests (without problems) can be deleted.
       responses:
         "204":
           description: Contest deleted successfully
         "401":
           description: Unauthorized access
         "403":
-          description: Forbidden - admin only
+          description: Forbidden - judge or admin only
         "404":
           description: Contest not found
+        "409":
+          description: Conflict - contest is not empty
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Contest is not empty"
         "500":
           description: Server error
 

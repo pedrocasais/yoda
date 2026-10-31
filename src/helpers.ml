@@ -21,8 +21,8 @@ let get_actor_groups conn actor_id =
   >>= fun user ->
   Lwt.return (Option.value ~default:"[]" user |> Openapi.UserGroups.of_json)
 
-(** [check_admin_permissions request next] verifica se o user tem autorização de Admin para aceder a [request]. *)
-let check_admin_permissions request next =
+(** Verifica as permissões de um utilizador com base num predicado. *)
+let check_permissions predicate request next =
   let id_session = Dream.session_field request "user" in
   (* obtém role de um dado user:id_session. *)
   let aux = function
@@ -31,9 +31,7 @@ let check_admin_permissions request next =
         Lwt_pool.use Db.pool (fun conn -> get_actor_role conn id)
         >>= function
         | Some role ->
-            if Openapi.userRole_of_json role = Openapi.Admin then
-              Lwt.return Ok
-            else Lwt.return Forbidden
+            if predicate role then Lwt.return Ok else Lwt.return Forbidden
         | None -> Lwt.return Bad_Request )
   in
   aux id_session
@@ -58,6 +56,20 @@ let check_admin_permissions request next =
         ~headers:[("Content-Type", "application/json")]
         (Openapi.ErrorResponse.to_json error)
   | Ok -> next ()
+
+(** [check_admin_permissions request next] verifica se o user tem autorização de Admin para aceder a [request]. *)
+let check_admin_permissions request next =
+  check_permissions
+    (fun role -> Openapi.userRole_of_json role = Openapi.Admin)
+    request next
+
+(** [check_judge_or_admin_permissions request next] verifica se o user tem autorização de Judge ou Admin para aceder a [request]. *)
+let check_judge_or_admin_permissions request next =
+  check_permissions
+    (fun role ->
+      Openapi.userRole_of_json role = Openapi.Judge
+      || Openapi.userRole_of_json role = Openapi.Admin )
+    request next
 
 (* [TODO] replace by Date.now_utc *)
 

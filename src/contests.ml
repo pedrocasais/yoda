@@ -332,23 +332,35 @@ let getContestsContestsIdProblems request =
         (Printexc.to_string exn) )
 
 (** [deleteContestsId request] elimina o concurso pelo [id], parâmetro na rota.
- @return 204 No Content, se for eliminado com sucesso; 404 Not Found, se não existir o concurso com o [id] ou 500 Internal Server Error    *)
+ Só é possível eliminar um concurso vazio, i.e., sem problemas associados.
+ @return 204 No Content, se for eliminado com sucesso; 404 Not Found, se não existir o concurso com o [id]; 409 Conflict, se o concurso tiver problemas; ou 500 Internal Server Error    *)
 let deleteContestsId request =
   (* no need to check for admin or judge permission; it came from a protected
      route *)
   Lwt.catch
     (fun () ->
       let id = Dream.param request "id" in
-      Lwt_pool.use Db.pool (fun conn -> Client.del conn ["contest:" ^ id])
-      >>= function
-      | 0 ->
-          Dream.json ~code:404
-            ~headers:[("Content-Type", "application/json")]
-            "Contest not found"
-      | _ ->
-          Dream.json ~code:204
-            ~headers:[("Content-Type", "application/json")]
-            "Contest deleted successfully" )
+      let key = "contest:" ^ id in
+      Lwt_pool.use Db.pool (fun conn ->
+          Client.exists conn key
+          >>= function
+          | false ->
+              Dream.json ~code:404
+                ~headers:[("Content-Type", "application/json")]
+                "Contest not found"
+          | true -> (
+              Client.scard conn (key ^ ":problems")
+              >>= function
+              | 0 ->
+                  Client.del conn [key]
+                  >>= fun _ ->
+                  Dream.json ~code:204
+                    ~headers:[("Content-Type", "application/json")]
+                    "Contest deleted successfully"
+              | _ ->
+                  Dream.json ~code:409
+                    ~headers:[("Content-Type", "application/json")]
+                    "Contest is not empty" ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]

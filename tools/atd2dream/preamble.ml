@@ -20,19 +20,8 @@ let login_handler_admin next request =
         "Unauthorized access"
 
 let login_handler_judge next request =
-  let open Redis_lwt in
   match Dream.session_field request "user" with
-  | Some _ ->
-      Helpers.check_admin_permissions request (fun () ->
-          Lwt_pool.use Db.pool (fun conn ->
-              Client.hget conn ("user:" ^ Dream.session_id request) "role" )
-          >>= function
-          | Some role when Openapi.userRole_of_json role = Openapi.Judge ->
-              next request
-          | _ ->
-              Dream.json ~code:403
-                ~headers:[("Content-Type", "application/json")]
-                "Forbidden - judge only" )
+  | Some _ -> Helpers.check_judge_or_admin_permissions request (fun () -> next request)
   | None ->
       Dream.json ~code:401
         ~headers:[("Content-Type", "application/json")]
