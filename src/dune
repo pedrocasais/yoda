@@ -71,7 +71,7 @@
   lwt.unix
   redis-lwt
   argon2
-  mirage-crypto-rng-lwt)
+  mirage-crypto-rng.unix)
  (preprocess
   (pps lwt_ppx))
  (flags :standard -cclib -largon2))
