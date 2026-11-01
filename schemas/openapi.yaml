@@ -2,7 +2,7 @@ openapi: 3.0.4
 info:
   title: "API specification for Yoda"
   description: "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications."
-  version: "1.7.8"
+  version: "1.7.9"
 
 paths:
   /admin/users:
@@ -1329,11 +1329,18 @@ components:
       allOf:
         - $ref: "#/components/schemas/ContestFields"
         - type: object
-          required: [title, start_time, status]
+          properties:
+            allowed_groups:
+              $ref: "#/components/schemas/UserGroups"
+          required: [title, start_time, status, allowed_groups]
 
     ContestUpdateRequest:
       allOf:
         - $ref: "#/components/schemas/ContestFields"
+        - type: object
+          properties:
+            allowed_groups:
+              $ref: "#/components/schemas/UserGroups"
 
     Contest:
       allOf:

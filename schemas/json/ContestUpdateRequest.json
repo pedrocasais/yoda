@@ -3,6 +3,14 @@
   "allOf": [
     {
       "$ref": "#/components/schemas/ContestFields"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "allowed_groups": {
+          "$ref": "#/components/schemas/UserGroups"
+        }
+      }
     }
   ]
 }

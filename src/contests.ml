@@ -526,7 +526,8 @@ let postContests request =
                 ; contest.start_time
                 ; "status"
                 ; Openapi.ContestCreateRequestStatus.to_json contest.status
-                ]
+                ; "allowed_groups"
+                ; Openapi.UserGroups.to_json contest.allowed_groups ]
               @
               match contest.end_time with
               | Some end_time -> ["end_time"; end_time]

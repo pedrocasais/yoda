@@ -132,6 +132,7 @@ type contestUpdateRequest = {
   ?start_time : string option;
   ?end_time : string option;
   ?status : contestUpdateRequestStatus option;
+  ?allowed_groups : userGroups option;
 } 
 
 type contestCreateRequest = {
@@ -140,6 +141,7 @@ type contestCreateRequest = {
   start_time : string;
   ?end_time : string option;
   status : contestCreateRequestStatus;
+  allowed_groups : userGroups;
 } 
 
 type contestFields = {

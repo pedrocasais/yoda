@@ -6,10 +6,16 @@
     },
     {
       "type": "object",
+      "properties": {
+        "allowed_groups": {
+          "$ref": "#/components/schemas/UserGroups"
+        }
+      },
       "required": [
         "title",
         "start_time",
-        "status"
+        "status",
+        "allowed_groups"
       ]
     }
   ]

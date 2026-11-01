@@ -887,9 +887,10 @@ type contestUpdateRequest = {
   start_time: string option;
   end_time: string option;
   status: contestUpdateRequestStatus option;
+  allowed_groups: userGroups option;
 }
 
-val create_contestUpdateRequest : ?title:string -> ?description:string -> ?start_time:string -> ?end_time:string -> ?status:contestUpdateRequestStatus -> unit -> contestUpdateRequest
+val create_contestUpdateRequest : ?title:string -> ?description:string -> ?start_time:string -> ?end_time:string -> ?status:contestUpdateRequestStatus -> ?allowed_groups:userGroups -> unit -> contestUpdateRequest
 val contestUpdateRequest_of_yojson : Yojson.Safe.t -> contestUpdateRequest
 val yojson_of_contestUpdateRequest : contestUpdateRequest -> Yojson.Safe.t
 val contestUpdateRequest_of_json : string -> contestUpdateRequest
@@ -897,7 +898,7 @@ val json_of_contestUpdateRequest : contestUpdateRequest -> string
 
 module ContestUpdateRequest : sig
   type nonrec t = contestUpdateRequest
-  val create : ?title:string -> ?description:string -> ?start_time:string -> ?end_time:string -> ?status:contestUpdateRequestStatus -> unit -> t
+  val create : ?title:string -> ?description:string -> ?start_time:string -> ?end_time:string -> ?status:contestUpdateRequestStatus -> ?allowed_groups:userGroups -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -969,9 +970,10 @@ type contestCreateRequest = {
   start_time: string;
   end_time: string option;
   status: contestCreateRequestStatus;
+  allowed_groups: userGroups;
 }
 
-val create_contestCreateRequest : title:string -> ?description:string -> start_time:string -> ?end_time:string -> status:contestCreateRequestStatus -> unit -> contestCreateRequest
+val create_contestCreateRequest : title:string -> ?description:string -> start_time:string -> ?end_time:string -> status:contestCreateRequestStatus -> allowed_groups:userGroups -> unit -> contestCreateRequest
 val contestCreateRequest_of_yojson : Yojson.Safe.t -> contestCreateRequest
 val yojson_of_contestCreateRequest : contestCreateRequest -> Yojson.Safe.t
 val contestCreateRequest_of_json : string -> contestCreateRequest
@@ -979,7 +981,7 @@ val json_of_contestCreateRequest : contestCreateRequest -> string
 
 module ContestCreateRequest : sig
   type nonrec t = contestCreateRequest
-  val create : title:string -> ?description:string -> start_time:string -> ?end_time:string -> status:contestCreateRequestStatus -> unit -> t
+  val create : title:string -> ?description:string -> start_time:string -> ?end_time:string -> status:contestCreateRequestStatus -> allowed_groups:userGroups -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t

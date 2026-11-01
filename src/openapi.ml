@@ -2504,10 +2504,11 @@ type contestUpdateRequest = {
   start_time: string option;
   end_time: string option;
   status: contestUpdateRequestStatus option;
+  allowed_groups: userGroups option;
 }
 
-let create_contestUpdateRequest ?title ?description ?start_time ?end_time ?status () : contestUpdateRequest =
-  { title; description; start_time; end_time; status }
+let create_contestUpdateRequest ?title ?description ?start_time ?end_time ?status ?allowed_groups () : contestUpdateRequest =
+  { title; description; start_time; end_time; status; allowed_groups }
 
 let contestUpdateRequest_of_yojson (x : Yojson.Safe.t) : contestUpdateRequest =
   match x with
@@ -2547,7 +2548,12 @@ let contestUpdateRequest_of_yojson (x : Yojson.Safe.t) : contestUpdateRequest =
       | None | Some `Null -> Option.None
       | Some v -> Option.Some (contestUpdateRequestStatus_of_yojson v)
     in
-    { title; description; start_time; end_time; status }
+    let allowed_groups =
+      match assoc "allowed_groups" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (userGroups_of_yojson v)
+    in
+    { title; description; start_time; end_time; status; allowed_groups }
   | _ -> Atdml_runtime.Yojson.bad_type "contestUpdateRequest" x
 
 let yojson_of_contestUpdateRequest (x : contestUpdateRequest) : Yojson.Safe.t =
@@ -2557,6 +2563,7 @@ let yojson_of_contestUpdateRequest (x : contestUpdateRequest) : Yojson.Safe.t =
     (match x.start_time with None -> [] | Some v -> [("start_time", Atdml_runtime.Yojson.yojson_of_string v)]);
     (match x.end_time with None -> [] | Some v -> [("end_time", Atdml_runtime.Yojson.yojson_of_string v)]);
     (match x.status with None -> [] | Some v -> [("status", yojson_of_contestUpdateRequestStatus v)]);
+    (match x.allowed_groups with None -> [] | Some v -> [("allowed_groups", yojson_of_userGroups v)]);
   ])
 
 let contestUpdateRequest_of_json s =
@@ -2720,10 +2727,11 @@ type contestCreateRequest = {
   start_time: string;
   end_time: string option;
   status: contestCreateRequestStatus;
+  allowed_groups: userGroups;
 }
 
-let create_contestCreateRequest ~title ?description ~start_time ?end_time ~status () : contestCreateRequest =
-  { title; description; start_time; end_time; status }
+let create_contestCreateRequest ~title ?description ~start_time ?end_time ~status ~allowed_groups () : contestCreateRequest =
+  { title; description; start_time; end_time; status; allowed_groups }
 
 let contestCreateRequest_of_yojson (x : Yojson.Safe.t) : contestCreateRequest =
   match x with
@@ -2763,7 +2771,12 @@ let contestCreateRequest_of_yojson (x : Yojson.Safe.t) : contestCreateRequest =
       | Some v -> contestCreateRequestStatus_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "contestCreateRequest" "status"
     in
-    { title; description; start_time; end_time; status }
+    let allowed_groups =
+      match assoc "allowed_groups" with
+      | Some v -> userGroups_of_yojson v
+      | None -> Atdml_runtime.Yojson.missing_field "contestCreateRequest" "allowed_groups"
+    in
+    { title; description; start_time; end_time; status; allowed_groups }
   | _ -> Atdml_runtime.Yojson.bad_type "contestCreateRequest" x
 
 let yojson_of_contestCreateRequest (x : contestCreateRequest) : Yojson.Safe.t =
@@ -2773,6 +2786,7 @@ let yojson_of_contestCreateRequest (x : contestCreateRequest) : Yojson.Safe.t =
     [("start_time", Atdml_runtime.Yojson.yojson_of_string x.start_time)];
     (match x.end_time with None -> [] | Some v -> [("end_time", Atdml_runtime.Yojson.yojson_of_string v)]);
     [("status", yojson_of_contestCreateRequestStatus x.status)];
+    [("allowed_groups", yojson_of_userGroups x.allowed_groups)];
   ])
 
 let contestCreateRequest_of_json s =
