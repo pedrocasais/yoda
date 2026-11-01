@@ -44,9 +44,9 @@ let makeContestList user_groups lst =
         Openapi.create_contest
           ~id:(int_of_string (List.assoc "id" x))
           ~title:(List.assoc "title" x)
-          ~description:(List.assoc "description" x)
+          ?description:(List.assoc_opt "description" x)
           ~start_time:(List.assoc "start_time" x)
-          ~end_time:(List.assoc "end_time" x)
+          ?end_time:(List.assoc_opt "end_time" x)
           ~status:(Openapi.contestStatus_of_json (List.assoc "status" x))
           ()
       in
@@ -410,7 +410,7 @@ let putContestsId request =
               let contest =
                 Openapi.ContestUpdateRequest.create
                   ~title:(List.assoc "title" lst)
-                  ~description:(List.assoc "description" lst)
+                  ?description:(List.assoc_opt "description" lst)
                   ~start_time:(List.assoc "start_time" lst)
                   ?end_time:(List.assoc_opt "end_time" lst)
                   ~status:
@@ -448,7 +448,7 @@ let getContestsId request =
             Openapi.create_contest
               ~id:(int_of_string (List.assoc "id" x))
               ~title:(List.assoc "title" x)
-              ~description:(List.assoc "description" x)
+              ?description:(List.assoc_opt "description" x)
               ~start_time:(List.assoc "start_time" x)
               ?end_time:(List.assoc_opt "end_time" x)
               ~status:(Openapi.contestStatus_of_json (List.assoc "status" x))
@@ -529,10 +529,7 @@ let postContests request =
             | [`Status "OK"; `Int n] when n >= 1 ->
                 let contest_res =
                   Openapi.Contest.create ~id:next_id ~title:contest.title
-                    ~description:
-                      ( match contest.description with
-                      | Some x -> x
-                      | None -> "Description." )
+                    ?description:contest.description
                     ~start_time:contest.start_time ?end_time:contest.end_time
                     ~status:
                       (Openapi.ContestStatus.of_json
