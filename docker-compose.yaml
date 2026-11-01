@@ -1,32 +1,8 @@
 services:
-  traefik:
-    image: "traefik:latest"
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxy"
-      - "--entryPoints.web.address=:80"
-      - --api.dashboard=true
-      - --api.insecure=true
-    ports:
-      - "80:80"
-      - "8080:8080"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    networks:
-      - proxy
-    restart: unless-stopped
-
   yoda-b:
     build:
       dockerfile: Containerfile
-    image: yodab-dev
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.yoda-api.rule=PathPrefix(`/auth`) || PathPrefix(`/admin`) || PathPrefix(`/judge`) || PathPrefix(`/users`) || PathPrefix(`/contests`) || PathPrefix(`/problems`) || PathPrefix(`/submissions`) || PathPrefix(`/testcases`) || PathPrefix(`/status`)"
-      - "traefik.http.routers.yoda-api.entrypoints=web"
-      - "traefik.http.routers.yoda-api.priority=20"
-      - "traefik.http.services.yoda-api.loadbalancer.server.port=8001"
+    image: ghcr.io/pedrocasais/yoda:master
     networks:
       - proxy
     restart: unless-stopped
@@ -34,13 +10,11 @@ services:
   yoda-c:
     build:
       dockerfile: Containerfile
-    image: yodac-dev
+    image: ghcr.io/pedrocasais/yoda:master
     command: ["./yodac.exe"]
     user: "0:0"
-    ports:
-      - "8081:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${CONTAINER_ENGINE_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
       - /var/lib/yodac:/var/lib/yodac
     environment:
       YODAC_WORK_ROOT: /var/lib/yodac
@@ -51,7 +25,7 @@ services:
   valkey:
     image: valkey/valkey:latest
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - valkey_data:/data
     networks:
@@ -60,12 +34,14 @@ services:
 
   yoda-a:
     image: ghcr.io/anmaped/yoda-web:latest
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.yodaw.rule=Host(`localhost`)"
-      - "traefik.http.routers.yodaw.entrypoints=web"
-      - "traefik.http.services.yodaw.loadbalancer.server.port=80"
-      - "traefik.http.routers.yodaw.priority=10"
+    ports:
+      - "80:80"
+    environment:
+      # The browser calls the API through yoda-a's /api proxy.
+      BASE_API_URL: http://localhost/api
+      API_ROUTING_URL: http://yoda-b:8001/
+    depends_on:
+      - yoda-b
     networks:
       - proxy
     restart: unless-stopped
