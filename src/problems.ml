@@ -5,13 +5,18 @@
 open Lwt.Infix
 open Redis_lwt
 
+let is_privileged_role = function
+  | Some role ->
+      role = Openapi.UserRole.to_json Openapi.Admin
+      || role = Openapi.UserRole.to_json Openapi.Judge
+  | None -> false
+
+let is_draft x = List.assoc_opt "is_draft" x = Some "true"
+
 let makeProblem user_id user_role x =
   let _ = user_id in
   (* this argument is not being used! *)
-  let privileged =
-    user_role = Some (Openapi.UserRole.to_json Openapi.Admin)
-    || user_role = Some (Openapi.UserRole.to_json Openapi.Judge)
-  in
+  let privileged = is_privileged_role user_role in
   let object_artifacts =
     if privileged then
       match List.assoc_opt "object_artifacts" x with
@@ -35,6 +40,7 @@ let makeProblem user_id user_role x =
         | Some "true" -> Some true
         | Some "false" -> Some false
         | _ -> None )
+      ~is_draft:(is_draft x)
       ~languages:
         ( match List.assoc_opt "languages" x with
         | Some l -> Openapi.Languages.of_json l
@@ -52,7 +58,9 @@ let makeProblem user_id user_role x =
 @return devolve uma lista de problemas [Openapi.problems list] *)
 let makeProblemList user_id user_role lst =
   List.fold_left
-    (fun acc x -> List.rev_append [makeProblem user_id user_role x] acc)
+    (fun acc x ->
+      if is_draft x && not (is_privileged_role user_role) then acc
+      else List.rev_append [makeProblem user_id user_role x] acc )
     [] lst
 
 (** [postProblemsIdTestcases request] cria um novo testCase para o problema com [id] igual ao parâmetro da rota. 
@@ -294,6 +302,10 @@ let putProblemsId request =
                   (problem.is_force_closed |> Option.map string_of_bool)
                 >>= fun _ ->
                 check
+                  (Client.hset conn key "is_draft")
+                  (problem.is_draft |> Option.map string_of_bool)
+                >>= fun _ ->
+                check
                   (Client.hset conn key "languages")
                   (problem.languages |> Option.map Openapi.Languages.to_json)
                 >>= fun _ ->
@@ -325,6 +337,7 @@ let putProblemsId request =
                       | Some "true" -> Some true
                       | Some "false" -> Some false
                       | _ -> None )
+                    ~is_draft:(is_draft lst)
                     ~languages:
                       ( match List.assoc_opt "languages" lst with
                       | Some x -> Openapi.Languages.of_json x
@@ -356,6 +369,10 @@ let getProblemsId request =
           Client.hgetall conn ("problem:" ^ id)
           >>= function
           | [] ->
+              Dream.json ~code:404
+                ~headers:[("Content-Type", "application/json")]
+                "Problem not found"
+          | x when is_draft x && not (is_privileged_role user_role) ->
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]
                 "Problem not found"

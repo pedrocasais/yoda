@@ -65,6 +65,7 @@ let postSubmissions request =
       Dream.body request
       >>= fun data ->
       let sub = Openapi.solution_of_json data in
+      let user_id = Helpers.get_actor_id request in
       let rec aux (solution : Openapi.solution) conn testcases attempt =
         Client.unwatch conn
         >>= fun _ ->
@@ -164,20 +165,33 @@ let postSubmissions request =
               (Helpers.error_msg "Failed to create submission")
       in
       Lwt_pool.use Db.pool (fun conn ->
-          Client.smembers conn
-            ("problem:" ^ string_of_int sub.problem_id ^ ":testcases")
-          >>= function
-          | [] ->
-              Dream.json ~code:404
-                ~headers:[("Content-Type", "application/json")]
-                (Helpers.error_msg
-                   (Printf.sprintf
-                      "No tests found for problem:%d. Problem must have \
-                       tests for submissions."
-                      sub.problem_id ) )
-          | lst -> (
-              Helpers.getAllTestCases conn lst
-              >>= function lst' -> aux sub conn (makeTestCaseList lst') 0 ) ) )
+          let problem_key =
+            "problem:" ^ string_of_int sub.problem_id
+          in
+          Helpers.get_actor_role conn user_id
+          >>= fun user_role ->
+          Client.hget conn problem_key "is_draft"
+          >>= fun is_draft ->
+          let privileged = Problems.is_privileged_role user_role in
+          if is_draft = Some "true" && not privileged then
+            Dream.json ~code:404
+              ~headers:[("Content-Type", "application/json")]
+              (Helpers.error_msg "Problem not found.")
+          else
+            Client.smembers conn (problem_key ^ ":testcases")
+            >>= function
+            | [] ->
+                Dream.json ~code:404
+                  ~headers:[("Content-Type", "application/json")]
+                  (Helpers.error_msg
+                     (Printf.sprintf
+                        "No tests found for problem:%d. Problem must have \
+                         tests for submissions."
+                        sub.problem_id ) )
+            | lst -> (
+                Helpers.getAllTestCases conn lst
+                >>= function
+                | lst' -> aux sub conn (makeTestCaseList lst') 0 ) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]

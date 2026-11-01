@@ -3,7 +3,7 @@
   "info": {
     "title": "API specification for Yoda",
     "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
-    "version": "1.7.9"
+    "version": "1.7.10"
   },
   "paths": {
     "/admin/users": {
@@ -1495,6 +1495,10 @@
             "type": "boolean",
             "description": "True when the problem has been manually stopped by an admin."
           },
+          "is_draft": {
+            "type": "boolean",
+            "description": "True while the problem is being configured and hidden from participants."
+          },
           "languages": {
             "$ref": "#/components/schemas/Languages"
           },
@@ -1671,6 +1675,10 @@
           },
           "source_artifacts": {
             "$ref": "#/components/schemas/SourceArtifacts"
+          },
+          "is_draft": {
+            "type": "boolean",
+            "description": "Keep the problem hidden from participants while it is being configured."
           }
         },
         "required": [
@@ -1728,6 +1736,10 @@
           },
           "object_artifacts": {
             "$ref": "#/components/schemas/ObjectArtifacts"
+          },
+          "is_draft": {
+            "type": "boolean",
+            "description": "Keep the problem hidden from participants while it is being configured."
           }
         }
       },

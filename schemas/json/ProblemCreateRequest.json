@@ -28,6 +28,10 @@
     },
     "source_artifacts": {
       "$ref": "#/components/schemas/SourceArtifacts"
+    },
+    "is_draft": {
+      "type": "boolean",
+      "description": "Keep the problem hidden from participants while it is being configured."
     }
   },
   "required": [

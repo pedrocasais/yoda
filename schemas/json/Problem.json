@@ -40,6 +40,10 @@
       "type": "boolean",
       "description": "True when the problem has been manually stopped by an admin."
     },
+    "is_draft": {
+      "type": "boolean",
+      "description": "True while the problem is being configured and hidden from participants."
+    },
     "languages": {
       "$ref": "#/components/schemas/Languages"
     },

@@ -231,6 +231,7 @@ type problemUpdateRequest = {
   ?memory_limit_mb : int option;
   ?source_artifacts : sourceArtifacts option;
   ?object_artifacts : objectArtifacts option;
+  ?is_draft <doc text="Keep the problem hidden from participants while it is being configured.">: bool option;
 } 
 
 type problemCreateRequest = {
@@ -243,6 +244,7 @@ type problemCreateRequest = {
   time_limit_ms : int;
   memory_limit_mb : int;
   source_artifacts : sourceArtifacts;
+  ?is_draft <doc text="Keep the problem hidden from participants while it is being configured.">: bool option;
 } 
 
 type objectArtifacts = objectArtifact list 
@@ -294,6 +296,7 @@ type problem = {
   ?open_at <doc text="Optional date/time from which the problem is open.">: string option;
   ?close_at <doc text="Optional date/time after which the problem is closed.">: string option;
   ?is_force_closed <doc text="True when the problem has been manually stopped by an admin.">: bool option;
+  ?is_draft <doc text="True while the problem is being configured and hidden from participants.">: bool option;
   languages : languages;
   ?source_artifacts : sourceArtifacts option;
   ?object_artifacts : objectArtifacts option;

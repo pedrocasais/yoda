@@ -42,6 +42,10 @@
     },
     "object_artifacts": {
       "$ref": "#/components/schemas/ObjectArtifacts"
+    },
+    "is_draft": {
+      "type": "boolean",
+      "description": "Keep the problem hidden from participants while it is being configured."
     }
   }
 }
