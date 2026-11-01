@@ -491,8 +491,8 @@ let postContests request =
     (fun () ->
       Dream.body request
       >>= fun data ->
-      let contest = Openapi.contest_of_json data in
-      let rec aux (contest : Openapi.contest) attempt =
+      let contest = Openapi.ContestCreateRequest.of_json data in
+      let rec aux (contest : Openapi.ContestCreateRequest.t) attempt =
         Lwt_pool.use Db.pool (fun conn ->
             Client.unwatch conn
             >>= fun _ ->
@@ -512,22 +512,25 @@ let postContests request =
               ["SET"; "contest:id"; string_of_int next_id]
             >>= fun _ ->
             Client.send_custom_request conn
-              [ "HSET"
-              ; key
-              ; "id"
-              ; string_of_int contest.id
-              ; "title"
-              ; contest.title
-              ; "description"
-              ; ( match contest.description with
-                | Some x -> x
-                | None -> "Description." )
-              ; "start_time"
-              ; contest.start_time
-              ; "end_time"
-              ; contest.end_time
-              ; "status"
-              ; Openapi.json_of_contestStatus contest.status ]
+              ( [ "HSET"
+                ; key
+                ; "id"
+                ; string_of_int next_id
+                ; "title"
+                ; contest.title
+                ; "description"
+                ; ( match contest.description with
+                  | Some x -> x
+                  | None -> "Description." )
+                ; "start_time"
+                ; contest.start_time
+                ; "status"
+                ; Openapi.ContestCreateRequestStatus.to_json contest.status
+                ]
+              @
+              match contest.end_time with
+              | Some end_time -> ["end_time"; end_time]
+              | None -> [] )
             >>= fun _ ->
             Client.exec conn
             >>= function
@@ -549,8 +552,12 @@ let postContests request =
                       ( match contest.description with
                       | Some x -> x
                       | None -> "Description." )
-                    ~start_time:contest.start_time ~end_time:contest.end_time
-                    ~status:contest.status ()
+                    ~start_time:contest.start_time ?end_time:contest.end_time
+                    ~status:
+                      (Openapi.ContestStatus.of_json
+                         (Openapi.ContestCreateRequestStatus.to_json
+                            contest.status ) )
+                    ()
                 in
                 Dream.json ~code:200
                   ~headers:[("Content-Type", "application/json")]

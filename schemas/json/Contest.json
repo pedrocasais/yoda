@@ -15,7 +15,6 @@
         "id",
         "title",
         "start_time",
-        "end_time",
         "status"
       ]
     }

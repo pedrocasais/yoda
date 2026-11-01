@@ -3,7 +3,7 @@
   "info": {
     "title": "API specification for Yoda",
     "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
-    "version": "1.7.7"
+    "version": "1.7.8"
   },
   "paths": {
     "/admin/users": {
@@ -2026,7 +2026,6 @@
               "id",
               "title",
               "start_time",
-              "end_time",
               "status"
             ]
           }

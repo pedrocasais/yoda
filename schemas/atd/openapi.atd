@@ -121,7 +121,7 @@ type contest = {
   title : string;
   ?description : string option;
   start_time : string;
-  end_time : string;
+  ?end_time : string option;
   status : contestStatus;
   id : int;
 } 

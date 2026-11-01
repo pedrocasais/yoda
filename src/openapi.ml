@@ -2343,12 +2343,12 @@ type contest = {
   title: string;
   description: string option;
   start_time: string;
-  end_time: string;
+  end_time: string option;
   status: contestStatus;
   id: int;
 }
 
-let create_contest ~title ?description ~start_time ~end_time ~status ~id () : contest =
+let create_contest ~title ?description ~start_time ?end_time ~status ~id () : contest =
   { title; description; start_time; end_time; status; id }
 
 let contest_of_yojson (x : Yojson.Safe.t) : contest =
@@ -2381,8 +2381,8 @@ let contest_of_yojson (x : Yojson.Safe.t) : contest =
     in
     let end_time =
       match assoc "end_time" with
-      | Some v -> Atdml_runtime.Yojson.string_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "contest" "end_time"
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     let status =
       match assoc "status" with
@@ -2402,7 +2402,7 @@ let yojson_of_contest (x : contest) : Yojson.Safe.t =
     [("title", Atdml_runtime.Yojson.yojson_of_string x.title)];
     (match x.description with None -> [] | Some v -> [("description", Atdml_runtime.Yojson.yojson_of_string v)]);
     [("start_time", Atdml_runtime.Yojson.yojson_of_string x.start_time)];
-    [("end_time", Atdml_runtime.Yojson.yojson_of_string x.end_time)];
+    (match x.end_time with None -> [] | Some v -> [("end_time", Atdml_runtime.Yojson.yojson_of_string v)]);
     [("status", yojson_of_contestStatus x.status)];
     [("id", Atdml_runtime.Yojson.yojson_of_int x.id)];
   ])

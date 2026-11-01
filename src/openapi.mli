@@ -813,12 +813,12 @@ type contest = {
   title: string;
   description: string option;
   start_time: string;
-  end_time: string;
+  end_time: string option;
   status: contestStatus;
   id: int;
 }
 
-val create_contest : title:string -> ?description:string -> start_time:string -> end_time:string -> status:contestStatus -> id:int -> unit -> contest
+val create_contest : title:string -> ?description:string -> start_time:string -> ?end_time:string -> status:contestStatus -> id:int -> unit -> contest
 val contest_of_yojson : Yojson.Safe.t -> contest
 val yojson_of_contest : contest -> Yojson.Safe.t
 val contest_of_json : string -> contest
@@ -826,7 +826,7 @@ val json_of_contest : contest -> string
 
 module Contest : sig
   type nonrec t = contest
-  val create : title:string -> ?description:string -> start_time:string -> end_time:string -> status:contestStatus -> id:int -> unit -> t
+  val create : title:string -> ?description:string -> start_time:string -> ?end_time:string -> status:contestStatus -> id:int -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
