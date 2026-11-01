@@ -5,18 +5,12 @@
 open Lwt.Infix
 open Redis_lwt
 
-let is_privileged_role = function
-  | Some role ->
-      role = Openapi.UserRole.to_json Openapi.Admin
-      || role = Openapi.UserRole.to_json Openapi.Judge
-  | None -> false
-
 let is_draft x = List.assoc_opt "is_draft" x = Some "true"
 
 let makeProblem user_id user_role x =
   let _ = user_id in
   (* this argument is not being used! *)
-  let privileged = is_privileged_role user_role in
+  let privileged = Helpers.is_privileged_role user_role in
   let object_artifacts =
     if privileged then
       match List.assoc_opt "object_artifacts" x with
@@ -59,7 +53,7 @@ let makeProblem user_id user_role x =
 let makeProblemList user_id user_role lst =
   List.fold_left
     (fun acc x ->
-      if is_draft x && not (is_privileged_role user_role) then acc
+      if is_draft x && not (Helpers.is_privileged_role user_role) then acc
       else List.rev_append [makeProblem user_id user_role x] acc )
     [] lst
 
@@ -372,7 +366,7 @@ let getProblemsId request =
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]
                 "Problem not found"
-          | x when is_draft x && not (is_privileged_role user_role) ->
+          | x when is_draft x && not (Helpers.is_privileged_role user_role) ->
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]
                 "Problem not found"

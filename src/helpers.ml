@@ -16,6 +16,12 @@ let get_actor_id request =
 let get_actor_role conn actor_id =
   Client.hget conn ("user:" ^ actor_id) "role"
 
+let is_privileged_role = function
+  | Some role ->
+      role = Openapi.UserRole.to_json Openapi.Admin
+      || role = Openapi.UserRole.to_json Openapi.Judge
+  | None -> false
+
 let get_actor_groups conn actor_id =
   Client.hget conn ("user:" ^ actor_id) "groups"
   >>= fun user ->

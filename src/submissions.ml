@@ -65,7 +65,6 @@ let postSubmissions request =
       Dream.body request
       >>= fun data ->
       let sub = Openapi.solution_of_json data in
-      let user_id = Helpers.get_actor_id request in
       let rec aux (solution : Openapi.solution) conn testcases attempt =
         Client.unwatch conn
         >>= fun _ ->
@@ -168,16 +167,23 @@ let postSubmissions request =
           let problem_key =
             "problem:" ^ string_of_int sub.problem_id
           in
-          Helpers.get_actor_role conn user_id
+          Helpers.get_actor_role conn (Helpers.get_actor_id request)
           >>= fun user_role ->
-          Client.hget conn problem_key "is_draft"
-          >>= fun is_draft ->
-          let privileged = Problems.is_privileged_role user_role in
-          if is_draft = Some "true" && not privileged then
-            Dream.json ~code:404
+          let is_blocked =
+            if Helpers.is_privileged_role user_role then Lwt.return false
+            else
+              Client.hget conn problem_key "is_draft"
+              >>= fun is_draft ->
+              Client.hget conn problem_key "is_force_closed"
+              >|= fun is_force_closed ->
+              is_draft = Some "true" || is_force_closed = Some "true"
+          in
+          is_blocked >>= function
+          | true ->
+            Dream.json ~code:400
               ~headers:[("Content-Type", "application/json")]
-              (Helpers.error_msg "Problem not found.")
-          else
+              (Helpers.error_msg "Problem is not accepting submissions.")
+          | false ->
             Client.smembers conn (problem_key ^ ":testcases")
             >>= function
             | [] ->

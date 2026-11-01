@@ -14,7 +14,7 @@ A problem is evaluated by running a submission against its test cases. Each test
 
 Test case management is restricted to administrators.
 
-Problems can be marked with `is_draft` while they are being configured. Drafts are visible to administrators and judges, but hidden from participants and cannot be submitted to by participants. Omit `is_draft` when creating a problem to keep the existing published-by-default behavior; set it to `false` when the problem is ready to publish.
+Problems can be marked with `is_draft` while they are being configured. Drafts are visible to administrators and judges, but hidden from participants. Participant submissions are rejected while a problem is a draft or has `is_force_closed` set to `true`; administrators and judges can still submit in either state. Omit `is_draft` when creating a problem to keep the existing published-by-default behavior; set it to `false` when the problem is ready to publish.
 
 ## Managing test cases
 
