@@ -7,13 +7,25 @@ type statusStatus = [
   | Maintenance <json name="maintenance">
 ] 
 
-type contestStatus = [
+type contestFieldsStatus = [
   | Upcoming <json name="upcoming">
   | Running <json name="running">
   | Finished <json name="finished">
 ] 
 
-type judgeContestsIdPutRequestStatus = [
+type contestCreateRequestStatus = [
+  | Upcoming <json name="upcoming">
+  | Running <json name="running">
+  | Finished <json name="finished">
+] 
+
+type contestUpdateRequestStatus = [
+  | Upcoming <json name="upcoming">
+  | Running <json name="running">
+  | Finished <json name="finished">
+] 
+
+type contestStatus = [
   | Upcoming <json name="upcoming">
   | Running <json name="running">
   | Finished <json name="finished">
@@ -24,21 +36,6 @@ type contestsIdScoreboardGetResponse2 = scoreboardEntry list
 type problemsIdTestcasesGetResponse2 = testCase list 
 
 type contestsContestsidProblemsGetResponse2 = problem list 
-
-type judgeContestsIdPutRequest = {
-  ?title : string option;
-  ?description : string option;
-  ?start_time : string option;
-  ?end_time : string option;
-  ?status : judgeContestsIdPutRequestStatus option;
-} 
-
-type judgeContestsPostRequest = {
-  title : string;
-  ?description : string option;
-  start_time : string;
-  end_time : string;
-} 
 
 type contestsGetResponse2 = contest list 
 
@@ -121,12 +118,36 @@ type authToken = {
 } 
 
 type contest = {
-  id : int;
   title : string;
   ?description : string option;
   start_time : string;
   end_time : string;
   status : contestStatus;
+  id : int;
+} 
+
+type contestUpdateRequest = {
+  ?title : string option;
+  ?description : string option;
+  ?start_time : string option;
+  ?end_time : string option;
+  ?status : contestUpdateRequestStatus option;
+} 
+
+type contestCreateRequest = {
+  title : string;
+  ?description : string option;
+  start_time : string;
+  ?end_time : string option;
+  status : contestCreateRequestStatus;
+} 
+
+type contestFields = {
+  ?title : string option;
+  ?description : string option;
+  ?start_time : string option;
+  ?end_time : string option;
+  ?status : contestFieldsStatus option;
 } 
 
 type scoreboardEntry = {

@@ -3,7 +3,7 @@
   "info": {
     "title": "API specification for Yoda",
     "description": "This is the OpenAPI specification for the Yoda API, which provides endpoints for user management, authentication, contest management, problem management, submission handling, and judging. The API is designed to facilitate the development of competitive programming platforms and related applications.",
-    "version": "1.7.6"
+    "version": "1.7.7"
   },
   "paths": {
     "/admin/users": {
@@ -378,7 +378,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/JudgeContestsPostRequest"
+                "$ref": "#/components/schemas/ContestCreateRequest"
               }
             }
           }
@@ -428,7 +428,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/JudgeContestsIdPutRequest"
+                "$ref": "#/components/schemas/ContestUpdateRequest"
               }
             }
           }
@@ -1961,12 +1961,9 @@
           "problems"
         ]
       },
-      "Contest": {
+      "ContestFields": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer"
-          },
           "title": {
             "type": "string"
           },
@@ -1989,13 +1986,50 @@
               "finished"
             ]
           }
-        },
-        "required": [
-          "id",
-          "title",
-          "start_time",
-          "end_time",
-          "status"
+        }
+      },
+      "ContestCreateRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ContestFields"
+          },
+          {
+            "type": "object",
+            "required": [
+              "title",
+              "start_time",
+              "status"
+            ]
+          }
+        ]
+      },
+      "ContestUpdateRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ContestFields"
+          }
+        ]
+      },
+      "Contest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ContestFields"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "start_time",
+              "end_time",
+              "status"
+            ]
+          }
         ]
       },
       "AuthToken": {
@@ -2256,57 +2290,6 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/Contest"
-        }
-      },
-      "JudgeContestsPostRequest": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "start_time": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "end_time": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "title",
-          "start_time",
-          "end_time"
-        ]
-      },
-      "JudgeContestsIdPutRequest": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "start_time": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "end_time": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "upcoming",
-              "running",
-              "finished"
-            ]
-          }
         }
       },
       "ContestsContestsidProblemsGetResponse200": {

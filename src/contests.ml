@@ -376,7 +376,7 @@ let putContestsId request =
       let contest_id = Dream.param request "id" in
       Dream.body request
       >>= fun data ->
-      let contest = Openapi.JudgeContestsIdPutRequest.of_json data in
+      let contest = Openapi.ContestUpdateRequest.of_json data in
       Lwt_pool.use Db.pool (fun conn ->
           let key = "contest:" ^ contest_id in
           Client.hmget conn key
@@ -408,13 +408,12 @@ let putContestsId request =
                   | None -> Option.get (List.nth lst 3) )
                 ; "status"
                 ; ( match contest.status with
-                  | Some x ->
-                      Openapi.JudgeContestsIdPutRequestStatus.to_json x
+                  | Some x -> Openapi.ContestUpdateRequestStatus.to_json x
                   | None -> Option.get (List.nth lst 4) ) ]
               >>= function
               | `Int _ | `Status "OK" ->
                   let contest_res =
-                    Openapi.JudgeContestsIdPutRequest.create
+                    Openapi.ContestUpdateRequest.create
                       ~title:
                         ( match contest.title with
                         | Some x -> x
@@ -435,13 +434,13 @@ let putContestsId request =
                         ( match contest.status with
                         | Some x -> x
                         | None ->
-                            Openapi.JudgeContestsIdPutRequestStatus.of_json
+                            Openapi.ContestUpdateRequestStatus.of_json
                               (Option.get (List.nth lst 4)) )
                       ()
                   in
                   Dream.json ~code:200
                     ~headers:[("Content-Type", "application/json")]
-                    (Openapi.JudgeContestsIdPutRequest.to_json contest_res)
+                    (Openapi.ContestUpdateRequest.to_json contest_res)
               | _ ->
                   Dream.json ~code:500
                     ~headers:[("Content-Type", "application/json")]
@@ -545,18 +544,17 @@ let postContests request =
                   >>= fun () -> aux contest (attempt + 1)
             | [`Status "OK"; `Int n] when n >= 1 ->
                 let contest_res =
-                  Openapi.JudgeContestsPostRequest.create
-                    ~title:contest.title
+                  Openapi.Contest.create ~id:next_id ~title:contest.title
                     ~description:
                       ( match contest.description with
                       | Some x -> x
                       | None -> "Description." )
                     ~start_time:contest.start_time ~end_time:contest.end_time
-                    ()
+                    ~status:contest.status ()
                 in
                 Dream.json ~code:200
                   ~headers:[("Content-Type", "application/json")]
-                  (Openapi.JudgeContestsPostRequest.to_json contest_res)
+                  (Openapi.Contest.to_json contest_res)
             | _ ->
                 Dream.json ~code:500
                   ~headers:[("Content-Type", "application/json")]
