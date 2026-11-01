@@ -371,6 +371,7 @@ let deleteContestsId request =
 let putContestsId request =
   (* no need to check for admin or judge permission; it came from a protected
      route *)
+  let check f = function Some x -> f x | None -> Lwt.return false in
   Lwt.catch
     (fun () ->
       let contest_id = Dream.param request "id" in
@@ -379,72 +380,51 @@ let putContestsId request =
       let contest = Openapi.ContestUpdateRequest.of_json data in
       Lwt_pool.use Db.pool (fun conn ->
           let key = "contest:" ^ contest_id in
-          Client.hmget conn key
-            ["title"; "description"; "start_time"; "end_time"; "status"]
+          Client.exists conn key
           >>= function
-          | [None; None; None; None; None] ->
+          | false ->
               Dream.json ~code:404
                 ~headers:[("Content-Type", "application/json")]
                 "Contest not found"
-          | _ as lst -> (
-              Client.send_custom_request conn
-                [ "HSET"
-                ; key
-                ; "title"
-                ; ( match contest.title with
-                  | Some x -> x
-                  | None -> Option.get (List.nth lst 0) )
-                ; "description"
-                ; ( match contest.description with
-                  | Some x -> x
-                  | None -> Option.get (List.nth lst 1) )
-                ; "start_time"
-                ; ( match contest.start_time with
-                  | Some x -> x
-                  | None -> Option.get (List.nth lst 2) )
-                ; "end_time"
-                ; ( match contest.end_time with
-                  | Some x -> x
-                  | None -> Option.get (List.nth lst 3) )
-                ; "status"
-                ; ( match contest.status with
-                  | Some x -> Openapi.ContestUpdateRequestStatus.to_json x
-                  | None -> Option.get (List.nth lst 4) ) ]
-              >>= function
-              | `Int _ | `Status "OK" ->
-                  let contest_res =
-                    Openapi.ContestUpdateRequest.create
-                      ~title:
-                        ( match contest.title with
-                        | Some x -> x
-                        | None -> Option.get (List.nth lst 0) )
-                      ~description:
-                        ( match contest.description with
-                        | Some x -> x
-                        | None -> Option.get (List.nth lst 1) )
-                      ~start_time:
-                        ( match contest.start_time with
-                        | Some x -> x
-                        | None -> Option.get (List.nth lst 2) )
-                      ~end_time:
-                        ( match contest.end_time with
-                        | Some x -> x
-                        | None -> Option.get (List.nth lst 3) )
-                      ~status:
-                        ( match contest.status with
-                        | Some x -> x
-                        | None ->
-                            Openapi.ContestUpdateRequestStatus.of_json
-                              (Option.get (List.nth lst 4)) )
-                      ()
-                  in
-                  Dream.json ~code:200
-                    ~headers:[("Content-Type", "application/json")]
-                    (Openapi.ContestUpdateRequest.to_json contest_res)
-              | _ ->
-                  Dream.json ~code:500
-                    ~headers:[("Content-Type", "application/json")]
-                    "Erro" ) ) )
+          | true ->
+              check (Client.hset conn key "title") contest.title
+              >>= fun _ ->
+              check (Client.hset conn key "description") contest.description
+              >>= fun _ ->
+              check (Client.hset conn key "start_time") contest.start_time
+              >>= fun _ ->
+              check (Client.hset conn key "end_time") contest.end_time
+              >>= fun _ ->
+              check
+                (Client.hset conn key "status")
+                ( contest.status
+                |> Option.map Openapi.ContestUpdateRequestStatus.to_json )
+              >>= fun _ ->
+              check
+                (Client.hset conn key "allowed_groups")
+                ( contest.allowed_groups
+                |> Option.map Openapi.UserGroups.to_json )
+              >>= fun _ ->
+              Client.hgetall conn key
+              >>= fun lst ->
+              let contest =
+                Openapi.ContestUpdateRequest.create
+                  ~title:(List.assoc "title" lst)
+                  ~description:(List.assoc "description" lst)
+                  ~start_time:(List.assoc "start_time" lst)
+                  ?end_time:(List.assoc_opt "end_time" lst)
+                  ~status:
+                    (Openapi.ContestUpdateRequestStatus.of_json
+                       (List.assoc "status" lst) )
+                  ~allowed_groups:
+                    ( match List.assoc_opt "allowed_groups" lst with
+                    | None -> []
+                    | Some x -> Openapi.UserGroups.of_json x )
+                  ()
+              in
+              Dream.json ~code:200
+                ~headers:[("Content-Type", "application/json")]
+                (Openapi.ContestUpdateRequest.to_json contest) ) )
     (fun exn ->
       Dream.json ~code:500
         ~headers:[("Content-Type", "application/json")]
@@ -470,7 +450,7 @@ let getContestsId request =
               ~title:(List.assoc "title" x)
               ~description:(List.assoc "description" x)
               ~start_time:(List.assoc "start_time" x)
-              ~end_time:(List.assoc "end_time" x)
+              ?end_time:(List.assoc_opt "end_time" x)
               ~status:(Openapi.contestStatus_of_json (List.assoc "status" x))
               ()
           in
