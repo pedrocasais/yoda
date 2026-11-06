@@ -249,7 +249,10 @@ let postContestsContestsIdProblems request =
             ; "source_artifacts"
             ; Openapi.SourceArtifacts.to_json problem.source_artifacts
             ; "is_draft"
-            ; string_of_bool (Option.value ~default:true problem.is_draft) ]
+            ; string_of_bool (Option.value ~default:true problem.is_draft)
+            ; "is_submission_disabled"
+            ; string_of_bool
+                (Option.value ~default:false problem.is_submission_disabled) ]
           >>= fun _ ->
           Client.send_custom_request conn
             ["SADD"; "contest:" ^ cid ^ ":problems"; string_of_int next_id]
@@ -276,6 +279,9 @@ let postContestsContestsIdProblems request =
                   ~description:problem.description
                   ~input_spec:problem.input_spec
                   ~output_spec:problem.output_spec
+                  ~is_submission_disabled:
+                    (Option.value ~default:false
+                       problem.is_submission_disabled )
                   ~is_draft:(Option.value ~default:true problem.is_draft)
                   ~languages:problem.languages ()
               in

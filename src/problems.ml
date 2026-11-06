@@ -7,6 +7,9 @@ open Redis_lwt
 
 let is_draft x = List.assoc_opt "is_draft" x = Some "true"
 
+let is_submission_disabled x =
+  List.assoc_opt "is_submission_disabled" x = Some "true"
+
 let makeProblem user_id user_role x =
   let _ = user_id in
   (* this argument is not being used! *)
@@ -34,6 +37,7 @@ let makeProblem user_id user_role x =
         | Some "true" -> Some true
         | Some "false" -> Some false
         | _ -> None )
+      ~is_submission_disabled:(is_submission_disabled x)
       ~is_draft:(is_draft x)
       ~languages:
         ( match List.assoc_opt "languages" x with
@@ -296,6 +300,11 @@ let putProblemsId request =
                   (problem.is_force_closed |> Option.map string_of_bool)
                 >>= fun _ ->
                 check
+                  (Client.hset conn key "is_submission_disabled")
+                  (problem.is_submission_disabled
+                  |> Option.map string_of_bool)
+                >>= fun _ ->
+                check
                   (Client.hset conn key "is_draft")
                   (problem.is_draft |> Option.map string_of_bool)
                 >>= fun _ ->
@@ -331,6 +340,7 @@ let putProblemsId request =
                       | Some "true" -> Some true
                       | Some "false" -> Some false
                       | _ -> None )
+                    ~is_submission_disabled:(is_submission_disabled lst)
                     ~is_draft:(is_draft lst)
                     ~languages:
                       ( match List.assoc_opt "languages" lst with

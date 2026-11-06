@@ -182,7 +182,8 @@ let postSubmissions request =
             else
               Lwt.return
                 ( problem_field "is_draft" = Some "true"
-                || problem_field "is_force_closed" = Some "true" )
+                || problem_field "is_force_closed" = Some "true"
+                || problem_field "is_submission_disabled" = Some "true" )
           in
           is_blocked
           >>= function
