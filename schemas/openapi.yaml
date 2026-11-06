@@ -964,59 +964,65 @@ components:
         groups:
           $ref: "#/components/schemas/UserGroups"
 
-    Problem:
+    ProblemFields:
       type: object
       properties:
-        id:
-          type: integer
         code:
           type: string
         title:
           type: string
-        time_limit_ms:
-          type: integer
-        memory_limit_mb:
-          type: integer
         description:
           type: string
         input_spec:
           type: string
         output_spec:
           type: string
-        open_at:
-          type: string
-          format: date-time
-          description: Optional date/time from which the problem is open.
-        close_at:
-          type: string
-          format: date-time
-          description: Optional date/time after which the problem is closed.
-        is_force_closed:
-          type: boolean
-          description: True when the problem has been manually stopped by an admin.
+        time_limit_ms:
+          type: integer
+        memory_limit_mb:
+          type: integer
+        languages:
+          $ref: "#/components/schemas/Languages"
+        source_artifacts:
+          $ref: "#/components/schemas/SourceArtifacts"
         is_submission_disabled:
           type: boolean
           description: True when submissions are disabled for participants.
         is_draft:
           type: boolean
           description: True while the problem is being configured and hidden from participants.
-        languages:
-          $ref: "#/components/schemas/Languages"
-        source_artifacts:
-          $ref: "#/components/schemas/SourceArtifacts"
-        object_artifacts:
-          $ref: "#/components/schemas/ObjectArtifacts"
-      required:
-        [
-          "code",
-          "title",
-          "time_limit_ms",
-          "memory_limit_mb",
-          "description",
-          "input_spec",
-          "output_spec",
-          "languages",
-        ]
+
+    Problem:
+      allOf:
+        - $ref: "#/components/schemas/ProblemFields"
+        - type: object
+          properties:
+            id:
+              type: integer
+            open_at:
+              type: string
+              format: date-time
+              description: Optional date/time from which the problem is open.
+            close_at:
+              type: string
+              format: date-time
+              description: Optional date/time after which the problem is closed.
+            is_force_closed:
+              type: boolean
+              description: True when the problem has been manually stopped by an admin.
+            object_artifacts:
+              $ref: "#/components/schemas/ObjectArtifacts"
+          required:
+            [
+              "code",
+              "title",
+              "time_limit_ms",
+              "memory_limit_mb",
+              "description",
+              "input_spec",
+              "output_spec",
+              "languages",
+            ]
 
     OracleConfig:
       type: object
@@ -1102,82 +1108,37 @@ components:
         $ref: "#/components/schemas/ObjectArtifact"
 
     ProblemCreateRequest:
-      type: object
-      properties:
-        code:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        input_spec:
-          type: string
-        output_spec:
-          type: string
-        languages:
-          $ref: "#/components/schemas/Languages"
-        time_limit_ms:
-          type: integer
-        memory_limit_mb:
-          type: integer
-        source_artifacts:
-          $ref: "#/components/schemas/SourceArtifacts"
-        is_submission_disabled:
-          type: boolean
-          description: Disable submissions for participants.
-        is_draft:
-          type: boolean
-          description: Keep the problem hidden from participants while it is being configured.
-      required:
-        [
-          "code",
-          "title",
-          "time_limit_ms",
-          "memory_limit_mb",
-          "description",
-          "input_spec",
-          "output_spec",
-          "languages",
-          "source_artifacts",
-        ]
+      allOf:
+        - $ref: "#/components/schemas/ProblemFields"
+        - type: object
+          required:
+            [
+              "code",
+              "title",
+              "time_limit_ms",
+              "memory_limit_mb",
+              "description",
+              "input_spec",
+              "output_spec",
+              "languages",
+              "source_artifacts",
+            ]
 
     ProblemUpdateRequest:
-      type: object
-      properties:
-        code:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        input_spec:
-          type: string
-        output_spec:
-          type: string
-        open_at:
-          type: string
-          format: date-time
-        close_at:
-          type: string
-          format: date-time
-        is_force_closed:
-          type: boolean
-        is_submission_disabled:
-          type: boolean
-          description: Disable submissions for participants.
-        languages:
-          $ref: "#/components/schemas/Languages"
-        time_limit_ms:
-          type: integer
-        memory_limit_mb:
-          type: integer
-        source_artifacts:
-          $ref: "#/components/schemas/SourceArtifacts"
-        object_artifacts:
-          $ref: "#/components/schemas/ObjectArtifacts"
-        is_draft:
-          type: boolean
-          description: Keep the problem hidden from participants while it is being configured.
+      allOf:
+        - $ref: "#/components/schemas/ProblemFields"
+        - type: object
+          properties:
+            open_at:
+              type: string
+              format: date-time
+            close_at:
+              type: string
+              format: date-time
+            is_force_closed:
+              type: boolean
+            object_artifacts:
+              $ref: "#/components/schemas/ObjectArtifacts"
 
     Submission:
       type: object

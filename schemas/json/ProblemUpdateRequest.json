@@ -1,51 +1,27 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "code": {
-      "type": "string"
+  "allOf": [
+    {
+      "$ref": "#/components/schemas/ProblemFields"
     },
-    "title": {
-      "type": "string"
-    },
-    "description": {
-      "type": "string"
-    },
-    "input_spec": {
-      "type": "string"
-    },
-    "output_spec": {
-      "type": "string"
-    },
-    "open_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "close_at": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "is_force_closed": {
-      "type": "boolean"
-    },
-    "languages": {
-      "$ref": "#/components/schemas/Languages"
-    },
-    "time_limit_ms": {
-      "type": "integer"
-    },
-    "memory_limit_mb": {
-      "type": "integer"
-    },
-    "source_artifacts": {
-      "$ref": "#/components/schemas/SourceArtifacts"
-    },
-    "object_artifacts": {
-      "$ref": "#/components/schemas/ObjectArtifacts"
-    },
-    "is_draft": {
-      "type": "boolean",
-      "description": "Keep the problem hidden from participants while it is being configured."
+    {
+      "type": "object",
+      "properties": {
+        "open_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "close_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "is_force_closed": {
+          "type": "boolean"
+        },
+        "object_artifacts": {
+          "$ref": "#/components/schemas/ObjectArtifacts"
+        }
+      }
     }
-  }
+  ]
 }

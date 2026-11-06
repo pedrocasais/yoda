@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "input_spec": {
+      "type": "string"
+    },
+    "output_spec": {
+      "type": "string"
+    },
+    "time_limit_ms": {
+      "type": "integer"
+    },
+    "memory_limit_mb": {
+      "type": "integer"
+    },
+    "languages": {
+      "$ref": "#/components/schemas/Languages"
+    },
+    "source_artifacts": {
+      "$ref": "#/components/schemas/SourceArtifacts"
+    },
+    "is_submission_disabled": {
+      "type": "boolean",
+      "description": "True when submissions are disabled for participants."
+    },
+    "is_draft": {
+      "type": "boolean",
+      "description": "True while the problem is being configured and hidden from participants."
+    }
+  }
+}

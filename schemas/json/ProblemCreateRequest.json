@@ -1,48 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "code": {
-      "type": "string"
+  "allOf": [
+    {
+      "$ref": "#/components/schemas/ProblemFields"
     },
-    "title": {
-      "type": "string"
-    },
-    "description": {
-      "type": "string"
-    },
-    "input_spec": {
-      "type": "string"
-    },
-    "output_spec": {
-      "type": "string"
-    },
-    "languages": {
-      "$ref": "#/components/schemas/Languages"
-    },
-    "time_limit_ms": {
-      "type": "integer"
-    },
-    "memory_limit_mb": {
-      "type": "integer"
-    },
-    "source_artifacts": {
-      "$ref": "#/components/schemas/SourceArtifacts"
-    },
-    "is_draft": {
-      "type": "boolean",
-      "description": "Keep the problem hidden from participants while it is being configured."
+    {
+      "type": "object",
+      "required": [
+        "code",
+        "title",
+        "time_limit_ms",
+        "memory_limit_mb",
+        "description",
+        "input_spec",
+        "output_spec",
+        "languages",
+        "source_artifacts"
+      ]
     }
-  },
-  "required": [
-    "code",
-    "title",
-    "time_limit_ms",
-    "memory_limit_mb",
-    "description",
-    "input_spec",
-    "output_spec",
-    "languages",
-    "source_artifacts"
   ]
 }
